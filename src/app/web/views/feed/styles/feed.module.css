@@ -1,0 +1,373 @@
+.box {
+  height: 100%;
+  max-height: 30vh;
+  width: 60%;
+  margin: auto;
+  margin-bottom: 40px;
+  margin-top: 40px;
+  overflow: hidden;
+  background-color: silver;
+}
+
+.image {
+  max-width: 100% !important;
+  object-fit: cover;
+}
+
+.btn {
+  z-index: 1;
+  background: white;
+}
+
+.cardBody {
+  overflow-y: hidden;
+  background-image: url("/images/imagen___.png");
+  height: 28vh;
+  border-radius: 20px;
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #c0c0c030;
+}
+
+.boxInsideBox {
+  display: flex;
+  margin: auto;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.h3Abso {
+  border-radius: 15px;
+  z-index: 1;
+  color: black;
+  font-size: 1em;
+  background: white;
+  margin-bottom: 10px;
+  padding: 13px;
+}
+
+.fatherBoxes {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  /* margin: 39px; */
+  position: relative;
+  justify-content: center;
+  width: 100%;
+  
+  
+}
+
+.cards {
+  /* flex-basis: 20%; */
+  
+  max-width: 360px;
+  min-height: 40px;
+  max-height: 250px;
+  margin-bottom: 150px;
+  
+
+  /* &:hover {
+    transform: scale(1.02);
+  } */
+}
+
+.footerCards {
+  background-color: white;
+  padding: 10px;
+  border-radius: 0px 0px 5px 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom-left-radius: 1em;
+  border-bottom-right-radius: 1em;
+  max-height: 180px;
+  
+  
+  
+
+  & div:first-child {
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+}
+
+.divToolstip {
+  cursor: pointer;
+  border-radius: 50%;
+  padding: 4px;
+}
+
+.divToolstip:hover {
+  background-color: #dedede;
+}
+
+.cards > div {
+  box-shadow: 3px 3px 11px -1px rgba(0, 0, 0, 0.6);
+  height: 90%;
+  
+  
+}
+
+.cards > div > img {
+  height: 100%;
+  object-fit: cover;
+  border-top-left-radius: 1em;
+  border-top-right-radius: 1em;
+}
+
+.cardImage:first-child {
+  height: 100%;
+  /* border-radius: inherit; */
+  border-top-left-radius: 1em;
+  border-top-right-radius: 1em;
+  
+}
+
+.cardImage:first-child > div {
+  height: 100%;
+  /* border-radius: inherit; */
+  border-top-left-radius: 1em;
+  border-top-right-radius: 1em;
+  
+}
+
+.cardImage:first-child > div > img {
+  height: 100%;
+  /* border-radius: inherit; */
+  border-top-left-radius: 1em;
+  border-top-right-radius: 1em;
+  
+}
+
+.skeleton {
+  height: 80%;
+}
+
+.skeletonLow {
+  height: 100%;
+  margin-top: 21px;
+  width: 100%;
+}
+
+.bottomNavbar {
+  display: flex;
+  justify-content: center;
+  background-color: white;
+}
+
+.bottomNavbar > div {
+  display: flex;
+  max-width: 1400px;
+  width: 100%;
+  padding: 1px 10px 11px 1.5rem;
+}
+
+.footerCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.footerCard > div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: 100%;
+}
+
+.selectCities {
+  margin-left: 1.5rem;
+  padding-top: 10px;
+}
+
+.boxSecondNavbar {
+  align-items: center;
+}
+
+.inputSearch {
+  margin-left: 10px;
+  width: calc(8vh + 44%);
+  margin-top: 10px;
+}
+
+/* modal info model */
+.modalInfoModel {
+  width: 1000%;
+  height: 95%;
+  max-width: none;
+  overflow: auto;
+}
+
+.previewImg {
+  margin: 15px 0px 0px 0px;
+}
+
+.asideInfoModal {
+  height: 65vh;
+  overflow-y: auto;
+}
+
+.accordionText {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.headerTableModal {
+  display: flex;
+  justify-content: end;
+  gap: 10px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.buttonsCards {
+  display: flex;
+  position: relative;
+  align-items: end;
+  /* bottom: -9px; */
+  justify-content: end;
+  height: 100%;
+}
+
+.loadingTimeLine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+  width: 50%;
+  background: #dedede;
+  height: 10vh;
+  gap: 12px;
+}
+
+.bodyTimeLine {
+  display: flex;
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.formLeft {
+  width: 300%;
+  min-height: 40vh;
+  max-height: 75%;
+  border: 1px solid silver;
+  border-radius: 5px;
+  transition: all 200ms ease-in;
+}
+
+.formRigth {
+  width: 0%;
+  transition: all 200ms ease-in;
+
+  & .boxForm {
+    opacity: 0;
+  }
+
+  & .headerLeft {
+    background-color: white;
+  }
+}
+
+.boxForm {
+  & form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  & form > div {
+    margin: 10px 10px 0px 10px;
+  }
+}
+
+.bodyModal {
+  overflow: hidden;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: #dedede;
+  padding: 10px;
+  font-weight: bold;
+  text-align: center;
+
+  & div {
+    right: -48px;
+    flex-grow: 1;
+    position: absolute;
+    cursor: pointer;
+    z-index: 1;
+  }
+
+  & .iconLeft:hover {
+    background-color: #dedede;
+    border-radius: 50%;
+    transition: all 200ms ease-in-out;
+  }
+}
+
+/* section styles create new proyecty */
+
+.modal {
+  height: 90%;
+  max-height: 100% !important;
+}
+
+.titleFormCreateProyect {
+  font-size: 1.4rem;
+  font-weight: bold;
+  padding: 5px;
+}
+
+.proyectFormSectionAddress {
+  & .titleFormProyect {
+    font-size: 1.4rem;
+    margin-top: 10px;
+    background-color: black;
+    color: white;
+    border: 1px solid silver;
+    border-radius: 5px;
+    padding: 5px;
+  }
+
+  & .boxInputs {
+    display: flex;
+    gap: 25px;
+    margin-top: 20px;
+  }
+
+  & .boxInputsDes {
+    display: flex;
+    gap: 25px;
+    margin-top: 20px;
+  }
+
+  & .boxInputsDes > div {
+    width: 100%;
+  }
+
+  & .boxInputs > div {
+    width: 50%;
+  }
+}
+
+.savingForm {
+  border-radius: 5px;
+  width: 98%;
+  margin-left: 10px;
+  margin-right: 15px;
+
+  & :first-child{
+    height: 0.4srem;
+  }
+}
