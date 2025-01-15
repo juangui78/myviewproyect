@@ -3,6 +3,9 @@ import React, { useState } from "react";
 import {Card,CardHeader,CardBody, CardFooter,Divider,Image,Input,Button, Link} from "@nextui-org/react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { validationSchemaLogin } from "./js/validationSchema";
+import { Formik, Form, Field } from "formik";
+
 
 export default function Login() {
   const [disabled, setDisabled] = useState(false);
@@ -16,7 +19,7 @@ export default function Login() {
             alt="nextui logo"
             height={40}
             radius="sm"
-            src="https://avatars.githubusercontent.com/u/86160567?s=200&v=4"
+            src="/logos/isotipo-full-color.png"
             width={40}
           />
           <div className="flex flex-col">
@@ -26,52 +29,75 @@ export default function Login() {
         </CardHeader>
         <Divider />
         <CardBody>
-          <form onSubmit={async (e) => {
-            e.preventDefault();
-            setDisabled(true);
+          <Formik
+            initialValues={{ email: '', password: '' }}
+            validationSchema={validationSchemaLogin}
+            onSubmit={ async (values) => {
 
-            const email =  e.target.elements.email.value;
-            const password =  e.target.elements.password.value;
+              const { email, password } = values
 
-            const form = new FormData();
-            form.append('email', email);
-            form.append('password', password);
+              const response = await signIn('credentials', {
+                email : email,
+                password: password,
+                redirect : false
+              })
 
-            const response = await signIn('credentials', {
-              email : email,
-              password: password,
-              redirect : false
-            });
+              if (!response.ok) { // if there is an error
+                alert('incorrect password or email')
+                return
+              }
 
-            if (response.ok){
-              return router.push('/web/views/feed');
-            }else{
-              alert('incorrect password or email')
-            }
-
-            setDisabled(false);
-            console.log(response.error);
-            console.log(response.ok);
-
-          }}>
-            <Input
-              isRequired
-              type="email"
-              name="email"
-              label="Email"
-              className="w-full mb-5"
-            />
-            <Input
-              isRequired
-              type="password"
-              name="password"
-              label="Contraseña"
-              className="w-full mb-5"
-            />
-            <Button color="primary" type="submit" isDisabled={disabled}>
-              Iniciar Sesión
-            </Button>
-          </form>
+              return router.push('/web/views/feed')
+            }}
+          >
+            {({ handleSubmit, errors, touched }) => (
+              <Form onSubmit={handleSubmit}>
+                <Field name="email">
+                  {({ field, form, meta }) => (
+                     <>
+                      <Input
+                        {...field}
+                        type="email"
+                        isRequired
+                        bordered
+                        fullWidth
+                        label="Correo electrónico"
+                        color={meta.touched && meta.error ? 'error' : 'default'}
+                        className={meta.touched && meta.error ? 'input-error' : ''}
+                        clearable
+                      />
+                      {meta.error && (
+                        <p color="error">{meta.error}</p> 
+                      )}
+                    </>
+                  )}
+                </Field>
+                <Field name="password">
+                  {({ field, form, meta }) => (
+                     <>
+                      <Input
+                        {...field}
+                        type="password"
+                        isRequired
+                        bordered
+                        fullWidth
+                        label="Contraseña"
+                        color={meta.touched && meta.error ? 'error' : 'default'}
+                        className={meta.touched && meta.error ? 'input-error' : ''}
+                        clearable
+                      />
+                      {meta.error && (
+                        <p color="error">{meta.error}</p> 
+                      )}
+                    </>
+                  )}
+                </Field>
+                <Button color="primary" type="submit">
+                  Iniciar Sesión
+                </Button>
+              </Form>
+            )}
+          </Formik>
         </CardBody>
         <Divider />
         <CardFooter>
