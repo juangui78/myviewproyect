@@ -1,0 +1,10 @@
+
+.errorInputColor {
+    & div > div{
+        border-color: #DA1001;
+
+        & label{
+            color: #DA1001 !important;
+        }
+    }
+}

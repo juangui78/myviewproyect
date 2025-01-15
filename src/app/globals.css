@@ -1,3 +1,18 @@
+@font-face {
+  font-family: 'Work Sans';
+  src: url('../../public/fonts/WorkSans-VariableFont_wght.woff2') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Work Sans';
+  src: url('../../public/fonts/WorkSans-Italic-VariableFont_wght.woff2') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+}
+
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -17,5 +32,5 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Work Sans, sans-serif;
 }
