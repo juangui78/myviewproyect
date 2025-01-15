@@ -56,7 +56,7 @@ const App = () => {
     const objectRef = React.useRef();
     const [editMarkersMode, setEditMarkersMode] = useState(false)
     
-
+    //
     // const markers = [
     //     { id: 1, position: [1, 0, 2], label: 'Parcela 1' },
     //     { id: 2, position: [-2, 0, -1], label: 'Parcela 2' },
