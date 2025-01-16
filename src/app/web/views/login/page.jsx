@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { validationSchemaLogin } from "./js/validationSchema";
 import { Formik, Form, Field } from "formik";
+import styleLogin from './styles/login.module.css'
 
 
 export default function Login() {
@@ -12,67 +13,69 @@ export default function Login() {
   const router = useRouter();
 
   return (
-    <section className="flex justify-center ... items-center ... h-dvh">
-      <Card className="max-w-[900px] w-3/12">
-        <CardHeader className="flex gap-3">
+    <section className="flex flex-row flex-wrap max-[876px]:flex-col">
+      <section className={`flex flex-row  justify-center  items-center grow w-2/5 ... max-[876px]:hidden bg-[#030D1C]`}>
+        <div>
           <Image
-            alt="nextui logo"
-            height={40}
-            radius="sm"
-            src="/logos/isotipo-full-color.png"
-            width={40}
+            alt="my view_"
+            src="/logos/completo-fullblanco.png"
           />
-          <div className="flex flex-col">
-            <p className="text-md">Modelos y Asociados</p>
-            <p className="text-small text-default-500">Esteban Y Parra</p>
-          </div>
-        </CardHeader>
-        <Divider />
-        <CardBody>
-          <Formik
-            initialValues={{ email: '', password: '' }}
-            validationSchema={validationSchemaLogin}
-            onSubmit={ async (values) => {
+              <p className="text-[#fff] absolute z-10 mt-[-520px] ml-[142px] text-2xl italic">Redefinimos La Perspectiva</p>
+        </div>
+      </section>
+      <section className={`flex justify-center ... items-center ... h-dvh  grow w-2/5 ... max-[876px]:w-full`} >
+        <Card className="max-w-[400px] w-full drop-shadow-2xl ...">
+          <CardHeader className="flex gap-3 flex-col mt-[35px]">
+            <div className="flex flex-col">
+              <h1 className="text-2xl">Iniciar Sesión</h1>
+            </div>
+          </CardHeader>
+          <CardBody>
+            <Formik
+              initialValues={{ email: '', password: '' }}
+              validationSchema={validationSchemaLogin}
+              onSubmit={ async (values) => {
 
-              const { email, password } = values
+                const { email, password } = values
 
-              const response = await signIn('credentials', {
-                email : email,
-                password: password,
-                redirect : false
-              })
+                const response = await signIn('credentials', {
+                  email : email,
+                  password: password,
+                  redirect : false
+                })
 
-              if (!response.ok) { // if there is an error
-                alert('incorrect password or email')
-                return
-              }
+                if (!response.ok) { // if there is an error
+                  alert('incorrect password or email')
+                  return
+                }
 
-              return router.push('/web/views/feed')
-            }}
-          >
-            {({ handleSubmit, errors, touched }) => (
-              <Form onSubmit={handleSubmit}>
+                return router.push('/web/views/feed')
+              }}
+            >
+            {({ handleSubmit, isSubmitting}) => (
+              <Form onSubmit={handleSubmit} className="flex flex-col ">
                 <Field name="email">
                   {({ field, form, meta }) => (
                      <>
                       <Input
                         {...field}
                         type="email"
+                        label="Email"
+                        labelPlacement="outside"
+                        variant="bordered"
+                        placeholder="Ingrese su correo electrónico"
                         isRequired
-                        bordered
                         fullWidth
-                        label="Correo electrónico"
-                        color={meta.touched && meta.error ? 'error' : 'default'}
-                        className={meta.touched && meta.error ? 'input-error' : ''}
                         clearable
+                        className={`pr-4 pl-4  ${meta.error ? styleLogin.errorInputColor : "" } `} 
                       />
-                      {meta.error && (
-                        <p color="error">{meta.error}</p> 
-                      )}
+                      <div className="mb-[10px] ml-[4px] pr-4 pl-4 ">
+                          <p className="h-[1rem] text-sm text-[#DA1001]">{ meta.error ? (meta.error + "*") : "" }</p>
+                      </div>
                     </>
                   )}
                 </Field>
-                <Field name="password">
+                <Field name="password" >
                   {({ field, form, meta }) => (
                      <>
                       <Input
@@ -80,30 +83,35 @@ export default function Login() {
                         type="password"
                         isRequired
                         bordered
+                        labelPlacement="outside"
+                        variant="bordered"
+                        placeholder="Ingrese su contraseña"
                         fullWidth
                         label="Contraseña"
-                        color={meta.touched && meta.error ? 'error' : 'default'}
-                        className={meta.touched && meta.error ? 'input-error' : ''}
+                        className={`pr-4 pl-4  ${meta.error ? styleLogin.errorInputColor : "" } `} 
                         clearable
                       />
-                      {meta.error && (
-                        <p color="error">{meta.error}</p> 
-                      )}
+                     <div className="mb-[15px] ml-[4px] pr-4 pl-4 ">
+                          <p className="h-[1rem] text-sm  text-[#DA1001]">{ meta.error ? (meta.error + "*") : "" }</p>
+                      </div>
                     </>
                   )}
                 </Field>
-                <Button color="primary" type="submit">
-                  Iniciar Sesión
+                <Button 
+                  className="m-auto w-3/6 bg-[#030D1C] mb-[40px]" 
+                  color="primary" 
+                  type="submit"
+                  isDisabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Verificando...' : 'Entrar'}
                 </Button>
               </Form>
             )}
           </Formik>
         </CardBody>
-        <Divider />
-        <CardFooter>
-            <Link href={'./signup'}>Crear cuenta</Link>
-        </CardFooter>
       </Card>
     </section>
+    </section>
+    
   );
 }
