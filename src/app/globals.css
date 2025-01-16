@@ -1,0 +1,36 @@
+@font-face {
+  font-family: 'Work Sans';
+  src: url('../../public/fonts/WorkSans-VariableFont_wght.woff2') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Work Sans';
+  src: url('../../public/fonts/WorkSans-Italic-VariableFont_wght.woff2') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+}
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Work Sans, sans-serif;
+}
