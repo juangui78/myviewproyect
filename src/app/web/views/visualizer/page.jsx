@@ -55,17 +55,7 @@ const App = () => {
     const [markers, setMarkers] = useState([]);
     const objectRef = React.useRef();
     const [editMarkersMode, setEditMarkersMode] = useState(false)
-    
-<<<<<<< HEAD
-    //
-=======
 
->>>>>>> 177e09030b9381b77d52d61f52b8479b2c2ea067
-    // const markers = [
-    //     { id: 1, position: [1, 0, 2], label: 'Parcela 1' },
-    //     { id: 2, position: [-2, 0, -1], label: 'Parcela 2' },
-    //     // Agrega más marcadores con sus coordenadas específicas
-    // ];
 
     const handleEditMarkersMode = (event) => {
         event.preventDefault();
