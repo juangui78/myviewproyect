@@ -9,18 +9,17 @@ import styleLogin from './styles/login.module.css'
 
 
 export default function Login() {
-  const [disabled, setDisabled] = useState(false);
   const router = useRouter();
 
   return (
     <section className="flex flex-row flex-wrap max-[876px]:flex-col">
-      <section className={`flex flex-row  justify-center  items-center grow w-2/5 ... max-[876px]:hidden bg-[#030D1C]`}>
+      <section className={`flex flex-row  justify-center  items-center grow w-2/5 ... max-[876px]:hidden bg-[#030D1C] ${styleLogin.backgrodunSection}  `}>
         <div>
           <Image
             alt="my view_"
-            src="/logos/completo-fullblanco.png"
+            src="/logos/completo-fullcolor.png"
           />
-              <p className="text-[#fff] absolute z-10 mt-[-520px] ml-[142px] text-2xl italic">Redefinimos La Perspectiva</p>
+              {/* <p className="text-[#fff] absolute z-10 mt-[-520px] ml-[142px] text-2xl italic">Redefinimos La Perspectiva</p> */}
         </div>
       </section>
       <section className={`flex justify-center ... items-center ... h-dvh  grow w-2/5 ... max-[876px]:w-full`} >
