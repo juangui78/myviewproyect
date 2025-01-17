@@ -1,17 +1,37 @@
 "use client"
-import React, { useState } from "react";
-import {Card,CardHeader,CardBody, CardFooter,Divider,Image,Input,Button, Link} from "@nextui-org/react";
+import React from "react";
+import { Card,CardHeader,CardBody,Image,Input,Button } from "@nextui-org/react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { validationSchemaLogin } from "./js/validationSchema";
 import { Formik, Form, Field } from "formik";
+import { ToastContainer, toast } from "react-toastify";
+import ErrorAlert from "@/web/global_components/alerts/ErrorAlert";
 import styleLogin from './styles/login.module.css'
+import 'react-toastify/dist/ReactToastify.css'; // Asegúrate de que esta línea esté presente
 
+const notifyError = () => toast.error(ErrorAlert, {
+  data: {
+    title: 'Oh Error!',
+    content: 'Email o contraseña incorrectos',
+  },
+  autoClose: true,
+  icon: false,
+  theme: 'colored',
+  position: "top-right",
+  autoClose: 3000,
+  hideProgressBar: false,
+  closeOnClick: false,
+  pauseOnHover: true,
+  draggable: true,
+  progress: undefined,
+});
 
 export default function Login() {
   const router = useRouter();
 
   return (
+    <>
     <section className="flex flex-row flex-wrap max-[876px]:flex-col">
       <section className={`flex flex-row  justify-center  items-center grow w-2/5 ... max-[876px]:hidden bg-[#030D1C] ${styleLogin.backgrodunSection}  `}>
         <div>
@@ -43,12 +63,12 @@ export default function Login() {
                   redirect : false
                 })
 
-                if (!response.ok) { // if there is an error
-                  alert('incorrect password or email')
+                if (!response.ok) { // if response is not ok
+                  notifyError()
                   return
                 }
 
-                return router.push('/web/views/feed')
+                return router.push('/web/views/feed') // go to feed page
               }}
             >
             {({ handleSubmit, isSubmitting}) => (
@@ -108,9 +128,14 @@ export default function Login() {
             )}
           </Formik>
         </CardBody>
+        {/* <CardFooter>
+            <Link href="/web/views/register" className="text-center text-[#030D1C]">¿No tienes una cuenta? Regístrate</Link>
+        </CardFooter> */}
       </Card>
     </section>
     </section>
-    
+    <ToastContainer />
+  
+    </>
   );
 }
