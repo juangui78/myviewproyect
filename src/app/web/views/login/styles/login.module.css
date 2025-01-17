@@ -9,6 +9,5 @@
 }
 
 .backgrodunSection{
-    background: rgb(12,219,255);
-    background: linear-gradient(204deg, rgba(12,219,255,1) 0%, rgba(8,198,102,1) 39%, rgba(3,13,28,1) 81%);
+    background-image: url('/images/gradient3.png');
 }
