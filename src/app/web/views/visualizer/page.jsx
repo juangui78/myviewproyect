@@ -163,8 +163,8 @@ const App = () => {
         </div>
         
 
-        <div className='flex md:w-[100%] justify-center md:h-[100vh] flex-col sm:flex-row'>
-            <div className='flex md:w-[85%] md:h-[100%] sm:w-[616px] sm:h-[700px]'> {/* Aquí se ajusta el tamaño del canvas */}
+        <div className='flex md:w-[100%] md:h-[100vh] flex-col sm:flex-row'>
+            <div className='flex md:w-[86%] md:h-[100%] sm:w-[616px] sm:h-[700px]'> {/* Aquí se ajusta el tamaño del canvas */}
                     
                     <Canvas dpr={quality}>
                     <Suspense fallback={null}>
@@ -193,19 +193,24 @@ const App = () => {
                 
             </div>
 
-            <div className=' md:h-full md:w-[18%] flex flex-col md:gap-2 items-center md:p-4 sm:p-0 sm:gap-0 sm:w-[100px]'>
+            <div className="flex flex-col items-center h-full p-4 max-w-[14%]">
+
+
                     
                     <div className='py-4 md:m-w-[295px] sm:min-w-[10px] '>
                         
-                        <h3>
-                            {currentProject?.description}
+                        <p className="text-tiny uppercase font-bold">Información</p>
+                        <h3 className='text-xs break-words '>
+                            {currentProject?.description ? currentProject.description : "Cargando..."}
                         </h3>
                         <br />
-                        <h3 className='italic text-sm'>{formatDate(currentProject?.creation_date)} </h3>
-                        <h3 className='italic text-sm'>Fecha de Subida: </h3>        
+                        <h3 className='italic text-xs'>{currentProject?.creation_date ? formatDate(currentProject?.creation_date) : null} </h3>
+                        <h3 className='italic text-xs text-gray-500 border-b-1 border-l-red-950 pb-4'>Fecha de Subida: </h3>  
+
+                        <p className="text-tiny uppercase font-bold pt-4">Tools</p>      
                             <Switch
                                 defaultSelected
-                                size="lg"
+                                size="sm"
                                 color="warning"
                                 thumbIcon={({ isSelected, className }) =>
                                 isSelected ? (
@@ -216,42 +221,29 @@ const App = () => {
                                 }
                                 
 
-                                className=' py-4'
+                                className='py-4'
                                 onChange={changeLight}
                             >
                                 Iluminación
                             
                             </Switch>
 
-                            <div className="flex flex-col gap-2 items-center m-4 justify-center">
-                                <Button color="danger" variant="bordered" onClick={handleEditMarkersMode} type="button" endContent={<MarkerIcon/>}>
+                            <div className="flex flex-col gap-2 items-center m-2 justify-center">
+                                <Button color="danger" variant="bordered" size="sm" onClick={handleEditMarkersMode} type="button" endContent={<MarkerIcon/>}>
                                     {editMarkersMode ? "Guardar Marcadores" : "Crear Marcador"}
                                 </Button>    
-                                <Button onClick={handleResetMarkers} type="button">
+                                <Button onClick={handleResetMarkers} size="sm" type="button">
                                     Borrar Marcadores
                                 </Button> 
                             </div>
                     
                         <div>
-                            <p className="text-tiny uppercase font-bold">Detalles</p>
+                            
                             
 
-                            <div className=" md:gap-8 md:p-9 sm:gap-3 sm:p-3">
-                                <Slider size="lg"  showSteps maxValue={1} minValue={0} step={0.2} color="warning"
-                                label="Calidad"  marks={[
-                                    {
-                                    value: 0,
-                                    label: "Peor Calidad",
-                                    },
-                                    {
-                                    value: 50,
-                                    label: "50%",
-                                    },
-                                    {
-                                    value: 1,
-                                    label: "Maxima Calidad",
-                                    },
-                                ]}
+                            <div className=" md:gap-4 md:px-9 md:py-3 sm:gap-3 sm:p-3">
+                                <Slider size="md"  showSteps maxValue={1} minValue={0} step={0.2} color="warning"
+                                label="Calidad"  
                                 
                                 value={quality}
                                 onChange={(value) => setQuality(value)}
