@@ -97,6 +97,8 @@ const ModalTimeLine = () => {
                 form.append("description", description);
                 form.append("file", acceptedFiles[0]); // only accept .zip, .rar etc
                 form.append('idProyect', idProyect);
+                console.log('llegando a AWS');
+                
 
                 const response = await axios.post("/api/models_", form, {
                       headers: {

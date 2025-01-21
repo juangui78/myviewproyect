@@ -37,7 +37,8 @@ export default function Login() {
         <div>
           <Image
             alt="my view_"
-            src="/logos/completo-fullcolor.png"
+            src="/logos/completo-fullblanco.png"
+            className="w-[600px] h-auto"
           />
               {/* <p className="text-[#fff] absolute z-10 mt-[-520px] ml-[142px] text-2xl italic">Redefinimos La Perspectiva</p> */}
         </div>

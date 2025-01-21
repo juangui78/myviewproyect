@@ -141,7 +141,8 @@ const App = () => {
           const modelLocation = currentProject?.model?.folder;
           if (modelLocation) {
             const loader = new GLTFLoader();
-            loader.load(`/modelers${modelLocation}/scene.gltf`, (gltfLoaded) => {
+            //Aqui va la URL dinamica de cada proyecto. De momento esta estatica para pruebas.
+            loader.load(`https://myview-models-demo.s3.sa-east-1.amazonaws.com/Conception/scene.gltf`, (gltfLoaded) => {
               setGltf(gltfLoaded);
             });
           }

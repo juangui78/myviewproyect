@@ -1,74 +1,72 @@
 import { dbConnected } from "@/api/libs/mongoose";
 import Model from "@/api/models/models";
 import { NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
 import { decrypt } from "@/api/libs/crypto";
-import fs from "fs";
-import path from "path";
-import unzipper from 'unzipper';
+import unzipper from "unzipper";
 import { v4 as uuidv4 } from "uuid";
-import {z} from 'zod';
-
+import { z } from "zod";
+import { uploadToS3, getS3File, deleteTempFile } from "@/api/libs/aws";
 
 dbConnected();
 
-const modelSchemaZod = z.object({ //schema of zod to validate data
-  texture_length: z.string(),
-  length_files: z.string(),
-  id_user: z.string(),
-  length_textures: z.string(),
-  name: z.string(),
-  description: z.string(),
-  address: z.string(),
-  city: z.string(),
-  m2: z.string()
-});
+const BUCKET_NAME = "myview-models-demo";
+const TEMP_FOLDER = "temp/";
 
-
-//====================================================================//
-// METHODS
-
-export async function POST(request) { //method post width model data
-  //save and create a new model 
+export async function POST(request) {
   try {
     const uuid = uuidv4();
-    const form = await request.formData(); // get formdata
-    const idProyect = decrypt(form.get('idProyect'));
+    const form = await request.formData();
+    const idProyect = decrypt(form.get("idProyect"));
     const file = form.get("file");
 
     const fileName = file.name;
     const fileSize = file.size;
-    const fileExtension = "gltf";
-    const folder = "/"+idProyect+"/" + uuid + "";
+    const fileExtension = "zip";
 
-    const urlModels = path.join(process.cwd(),"/public/modelers/"+idProyect+"/" + uuid + "");
-    const urlCompresed = path.join(process.cwd(),"/public/compresed/"+idProyect+"/" + uuid + "");
+    // Subir archivo a S3
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const key = `${TEMP_FOLDER}${idProyect}/${uuid}/${fileName}`;
+    const s3Upload = await uploadToS3(BUCKET_NAME, key, buffer, "application/zip");
 
-    await fs.promises.mkdir(urlCompresed, {recursive: true}); //create folder for the moment
-
-    const bytes = await file.arrayBuffer(); //transform to bytes the file
-    const buffer = Buffer.from(bytes); // buffered the bytes
-
-    writeFile(urlCompresed + "/" + fileName, buffer); //add the compresed file to a folder
+    // Descargar el archivo desde S3 para descomprimir
+    const s3File = await getS3File(BUCKET_NAME, key);
+    console.log('archivo descargado');
     
-    //descompres the file to order the data
-    const directory = await unzipper.Open.file(urlCompresed + "/" + fileName);
-    await directory.extract({path : urlModels});
 
-    //Delete the folders compresed
-    await fs.promises.rm(path.join(process.cwd(),"/public/compresed/"+idProyect+"/"), {recursive : true, force: true});
+    // Descomprimir con unzipper
+    const zipBuffer = s3File.Body;
+    const directory = await unzipper.Open.buffer(zipBuffer);
 
+    const extractedFiles = [];
+    for (const file of directory.files) {
+      if (!file.path.endsWith("/")) {
+        const fileBuffer = await file.buffer();
+        const fileKey = `${idProyect}/${uuid}/${file.path}`;
+
+        // Subir los archivos descomprimidos a S3
+        await uploadToS3(BUCKET_NAME, fileKey, fileBuffer, "application/octet-stream");
+        extractedFiles.push({
+          name: file.path,
+          url: `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`,
+        });
+      }
+    }
+
+    
+
+    // Registrar información del modelo
     const modelInfo = {
-      name : form.get("name"),
-      description : form.get("description"),
-      thumbnail : "",
-      model : {
-        name : fileName,
-        size : fileSize,
-        extension : fileExtension,
-        folder : folder
+      name: form.get("name"),
+      description: form.get("description"),
+      thumbnail: extractedFiles[0]?.url || "", // Asumiendo que el primer archivo es el thumbnail
+      model: {
+        name: fileName,
+        size: fileSize,
+        extension: fileExtension,
+        files: extractedFiles,
       },
-      idProyect : idProyect
+      idProyect: idProyect,
     };
 
     const newModel = new Model(modelInfo);
@@ -81,23 +79,24 @@ export async function POST(request) { //method post width model data
         day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
-        hour12: true, // Para formato de 24 horas
+        hour12: true,
       };
       return new Date(date).toLocaleString("es-ES", opciones);
     };
 
     const response = {
-        title:  formatDate(saved.creation_date),
-        cardTitle: saved.name,
-        cardSubtitle : saved.description
-    }
+      title: formatDate(saved.creation_date),
+      cardTitle: saved.name,
+      cardSubtitle: saved.description,
+    };
 
     return NextResponse.json(response);
-  
   } catch (error) {
-    console.log(error)
+    console.error(error);
+    console.log('no esta funcionando S3');
+    
     return NextResponse.json({
-      error,
+      error: error.message,
     });
   }
 }
