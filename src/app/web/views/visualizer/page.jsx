@@ -45,7 +45,7 @@ ModelComponent.displayName = 'ModelComponent';
 const App = () => {
 
     const [light, setLight] = useState('lobby')
-    const [quality, setQuality] = useState(0.6)
+    const [quality, setQuality] = useState(0.8)
     const searchParams = useSearchParams();
     const idProyect = searchParams.get("id");
     const [currentProject, setCurrentProject] = useState(null);
