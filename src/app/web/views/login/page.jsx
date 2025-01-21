@@ -1,38 +1,24 @@
 "use client"
-import React from "react";
+import React, { useState } from "react";
 import { Card,CardHeader,CardBody,Image,Input,Button } from "@nextui-org/react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { validationSchemaLogin } from "./js/validationSchema";
 import { Formik, Form, Field } from "formik";
-import { ToastContainer, toast } from "react-toastify";
-import ErrorAlert from "@/web/global_components/alerts/ErrorAlert";
 import styleLogin from './styles/login.module.css'
-import 'react-toastify/dist/ReactToastify.css'; // Asegúrate de que esta línea esté presente
-
-const notifyError = () => toast.error(ErrorAlert, {
-  data: {
-    title: 'Oh Error!',
-    content: 'Email o contraseña incorrectos',
-  },
-  autoClose: true,
-  icon: false,
-  theme: 'colored',
-  position: "top-right",
-  autoClose: 3000,
-  hideProgressBar: false,
-  closeOnClick: false,
-  pauseOnHover: true,
-  draggable: true,
-  progress: undefined,
-});
+import { motion } from "framer-motion";
 
 export default function Login() {
   const router = useRouter();
+  const [error, setError] = useState(false)
+
+  const activateError = () => {
+    setError(true)
+  }
 
   return (
     <>
-    <section className="flex flex-row flex-wrap max-[876px]:flex-col">
+    <section className="flex flex-row flex-wrap max-[876px]:flex-col" id="custom-toast-div">
       <section className={`flex flex-row  justify-center  items-center grow w-2/5 ... max-[876px]:hidden bg-[#030D1C] ${styleLogin.backgrodunSection}  `}>
         <div>
           <Image
@@ -47,6 +33,21 @@ export default function Login() {
           <CardHeader className="flex gap-3 flex-col mt-[35px]">
             <div className="flex flex-col">
               <h1 className="text-2xl">Iniciar Sesión</h1>
+            </div>
+            <div className="w-full pr-[1rem] pl-[1rem] ">
+              {error ? (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{
+                    duration: 0.4,
+                    scale: { type: "spring", visualDuration: 0.4, bounce: 0.5 },
+                  }}>
+                  <div className="w-full border-solid border-2 border-[#DA1001]  p-[0.7rem] rounded-lg">
+                    <p className="text-base text-[#DA1001] ">Correo y/o contraseña incorrecta</p>
+                  </div>
+                </motion.div>
+              ) : null}
             </div>
           </CardHeader>
           <CardBody>
@@ -64,7 +65,7 @@ export default function Login() {
                 })
 
                 if (!response.ok) { // if response is not ok
-                  notifyError()
+                  activateError() // activate error
                   return
                 }
 
@@ -133,9 +134,7 @@ export default function Login() {
         </CardFooter> */}
       </Card>
     </section>
-    </section>
-    <ToastContainer />
-  
+    </section>  
     </>
   );
 }
