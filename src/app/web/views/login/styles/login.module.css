@@ -9,5 +9,8 @@
 }
 
 .backgrodunSection{
-    background-image: url('/images/gradient3.png');
+    background-image: url('/images/gradient_login.webp');
+    background-repeat: no-repeat;
+    object-fit: cover;
+    background-size: cover;
 }
