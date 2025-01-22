@@ -10,10 +10,13 @@ function Marker({ position, label, onClick }) {
                 <div style={{
                     color: 'white',
                     background: 'black',
-                    padding: '2px 5px',
+                    padding: '2px 7px',
                     borderRadius: '5px',
+                    display: 'flex',        // Usamos flex para alinear el texto y el número
+                    alignItems: 'center',
+                    whiteSpace: 'nowrap',
                 }}>
-                    {label}
+                    <span>{label}</span>
                 </div>
             </Html>
         </mesh>

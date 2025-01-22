@@ -21,6 +21,7 @@ import {Progress} from "@nextui-org/progress";
 import Marker from "./components/markers/Markers";
 import ClickHandler from "./components/clickhandler/ClickHandler";
 import * as THREE from 'three';
+import AreaVisual  from "./components/areaVisualizer/AreaVisual";
 
 function LoadingScreen({ progress }) {
     return (
@@ -55,6 +56,8 @@ const App = () => {
     const [markers, setMarkers] = useState([]);
     const objectRef = React.useRef();
     const [editMarkersMode, setEditMarkersMode] = useState(false)
+    const [areaCalculated, setAreaCalculated] = useState(0);
+    const [distanceCalculated, setDistanceCalculated] = useState(0)
 
 
     const handleEditMarkersMode = (event) => {
@@ -74,7 +77,7 @@ const App = () => {
         const newMarker = {
             id: markers.length + 1, // Genera un nuevo ID basado en la longitud del array actual
             position,
-            label: `Parcela ${markers.length + 1}` // Etiqueta dinámica
+            label: `Punto ${markers.length + 1}` // Etiqueta dinámica
         };
 
         // Calcular distancia entre dos markers
@@ -83,10 +86,12 @@ const App = () => {
             const newMarkerPosition = new THREE.Vector3(...position);
             const distance = lastMarkerPosition.distanceTo(newMarkerPosition);
             console.log('Distancia entre el último marcador y el nuevo:', distance);
+            setDistanceCalculated(distance)
         }
 
         // Añadir el nuevo marcador al estado
         setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
+        
 
     };
     
@@ -100,7 +105,10 @@ const App = () => {
         
     }
 
-    
+    // Función para recibir el área calculada desde AreaVisual
+    const handleAreaCalculated = (calculatedArea) => {
+        setAreaCalculated(calculatedArea);
+    };
     
 
     const getModel = async () => {
@@ -182,6 +190,8 @@ const App = () => {
                                 onClick={() => setSelectedMarker(marker.id)}
                             />
                         ))}
+
+                        {markers.length > 2 && <AreaVisual markers={markers} areaCalculated={handleAreaCalculated}/>}
                         
                         {gltf && <ModelComponent gltf={gltf} ref={objectRef}/>}
                         <OrbitControls />
@@ -237,6 +247,8 @@ const App = () => {
                                     Borrar Marcadores
                                 </Button> 
                             </div>
+
+                            
                     
                         <div>
                             
@@ -253,6 +265,14 @@ const App = () => {
 
                                 </Slider>
                             </div>
+
+                            <div>
+                                <p className="text-tiny uppercase font-bold">Area Delimitada</p>
+                                <h3 className='italic text-md text-gray-500  pb-4'>{areaCalculated.toFixed(2)} m²</h3>
+                                <p className="text-tiny uppercase font-bold">Distancia (A - B)</p>
+                                <h3 className='italic text-md text-gray-500 border-b-1 border-l-red-950 pb-4'>{distanceCalculated.toFixed(2)} mts</h3>
+                            </div>
+
                         </div>
                         
                     </div>
