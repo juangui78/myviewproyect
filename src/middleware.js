@@ -26,5 +26,7 @@ export async function middleware(request){
 }
 
 export const config = {
-  matcher : ['/pages/:path*', '/web/views/login', '/web/views/feed'] // see in the future
+  matcher : [
+    '/web/views/login', '/web/views/user/feed'
+  ] // see in the future
 }

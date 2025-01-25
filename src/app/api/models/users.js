@@ -52,15 +52,11 @@ const user_schema = new Schema({
     required: false,
     default: false,
   },
-  permissions: {
-    view : {
-      type : Boolean,
-      default : false,
-    },
-    createEdit : {
-      type: Boolean,
-      default: false
-    }
+  rol: {
+    type: String,
+    required: true,
+    default: 'admin',
+    enum : ['user', 'admin', 'superadmin']
   },
   configurations : {
     feed : {
@@ -68,12 +64,6 @@ const user_schema = new Schema({
       required: true,
       default : 'cards',
       enum : ['cards', 'table']
-    },
-    timeline : {
-      type: String,
-      required: true,
-      enum : ['timeline', 'table'],
-      default : 'timeline'
     }
   },
   id_Company : {
