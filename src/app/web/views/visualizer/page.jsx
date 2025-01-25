@@ -94,6 +94,18 @@ const App = () => {
         
 
     };
+
+    const SetCameraPosition = () => {
+        const { camera } = useThree();
+      
+        useEffect(() => {
+          // Configura la posición inicial de la cámara
+          camera.position.set(0, 200, 0); // (x, y, z)
+          camera.lookAt(0, 0, 0); // Apunta hacia el origen o cualquier posición deseada
+        }, [camera]);
+      
+        return null;
+      };
     
 
     const changeQuality = (value) => {
@@ -150,7 +162,7 @@ const App = () => {
           if (modelLocation) {
             const loader = new GLTFLoader();
             //Aqui va la URL dinamica de cada proyecto. De momento esta estatica para pruebas.
-            loader.load(`https://myview-models-demo.s3.sa-east-1.amazonaws.com/Conception/scene.gltf`, (gltfLoaded) => {
+            loader.load(`https://myview-bucketdemo.s3.us-east-1.amazonaws.com/Conception/scene.gltf`, (gltfLoaded) => {
               setGltf(gltfLoaded);
             });
           }
@@ -182,6 +194,7 @@ const App = () => {
                         <ambientLight intensity={1} />
                         <directionalLight color="white" position={[0, 2, 50]} />
                         { editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef}/>}
+                        <SetCameraPosition />
                         {markers.map(marker => (
                             <Marker
                                 key={marker.id}
