@@ -7,6 +7,8 @@ const ClickHandler = ({ onAddMarker }) => {
     const { camera, scene, gl } = useThree(); // Obtenemos 'gl' para acceder al canvas
 
     const handleCanvasClick = (event) => {
+
+        if (event.button !== 0) return;
         const canvas = gl.domElement; // Obtenemos el canvas del contexto de Three.js
         const rect = canvas.getBoundingClientRect(); // Obtén las dimensiones y posición del canvas en la pantalla
 

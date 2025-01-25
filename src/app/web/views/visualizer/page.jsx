@@ -40,7 +40,21 @@ const ModelComponent = forwardRef(({ gltf }, ref) => {
   });
 ModelComponent.displayName = 'ModelComponent';
 
+const CameraPositioner = () => {
+    const { camera } = useThree();
+    const [isCameraInitialized, setIsCameraInitialized] = useState(false);
 
+    useEffect(() => {
+        // Solo establece la cámara la primera vez que se carga el proyecto
+        if (!isCameraInitialized) {
+            camera.position.set(0, 200, 0); // Posición inicial
+            camera.lookAt(0, 0, 0); // Mira al origen
+            setIsCameraInitialized(true); // Marca que la cámara ya fue inicializada
+        }
+    }, [camera, isCameraInitialized]);
+
+    return null; // Este componente no renderiza nada, solo maneja la cámara
+};
 
 
 const App = () => {
@@ -58,6 +72,8 @@ const App = () => {
     const [editMarkersMode, setEditMarkersMode] = useState(false)
     const [areaCalculated, setAreaCalculated] = useState(0);
     const [distanceCalculated, setDistanceCalculated] = useState(0)
+    const [isModelLoaded, setIsModelLoaded] = useState(false);
+
 
 
     const handleEditMarkersMode = (event) => {
@@ -71,6 +87,7 @@ const App = () => {
     };
 
     const handleAddMarker = (position) => {
+        
         console.log('Marker added at:', position);
         // Lógica para añadir el marcador visualmente
 
@@ -95,17 +112,6 @@ const App = () => {
 
     };
 
-    const SetCameraPosition = () => {
-        const { camera } = useThree();
-      
-        useEffect(() => {
-          // Configura la posición inicial de la cámara
-          camera.position.set(0, 200, 0); // (x, y, z)
-          camera.lookAt(0, 0, 0); // Apunta hacia el origen o cualquier posición deseada
-        }, [camera]);
-      
-        return null;
-      };
     
 
     const changeQuality = (value) => {
@@ -157,17 +163,18 @@ const App = () => {
     
 
     useEffect(() => {
-        if (currentProject) {
+        if (currentProject && !isModelLoaded) {
           const modelLocation = currentProject?.model?.folder;
           if (modelLocation) {
             const loader = new GLTFLoader();
             //Aqui va la URL dinamica de cada proyecto. De momento esta estatica para pruebas.
             loader.load(`https://myview-bucketdemo.s3.us-east-1.amazonaws.com/Conception/scene.gltf`, (gltfLoaded) => {
               setGltf(gltfLoaded);
+              setIsModelLoaded(true);
             });
           }
         }
-      }, [currentProject]);
+      }, [currentProject, isModelLoaded]);
     
 
   return (
@@ -194,7 +201,6 @@ const App = () => {
                         <ambientLight intensity={1} />
                         <directionalLight color="white" position={[0, 2, 50]} />
                         { editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef}/>}
-                        <SetCameraPosition />
                         {markers.map(marker => (
                             <Marker
                                 key={marker.id}
@@ -207,7 +213,8 @@ const App = () => {
                         {markers.length > 2 && <AreaVisual markers={markers} areaCalculated={handleAreaCalculated}/>}
                         
                         {gltf && <ModelComponent gltf={gltf} ref={objectRef}/>}
-                        <OrbitControls />
+                        <CameraPositioner />
+                        <OrbitControls minDistance={0}  target={[0, 0, 0]}/>
                         <Environment preset={light} background blur backgroundBlurriness />
                     </Suspense>
                     </Canvas>
