@@ -1,120 +1,169 @@
 "use client";
-import { useState, Suspense } from "react";
 import {
   Navbar,
-  NavbarBrand,
+  Badge,
   NavbarMenuToggle,
   NavbarContent,
   NavbarItem,
   Link,
-  Button,
   Avatar,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
+  Image,
+  NavbarMenu,
 } from "@nextui-org/react";
+import { Account } from "@/web/global_components/icons/UserAccount";
+import { Bell } from "@/web/global_components/icons/Bell";
 import { useSession, signOut } from "next-auth/react";
-import ModalForm from "@/web/views/feed/components/modalForm";
 import style from './styles/navbar.module.css'
 
 export default function NavBar({children}) {
-  const [modal, setModal] = useState(false);
   const { data: session } = useSession();
   const idUser = session?.user._id;
-  const permissions = session?.user.permissions
-
-  const openModalForm = (e) => {
-    setModal(true);
-  };
-
-  console.log(session);
-  
+  const rol = session?.user.rol;
+  console.log(session)
 
   return (
-    <Suspense>
-      <Navbar disableAnimation isBordered className={style.NavBar}>
-        <>
-        <NavbarContent className="sm:hidden max-w-screen-2xl" justify="start">
+    <Navbar disableAnimation isBordered className={style.NavBar}>
+      <NavbarContent className="sm:hidden" justify="start">
           <NavbarMenuToggle />
-        </NavbarContent>
+      </NavbarContent>
 
-        <NavbarContent className="sm:hidden pr-3" justify="center">
-          <NavbarBrand>
-            <p className="font-bold text-inherit ">MyView_</p>
-          </NavbarBrand>
-        </NavbarContent>
+      <NavbarContent className="sm:hidden" justify="start">
+          <Link href="/web/views/feed">
+            <Image src="/logos/completo-fullcolor.png" alt="logo" width={150} height={150} />
+          </Link>
+      </NavbarContent>
 
-        <NavbarContent className="hidden sm:flex gap-4" justify="center">
-          <NavbarBrand>
-            <p className="font-bold text-inherit ">MyView_</p>
-          </NavbarBrand>
-          <NavbarItem>
-            <Link color="foreground" href="#" className="">
-              Feed
-            </Link>
-          </NavbarItem>
-          {session && permissions.createEdit ? (
+      <NavbarContent className="hidden sm:flex" justify="center">
+          <Link href="/web/views/feed">
+            <Image className="object-cover" src="/logos/completo-fullcolor.png" alt="logo" width={150} height={150} />
+          </Link>
+          
+         
+
+        {rol === "superadmin" ? (
+          <>
             <NavbarItem>
-              <Link color="foreground" href="#" className="">
-                Socios
+              <Link color="foreground" href="/web/views/admin/feed">
+                Inicio
               </Link>
-            </NavbarItem>) : null
-            }
-          <NavbarItem>
-            <Link color="foreground" href="#" className="">
-              Dashboard
-            </Link>
-          </NavbarItem>
-          {session && permissions.createEdit ? (
-            <NavbarItem>
-              <Button
-                color="primary"
-                onClick={(e) => openModalForm()}
-              >
-              Nuevo Proyecto
-              </Button>
             </NavbarItem>
-            ) : null
-          }
-        </NavbarContent>
 
-        { session ? <NavbarContent justify="end">
+            <NavbarItem>
+              <Link color="foreground" href="/web/views/admin/feed">
+                Nuevo proyecto
+              </Link>
+            </NavbarItem>
+          </>
+        ) :
+
+        rol == "admin" ? (
+          <>
+            <NavbarItem>
+              <Link color="foreground" href="/web/views/user/feed">
+                Inicio
+              </Link>
+            </NavbarItem>
+
+            <NavbarItem>
+              <Link color="foreground" href="#">
+                Dasboard
+              </Link>
+            </NavbarItem>   
+          </>
+        ) : null
+        }
+
+          
+
+      </NavbarContent>
+
+      <NavbarContent justify="end">
+        <NavbarItem>
+          <Dropdown  placement="bottom-end">
+            <DropdownTrigger>
+              <div className="flex gap-4 items-center cursor-pointer">
+                <Badge color="danger" content="5" shape="rectangle" showOutline={false}>
+                  <Bell className="cursor-pointer" />
+                </Badge>
+              </div>
+            </DropdownTrigger>
+            <DropdownMenu aria-label="Notifications" variant="flat">
+              <DropdownItem key="notification">
+                <p className="font-semibold">No hay notificaciones</p>
+              </DropdownItem>
+              </DropdownMenu> 
+          </Dropdown>
+        </NavbarItem>
+
+        <NavbarItem>
           <Dropdown placement="bottom-end">
             <DropdownTrigger>
               <Avatar
-                isBordered
                 as="button"
                 className="transition-transform"
-                color="primary"
-                name="Jason Hughes"
                 size="sm"
-                src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
+                fullback = {
+                  < Account />
+                }
               />
+             
             </DropdownTrigger>
             <DropdownMenu aria-label="Profile Actions" variant="flat">
               <DropdownItem key="profile" className="h-14 gap-2">
-                <p className="font-semibold">Mi Cuenta</p>
-                <p className="font-semibold">{session?.user.email}</p>
+                <p className="font-semibold">Signed in as</p>
+                <p className="font-semibold">zoey@example.com</p>
               </DropdownItem>
               <DropdownItem key="settings">My Settings</DropdownItem>
-              <DropdownItem key="analytics">Analytics</DropdownItem>
-              <DropdownItem key="system">System</DropdownItem>
               <DropdownItem key="configurations">Configurations</DropdownItem>
-              <DropdownItem key="help_and_feedback">
-                Ayuda y Soporte
-              </DropdownItem>
+              <DropdownItem key="help_and_feedback">Help & Feedback</DropdownItem>
               <DropdownItem key="logout" color="danger" onClick={() => signOut()}>
-                Cerrar Sesion
+                Cerrar Sesión
               </DropdownItem>
             </DropdownMenu>
           </Dropdown>
-        </NavbarContent> 
-        :  <h2>Cargando...</h2> }
-        </>
-      </Navbar>
-      <ModalForm isOpenM={modal} close={() => setModal(false)} id_user={`${idUser}`}/>
-      {children}
-    </Suspense>
+        </NavbarItem> 
+      </NavbarContent>
+
+      {/* menu when its a small screen, often a mobile's screen */}
+      <NavbarMenu>
+                
+        {rol === "superadmin" ? (
+          <>
+            <NavbarItem>
+              <Link color="foreground" href="/web/views/admin/feed">
+                Inicio
+              </Link>
+            </NavbarItem>
+
+            <NavbarItem>
+              <Link color="foreground" href="/web/views/admin/feed">
+                Nuevo proyecto
+              </Link>
+            </NavbarItem>
+          </>
+        ) :
+
+        rol == "admin" ? (
+          <>
+            <NavbarItem>
+              <Link color="foreground" href="/web/views/user/feed">
+                Inicio
+              </Link>
+            </NavbarItem>
+
+            <NavbarItem>
+              <Link color="foreground" href="#">
+                Dasboard
+              </Link>
+            </NavbarItem>   
+          </>
+        ) : null
+        }
+      </NavbarMenu>
+    </Navbar>
   );
 }

@@ -31,7 +31,7 @@ const AuthOptions ={
           lastName: userFound.lastName,
           email: userFound.email,
           configuration : userFound.configurations,
-          permissions : userFound.permissions,
+          rol : userFound.rol,
           finalFree : planUser.finalFree,
           plan : planUser.plan,
           id_company : planUser._id

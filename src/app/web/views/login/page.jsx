@@ -80,7 +80,7 @@ export default function Login() {
                   return
                 }
 
-                return router.push('/web/views/feed') // go to feed page
+                return router.push('/web/views/user/feed') // go to feed page
               }}
             >
             {({ handleSubmit, isSubmitting}) => (
