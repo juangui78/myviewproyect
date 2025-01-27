@@ -1,8 +1,10 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { Html } from '@react-three/drei'; // Importa el componente Html
 
 const AreaVisual = ({ markers, areaCalculated, lineHeightOffset = 0.5 }) => {
   const lineRef = useRef();
+  const [area, setArea] = useState(0); // Estado para almacenar el área calculada
 
   // Puntos originales para cálculo
   const originalPoints = useMemo(() => {
@@ -63,17 +65,44 @@ const AreaVisual = ({ markers, areaCalculated, lineHeightOffset = 0.5 }) => {
   useEffect(() => {
     if (originalPoints.length < 3) return;
 
-    let area = 0;
+    let calculatedArea = 0;
     const n = originalPoints.length;
     for (let i = 0; i < n; i++) {
       const j = (i + 1) % n;
-      area += originalPoints[i].x * originalPoints[j].z - originalPoints[j].x * originalPoints[i].z;
+      calculatedArea += originalPoints[i].x * originalPoints[j].z - originalPoints[j].x * originalPoints[i].z;
     }
-    areaCalculated(Math.abs(area) / 2);
+    calculatedArea = Math.abs(calculatedArea) / 2;
+    setArea(calculatedArea); // Actualizar el estado del área
+    areaCalculated(calculatedArea); // Pasar el área al componente padre
   }, [originalPoints, areaCalculated]);
 
   return (
-    <line ref={lineRef} geometry={geometry} material={material} />
+    <>
+      <line ref={lineRef} geometry={geometry} material={material} />
+      {/* Mostrar el área en el último marcador */}
+      {markers.length > 0 && (
+        <Html
+          position={[
+            markers[markers.length - 1].position[0],
+            markers[markers.length - 1].position[1] + lineHeightOffset,
+            markers[markers.length - 1].position[2],
+          ]}
+          style={{ pointerEvents: 'none' }}
+        >
+          <div style={{
+            color: 'black',
+            background: 'white',
+            padding: '2px 7px',
+            borderRadius: '5px',
+            display: 'flex',
+            alignItems: 'center',
+            whiteSpace: 'nowrap',
+          }}>
+            <span>Área: {area.toFixed(2)} m²</span>
+          </div>
+        </Html>
+      )}
+    </>
   );
 };
 
