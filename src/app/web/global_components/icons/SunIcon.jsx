@@ -1,5 +1,6 @@
 import React from "react";
-export const SunIcon = (props) => (
+
+const SunIcon = ({ className, ...props }) => (
   <svg
     aria-hidden="true"
     focusable="false"
@@ -7,6 +8,7 @@ export const SunIcon = (props) => (
     role="presentation"
     viewBox="0 0 24 24"
     width="1em"
+    className={className}
     {...props}
   >
     <g fill="currentColor">
@@ -15,3 +17,5 @@ export const SunIcon = (props) => (
     </g>
   </svg>
 );
+
+export default SunIcon; // Exportación por defecto

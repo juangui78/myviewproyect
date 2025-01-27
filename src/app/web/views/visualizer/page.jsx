@@ -22,6 +22,7 @@ import Marker from "./components/markers/Markers";
 import ClickHandler from "./components/clickhandler/ClickHandler";
 import * as THREE from 'three';
 import AreaVisual  from "./components/areaVisualizer/AreaVisual";
+import Toolbar from "./components/toolbar/Toolbar";
 
 function LoadingScreen({ progress }) {
     return (
@@ -178,16 +179,16 @@ const App = () => {
     
 
   return (
-    <div className=" flex flex-col justify-center items-center h-[100vh] overflow-hidden ">
+    <div className=" flex flex-col justify-center items-center h-[100vh] overflow-hidden relative">
 
-        <div className=" pointer-events-none absolute z-50 flex items-start w-full h-full p-4">
-                <Link href='/web/views/feed'>
-                    <button type="button" className=" pointer-events-auto flex justify-start w-1/2 px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent border rounded-lg gap-x-2 sm:w-auto dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
-                        
-                        <span>Feed</span>
-                    </button>
-                </Link>
-            
+        <div className="pointer-events-none absolute z-50 flex justify-between w-full h-full p-4">
+        <Link href='/web/views/user/feed'>
+            <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent border rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
+            <span>Feed</span>
+            </button>
+        </Link>
+        
+        
         </div>
         
 
@@ -195,29 +196,41 @@ const App = () => {
             <div className='flex md:w-[86%] md:h-[100%] sm:w-[616px] sm:h-[700px]'> {/* Aquí se ajusta el tamaño del canvas */}
                     
                     <Canvas dpr={quality}>
-                    <Suspense fallback={null}>
-                        {/* <gridHelper args={[500, 500, 'gray']}/>
-                        <axesHelper args={[100, 10, 10]} /> */}
-                        <ambientLight intensity={1} />
-                        <directionalLight color="white" position={[0, 2, 50]} />
-                        { editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef}/>}
-                        {markers.map(marker => (
-                            <Marker
-                                key={marker.id}
-                                position={marker.position}
-                                label={marker.label}
-                                onClick={() => setSelectedMarker(marker.id)}
-                            />
-                        ))}
+                        <Suspense fallback={null}>
+                            {/* <gridHelper args={[500, 500, 'gray']}/>
+                            <axesHelper args={[100, 10, 10]} /> */}
+                            <ambientLight intensity={1} />
+                            <directionalLight color="white" position={[0, 2, 50]} />
+                            { editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef}/>}
+                            {markers.map(marker => (
+                                <Marker
+                                    key={marker.id}
+                                    position={marker.position}
+                                    label={marker.label}
+                                    onClick={() => setSelectedMarker(marker.id)}
+                                />
+                            ))}
 
-                        {markers.length > 2 && <AreaVisual markers={markers} areaCalculated={handleAreaCalculated}/>}
-                        
-                        {gltf && <ModelComponent gltf={gltf} ref={objectRef}/>}
-                        <CameraPositioner />
-                        <OrbitControls minDistance={0}  target={[0, 0, 0]}/>
-                        <Environment preset={light} background blur backgroundBlurriness />
-                    </Suspense>
+                            {markers.length > 2 && <AreaVisual markers={markers} areaCalculated={handleAreaCalculated}/>}
+                            
+                            {gltf && <ModelComponent gltf={gltf} ref={objectRef}/>}
+                            <CameraPositioner />
+                            <OrbitControls minDistance={0}  target={[0, 0, 0]}/>
+                            <Environment preset={light} background blur backgroundBlurriness />
+                        </Suspense>
                     </Canvas>
+
+                    {/* Contenedor del Toolbar ajustado */}
+                    <div className="pointer-events-auto relative" style={{ right: '0.2rem', top: '0.2rem' }}>
+                        <Toolbar 
+                        onToggleLight={changeLight}
+                        onMeasureDistance={() => setEditMarkersMode(!editMarkersMode)}
+                        onMeasureArea={() => console.log('')}
+                        onSelectMode={() => console.log('')}
+                        onReset={handleResetMarkers}
+                        lightMode={light}
+                        />
+                    </div>
 
                     {progress < 100 && <LoadingScreen progress={progress}/>}
              
@@ -239,34 +252,9 @@ const App = () => {
                         <h3 className='italic text-xs text-gray-500 border-b-1 border-l-red-950 pb-4'>Fecha de Subida: </h3>  
 
                         <p className="text-tiny uppercase font-bold pt-4">Tools</p>      
-                            <Switch
-                                defaultSelected
-                                size="sm"
-                                color="warning"
-                                thumbIcon={({ isSelected, className }) =>
-                                isSelected ? (
-                                    <SunIcon className={className} />
-                                ) : (
-                                    <MoonIcon className={className} />
-                                )
-                                }
-                                
-
-                                className='py-4'
-                                onChange={changeLight}
-                            >
-                                Iluminación
                             
-                            </Switch>
 
-                            <div className="flex flex-col gap-2 items-center m-2 justify-center">
-                                <Button color="danger" variant="bordered" size="sm" onClick={handleEditMarkersMode} type="button" endContent={<MarkerIcon/>}>
-                                    {editMarkersMode ? "Guardar Marcadores" : "Crear Marcador"}
-                                </Button>    
-                                <Button onClick={handleResetMarkers} size="sm" type="button">
-                                    Borrar Marcadores
-                                </Button> 
-                            </div>
+                            
 
                             
                     

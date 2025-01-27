@@ -1,55 +1,80 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
-const AreaVisual = ({ markers, areaCalculated }) => {
-  // Crear los puntos para el contorno 2D, tomando solo X y Y
-  const points = useMemo(() => {
-    return markers.map(marker => new THREE.Vector3(marker.position[0], marker.position[1], marker.position[2])); // Usamos X, Y, Z
+const AreaVisual = ({ markers, areaCalculated, lineHeightOffset = 0.5 }) => {
+  const lineRef = useRef();
+
+  // Puntos originales para cálculo
+  const originalPoints = useMemo(() => {
+    return markers.map(marker => new THREE.Vector3(
+      marker.position[0],
+      marker.position[1],
+      marker.position[2]
+    ));
   }, [markers]);
 
-  // Asegurarnos de que la línea sea cerrada (vuelve al primer punto)
-  if (points.length > 1) {
-    points.push(points[0]); // Conectar el último punto con el primero
-  }
+  // Puntos elevados para visualización
+  const elevatedPoints = useMemo(() => {
+    return originalPoints.map(point => 
+      new THREE.Vector3(
+        point.x,
+        point.y + lineHeightOffset,
+        point.z
+      )
+    );
+  }, [originalPoints, lineHeightOffset]);
 
+  // Crear geometría con datos de línea
   const geometry = useMemo(() => {
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    return geometry;
-  }, [points]);
-
-  // Función para calcular el área de un polígono en 2D (algoritmo del shoelace)
-  const calculateArea = (points) => {
-    let area = 0;
-    const n = points.length;
-
-    for (let i = 0; i < n - 1; i++) {
-      area += points[i].x * points[i + 1].y - points[i + 1].x * points[i].y;
+    const geom = new THREE.BufferGeometry();
+    const points = [...elevatedPoints];
+    
+    if (points.length > 1) {
+      points.push(points[0]); // Cerrar el polígono
     }
-    area = Math.abs(area) / 2;
-    return area;
-  };
-
-  // Calcular el área delimitada por los puntos
-  const area = useMemo(() => calculateArea(points), [points]);
-  console.log('el area delimitada mide: ' + area);
-
-  useEffect(() => {
-    if (areaCalculated) {
-      areaCalculated(area); // Llamamos a la función `areaCalculated` para pasar el área
+    
+    const positions = new Float32Array(points.flatMap(p => [p.x, p.y, p.z]));
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    // Calcular distancias manualmente si es necesario
+    const distances = new Float32Array(points.length);
+    let total = 0;
+    for (let i = 0; i < points.length; i++) {
+      distances[i] = total;
+      if (i > 0) {
+        total += points[i].distanceTo(points[i - 1]);
+      }
     }
-  }, [area, areaCalculated]);
+    geom.setAttribute('lineDistance', new THREE.BufferAttribute(distances, 1));
+    
+    return geom;
+  }, [elevatedPoints]);
 
-
-  // Material de la línea (puedes cambiar el color o el grosor)
-  const material = useMemo(() => new THREE.LineBasicMaterial({
-    color: 0xff0000,     // Color rojo para contrastar con el verde
-    linewidth: 100,        // Grosor de la línea
+  // Material con patrón de guiones
+  const material = useMemo(() => new THREE.LineDashedMaterial({
+    color: 0xffff00,
+    dashSize: 0.5,
+    gapSize: 0.3,
+    linewidth: 2,
+    depthTest: false
   }), []);
 
+  // Cálculo del área
+  useEffect(() => {
+    if (originalPoints.length < 3) return;
+
+    let area = 0;
+    const n = originalPoints.length;
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      area += originalPoints[i].x * originalPoints[j].z - originalPoints[j].x * originalPoints[i].z;
+    }
+    areaCalculated(Math.abs(area) / 2);
+  }, [originalPoints, areaCalculated]);
+
   return (
-    <line geometry={geometry} material={material} />
+    <line ref={lineRef} geometry={geometry} material={material} />
   );
 };
 
 export default AreaVisual;
-

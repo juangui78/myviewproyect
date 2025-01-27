@@ -6,7 +6,7 @@ function Marker({ position, label, onClick }) {
         <mesh position={position} onClick={onClick}>
             <sphereGeometry args={[0.2, 32, 32]} />
             <meshStandardMaterial color="red" />
-            <Html position={[0, 0.5, 0]} style={{ pointerEvents: 'none' }}>
+            {/* <Html position={[0, 0.5, 0]} style={{ pointerEvents: 'none' }}>
                 <div style={{
                     color: 'white',
                     background: 'black',
@@ -18,7 +18,7 @@ function Marker({ position, label, onClick }) {
                 }}>
                     <span>{label}</span>
                 </div>
-            </Html>
+            </Html> */}
         </mesh>
     );
 }
