@@ -27,7 +27,7 @@ export default function Home() {
                   <div className="flex items-center flex-col">
                     {/* <h2 className=" font-semibold uppercase text-4xl  ">Observa tus creaciones como nunca</h2> */}
                     <div className="flex gap-6 p-5">
-                        <Link href='/web/views/feed'>
+                        <Link href='/web/views/user/feed'>
                         <Button color="warning" size="lg" variant="shadow" radius="full" className=" font-semibold text-white bg-gradient-to-tr from-yellow-700 to-orange-400">Empieza Ya</Button>
                         </Link>
                         
