@@ -28,8 +28,7 @@
 .section {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background-color: #c0c0c030;
+  /* background-color: #c0c0c030; */
 }
 
 .boxInsideBox {
@@ -157,7 +156,7 @@
 .bottomNavbar {
   display: flex;
   justify-content: center;
-  background-color: white;
+  margin-top: 10px;  
 }
 
 .bottomNavbar > div {

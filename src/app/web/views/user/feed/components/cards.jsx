@@ -1,24 +1,24 @@
 'use client'
 import { Image } from "@nextui-org/react";
 import axios from "axios";
-import style from "../styles/feed.module.css";
-import { ZoomIcon } from "@/web/global_components/icons/zoomIcon";
-import { EditIconV2 } from "@/web/global_components/icons/EditIconV2";
 import { Tooltip } from "@nextui-org/react";
-import { TimelineIco } from "@/web/global_components/icons/timeline";
+import { Eye } from "@/web/global_components/icons/Eye";
+import { NoteText } from "@/web/global_components/icons/NoteText";
+import { Share } from "@/web/global_components/icons/Share";
+import { BlocksShuffle3 } from "@/web/global_components/icons/BlocksShuffle3";
+import { Ban } from "@/web/global_components/icons/Ban";
 import { encrypt } from "@/api/libs/crypto";
 import Link from 'next/link';
-import { use, useEffect, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import {  useEffect, useState } from "react";
+import { useSession} from "next-auth/react";
 
 
 
-export default function Feed({ search, options }) {
+export default function Feed({ search, options }) { 
 
-  
   const { data: session, status } = useSession();
-  const [proyectos, setProyectos] = useState([]);
-  const [encryptedIds, setEncryptedIds] = useState([]);
+  const [proyects, setProyects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(()  => { 
     // Aqui se traen los proyectos de esta sesión
@@ -27,97 +27,56 @@ export default function Feed({ search, options }) {
       if (status !== 'authenticated') return;
 
       try {
-        console.log('haciendo peticion de proyectos');
         const response = await axios.get(`/api/controllers/proyects?id_company=${session?.user?.id_company}`)
-        console.log('aqui debe estar la infop', response.data);
-        setProyectos(response.data);
-    } catch (error) {
+        setProyects(response.data);
+        setLoading(false)
+      } catch (error) {
         console.log(error, 'error con el fetch');
-    }
+      }
     };
 
     fetchData();
     
-  }, [session,]);
+  }, []);
 
   return (
     <>
-      {proyectos.length > 0 ? (
-        proyectos.map((item) => {
-          return (
-          <div className={`mx-4 p-4 .. ${style.cards}`} key={item._id}>
-            <div className="rounded-2xl">
-              <img src="/images/imagen___.png" />
-            </div>
-            <div className={style.footerCards}>
-              <div>
-                <h1 className=""> {item.name}</h1>
-              </div>
-              <div className="text-sm">
-                Descripción larga o prueba de descripción
-              </div>
-              <div className={style.buttonsCards}>
-                <div className={style.divToolstip}>
-                  <Link
-                    href={{ pathname: `/web/views/timeline`, query: { ind: encrypt(item._id) } }}
-                    passHref
-                    legacyBehavior
-                  >
-                    <a target="_blank" rel="noopener noreferrer">
-                      <Tooltip
-                        delay={500}
-                        content={
-                          <div className="px-1 py-2">
-                            <div className="text-small font-bold">Resumen</div>
-                            <div className="text-tiny">Resumen del proyecto</div>
-                          </div>
-                        }
-                      >
-                        <TimelineIco />
-                      </Tooltip>
-                    </a>
-                  </Link>
-                </div>
-                <div className={style.divToolstip}>
-                  <Link
-                    href={{ pathname: `/web/views/visualizer`, query: { id: encrypt(item._id) } }}
-                  >
-                    <Tooltip
-                      delay={200}
-                      content={
-                        <div className="px-1 py-2">
-                          <div className="text-small font-bold">Visualizar</div>
-                          <div className="text-tiny">Visualizar el modelo 3D</div>
-                        </div>
-                      }
-                    >
-                      <ZoomIcon />
-                    </Tooltip>
-                  </Link>
-                </div>
-                <div className={style.divToolstip}>
-                  <Tooltip
-                    delay={100}
-                    content={
-                      <div className="px-1 py-2">
-                        <div className="text-small font-bold">Editar</div>
-                        <div className="text-tiny">Editar la información del proyecto</div>
+      <div className="grid grid-cols-4 gap-[80px] w-[70%] m-auto mt-[40px]">
+
+        {loading ? (<div><BlocksShuffle3 className="text-white"/></div>) : 
+        (
+          proyects.length > 0 ? 
+          (
+            proyects.map((item) => {
+              return (
+                 <div key={item._id} className="relative flex flex-col col-span-1 ... bg-[#fff] h-[40vh] w-full rounded-lg ... ">
+                  <div className="h-[20%] text-black text-2xl pl-[22px] pt-[15px] font-semibold">{item.name}</div>
+                    <div className="flex flex-col items-center w-[100%] h-[60%]">
+                      <div className="w-[85%] h-[100%]">
+                        <Image isBlurred src="/images/imagen___.png" className="object-cover"  height={270}   />
                       </div>
-                    }
-                  >
-                    <EditIconV2 />
-                  </Tooltip>
-                </div>
+                    </div>
+                    <div className="bg-[#fff] z-10 w-[60%] h-[10%] shadow-xl ... rounded-lg absolute bottom-[20px] right-[20px] flex justify-center items-center gap-[10px]">
+                       <Link href={{ pathname: `/web/views/visualizer`, query: { id: encrypt(item._id) } }}>
+                          <Tooltip content="Visualizar el modelo 3D" showArrow={true}>
+                            <Eye className="text-black cursor-pointer" />
+                          </Tooltip>
+                        </Link >
+                      <NoteText className="text-black" />
+                      <Share className="text-black" />
+                  </div>
+               </div>
+              )
+              })
+          ) : (
+              <div className="w-[70%] h-full flex flex-col justify-center items-center absolute">
+                  <Ban className="text-white" />
+                  <div className="text-white text-2xl">!ups, no hay proyectos para mostrar</div>
               </div>
-            </div>
-          </div>
-        )})
-      ) : (
-        <div className="flex flex-col w-full justify-center items-center m-[39px]">
-          <h2 className="font-light italic">Aún no tienes modelos escaneados.</h2>
-          <Image src="/images/oops.png" alt="oops" width={200} height={200} />
-        </div>
-      )}
+          )
+        )}
+      </div>
     </>
   );
 }
+// 668498dfff80cf9e68b09cab

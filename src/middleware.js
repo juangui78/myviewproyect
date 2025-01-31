@@ -19,7 +19,7 @@ export async function middleware(request){
   // the session exist
   if (session){
     if (path === '/web/views/login' || path === '/web/views/signup'){
-      const urlRedirect_ = new URL('/web/views/feed' , request.url);
+      const urlRedirect_ = new URL('/web/views/user/feed' , request.url);
       return NextResponse.redirect(urlRedirect_);
     }else NextResponse.next();
   }

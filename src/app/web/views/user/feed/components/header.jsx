@@ -1,16 +1,11 @@
 "use client";
 import React, { useEffect } from "react";
 import {
-  CheckboxGroup,
-  Checkbox,
-  Select,
-  SelectItem,
   Input,
-  DatePicker
+  Button,
+  Progress
 } from "@nextui-org/react";
 import { SearchIcon } from "@/web/global_components/icons/SearchIcon";
-import style from "../styles/feed.module.css";
-import { useSession } from "next-auth/react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 
 export default function Header() {
@@ -22,12 +17,6 @@ export default function Header() {
   const searchParams = useSearchParams();
   const pathName = usePathname();
   const { replace } = useRouter();
-  const session = useSession();
-
-  let user = null;
-  if (session) {
-    user = session?.data?.user?.name;
-  }
 
   const handleChange = (value) => {
     const params = new URLSearchParams(searchParams);
@@ -39,61 +28,46 @@ export default function Header() {
     replace(`${pathName}?${params.toString()}`);
   }
 
-  const handlechangeCheck = (value) => {
-    const params = new URLSearchParams(searchParams);
-    const string = value.join(",");
-    if (value.length > 0){
-      params.set('options', string);
-    }else{
-      params.delete('options');
-    }
-    replace(`${pathName}?${params.toString()}`)
-  }
-
-
   return (
     <>
-      <section className={style.bottomNavbar}>
-        <div className={style.boxSecondNavbar}>
-          <CheckboxGroup
-            label=""
-            orientation="horizontal"
-            color="primary"
-            defaultValue={searchParams.get('options')?.split(",")}
-            onChange={(e) => handlechangeCheck(e)}
-          >
-            <Checkbox value="all">Activos</Checkbox>
-            <Checkbox value="order">Terminados</Checkbox>
-          </CheckboxGroup>
-          <DatePicker label="filtro por fecha" className="max-w-[284px]" variant='bordered' />
-          {/* <Select
-            label="Buscar por ciudad"
-            variant="bordered"
-            placeholder="Seleccionar ciudad"
-            // selectedKeys={value}
-            defaultSelectedKeys={[searchParams.get('search')?.toString()]}
-            className={`max-w-xs ${style.selectCities}`}
-            onChange={(e) => handleChange(e.target.value)}
-          >
-          {items.map((item) => (
-            <SelectItem key={item} value={item} textValue={item}>{item}</SelectItem>
-          ))}
-          </Select> */}
-          <Input
-            className={style.inputSearch}
-            classNames={{
-              base: "max-w-full h-10",
-              mainWrapper: "h-full",
-              input: "text-small",
-              inputWrapper:
-                "h-full font-normal text-default-500 bg-default-400/20 dark:bg-default-500/20",
-            }}
-            placeholder="Buscar..."
-            size="sm"
-            startContent={<SearchIcon size={18} />}
-            type="search"
-          />
-        </div>
+      <section className="flex flex-row justify-between w-full items-center mt-[30px] mb-[25px]">
+        <section className="flex flex-row justify-between w-[70%] m-auto">
+          <div className="text-white w-[20%]">
+              <div className="flex flex-row justify-between items-center">
+                <div className="text-sm">Hectareas</div>
+                <div className="text-sm">20h de 40h</div>
+              </div>
+              <Progress
+                classNames={{
+                  base: "max-w-md",
+                  indicator: "bg-[#0CDBFF]",
+                }}
+                radius="sm"
+                showValueLabel={false}
+                size="sm"
+                label=""
+                value={20}
+                maxValue={40}
+              />
+          </div>
+          <div className="flex flex-col md:flex-row justify-end items-start w-full md:w-[80%] gap-4">
+            <Input
+              className="w-full md:w-[25%]"
+              classNames={{
+                base: "max-w-full h-5",
+                mainWrapper: "h-full",
+                input: "text-small",
+                inputWrapper:
+                  "h-full font-normal text-default-500  dark:bg-default-500/20",
+              }}
+              placeholder="Buscar..."
+              size="sm"
+              startContent={<SearchIcon size={18} />}
+              type="search"
+            />
+            <Button className="w-[10%] h-[2rem]  bg-[#0CDBFF] shadow-lg ... text-black">Buscar</Button>
+          </div>
+        </section>
       </section>
     </>
   );

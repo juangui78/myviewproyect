@@ -10,7 +10,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="es">
       <head>
-        <link rel="shortcut icon" href="../../logos/isotipo-full-color.png" type="image/x-icon" />
+        <link rel="shortcut icon" href="/logos/isotipo-full-color.png" type="image/x-icon" />
       </head>
       <body>
         <Providers>
