@@ -2,7 +2,7 @@
 import { Image } from "@nextui-org/react";
 import axios from "axios";
 import { Tooltip } from "@nextui-org/react";
-import { Eye } from "@/web/global_components/icons/Eye";
+import Eye from "@/web/global_components/icons/Eye.jsx";
 import { NoteText } from "@/web/global_components/icons/NoteText";
 import { Share } from "@/web/global_components/icons/Share";
 import { BlocksShuffle3 } from "@/web/global_components/icons/BlocksShuffle3";
