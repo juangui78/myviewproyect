@@ -1,10 +1,21 @@
 .errorInputColor {
     & div > div{
-        border-color: #DA1001;
+        border-color: rgb(253 99 88);
 
         & label{
-            color: #DA1001 !important;
+            color: rgb(253 99 88) !important;
         }
     }
 }
 
+.colorWhite{
+    & div > div{
+        border-color: white;
+    }
+
+    & div > div > label{
+        color: white !important;
+    }
+
+  
+}

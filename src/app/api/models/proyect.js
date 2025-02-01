@@ -15,7 +15,7 @@ const proyectSchema = new Schema({
     min : [1, 'min length exceded'],
     required: true
   },
-  m2 : {
+  hectares : {
     type: Number,
     required: true
   },
@@ -72,8 +72,8 @@ const proyectSchema = new Schema({
    state : {
     type: String,
     required: true,
-    enum : ['Activo', 'Finalizado', 'Cancelado'],
-    default: 'Activo'
+    enum : ['Actived', 'ended', 'Canceled'],
+    default: 'Actived'
   },
   idCompany : {
     type : Schema.Types.ObjectId,

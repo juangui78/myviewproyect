@@ -21,17 +21,8 @@ export default function Login() {
   return (
     <>
     <section className="flex flex-row flex-wrap max-[876px]:flex-col">
-      {/* <section className={`flex flex-row  justify-center  items-center grow w-2/5 ... max-[876px]:hidden bg-[#030D1C] ${styleLogin.backgrodunSection}  `}>
-        <div>
-          <Image
-            alt="my view_"
-            src="/logos/completo-fullblanco.png"
-            className="w-[600px] h-auto"
-          />
-        </div>
-      </section> */}
       <section className={`flex justify-center ... items-center ... h-dvh  grow w-2/5 ... max-[876px]:w-full bg-[url(/images/op22.webp)] ... bg-no-repeat bg-cover`} >
-        <Card className="max-w-[400px] w-full drop-shadow-2xl ... bg-transparent">
+        <Card className="max-w-[400px] w-full  bg-transparent">
           <CardHeader className="flex gap-3 flex-col mt-[5px]">
             <div className="grid place-items-center mb-[-20px]">
             <Image
@@ -50,9 +41,9 @@ export default function Login() {
                     duration: 0.4,
                     scale: { type: "spring", visualDuration: 0.4, bounce: 0.5 },
                   }}>
-                  <div className="flex justify-center items-center text-[#DA1001]  w-full border-solid border-2 border-[#DA1001]  p-[0.7rem] rounded-lg">
+                  <div className="flex justify-center items-center text-[#FD6358]  w-full border-solid border-2 border-[#FD6358]  p-[0.7rem] rounded-lg">
                     <AlertCircleOutline /> 
-                    <span className=" text-base ml-[5px]">Correo y/o contraseña incorrecta</span>
+                    <span className=" text-base ml-[5px] text-[#FD6358]">Correo y/o contraseña incorrecta</span>
                   </div>
                 </motion.div>
               ) : null}
@@ -99,13 +90,20 @@ export default function Login() {
                         clearable
                         classNames={{
                           label: "text-white !important",
-                          input: "text-white",
-                          root: "text-white"
+                          input: "text-black !important",
+                          root: "text-black !important",
+                          inputWrapper: [
+                            "bg-[#fff]",
+                            "backdrop-blur-xl",
+                            "backdrop-saturate-200",
+                            "hover:bg-default-200/70",
+                            "!cursor-text",
+                          ],
                         }}
-                        className={`pr-4 pl-4  ${meta.error ? styleLogin.errorInputColor : "" } `} 
+                        className={`pr-4 pl-4  ${meta.error ? styleLogin.errorInputColor : styleLogin.colorWhite } `} 
                       />
                       <div className="mb-[10px] ml-[4px] pr-4 pl-4 ">
-                          <p className="h-[1rem] text-sm text-[#DA1001]">{ meta.error ? (meta.error + "*") : "" }</p>
+                          <p className="h-[1rem] text-sm text-[#FD6358]">{ meta.error ? (meta.error + "*") : "" }</p>
                       </div>
                     </>
                   )}
@@ -123,18 +121,29 @@ export default function Login() {
                         placeholder="Ingrese su contraseña"
                         fullWidth
                         label="Contraseña"
-                        className={`pr-4 pl-4  ${meta.error ? styleLogin.errorInputColor : "" } `} 
+                        classNames={{
+                          label: "text-white !important",
+                          input: "text-black !important",
+                          root: "text-black !important",
+                          inputWrapper: [
+                            "bg-[#fff]",
+                            "backdrop-blur-xl",
+                            "backdrop-saturate-200",
+                            "hover:bg-default-200/70",
+                            "!cursor-text",
+                          ],
+                        }}
+                        className={`pr-4 pl-4  ${meta.error ? styleLogin.errorInputColor : styleLogin.colorWhite } `} 
                         clearable
                       />
                      <div className="mb-[15px] ml-[4px] pr-4 pl-4 ">
-                          <p className="h-[1rem] text-sm  text-[#DA1001]">{ meta.error ? (meta.error + "*") : "" }</p>
+                          <p className="h-[1rem] text-sm  text-[#FD6358]">{ meta.error ? (meta.error + "*") : "" }</p>
                       </div>
                     </>
                   )}
                 </Field>
                 <Button 
-                  className="m-auto w-3/6 bg-[#030D1C] mb-[40px]" 
-                  color="primary" 
+                  className="m-auto w-3/6 bg-[#0CDBFF] mb-[40px] mt-[30px] color-black" 
                   type="submit"
                   isDisabled={isSubmitting}
                 >
