@@ -33,7 +33,7 @@ export default function NavBar({children}) {
 
       <NavbarContent className="sm:hidden" justify="start">
           <Link href="/web/views/user/feed">
-            <Image src="/logos/completo-fullblanco.png" alt="logo" width={150} height={150} />
+            <Image src="/logos/completo-fullblanco.png" className="object-cover" alt="logo" width={150} height={150} />
           </Link>
       </NavbarContent>
 
@@ -114,12 +114,10 @@ export default function NavBar({children}) {
             </DropdownTrigger>
             <DropdownMenu aria-label="Profile Actions" variant="flat">
               <DropdownItem key="profile" className="h-14 gap-2">
-                <p className="font-semibold">Signed in as</p>
-                <p className="font-semibold">zoey@example.com</p>
+                <p className="font-semibold">Loguiado como </p>
+                <p className="font-semibold">{session?.user?.email}</p>
               </DropdownItem>
-              <DropdownItem key="settings">My Settings</DropdownItem>
-              <DropdownItem key="configurations">Configurations</DropdownItem>
-              <DropdownItem key="help_and_feedback">Help & Feedback</DropdownItem>
+              <DropdownItem key="configurations">Configuración</DropdownItem>
               <DropdownItem key="logout" color="danger" onClick={() => signOut()}>
                 Cerrar Sesión
               </DropdownItem>
@@ -134,13 +132,13 @@ export default function NavBar({children}) {
         {rol === "superadmin" ? (
           <>
             <NavbarItem>
-              <Link className="text-black" href="/web/views/admin/feed">
+              <Link className="text-white" href="/web/views/admin/feed">
                 Inicio
               </Link>
             </NavbarItem>
 
             <NavbarItem>
-              <Link className="text-black" href="/web/views/admin/feed">
+              <Link className="text-white" href="/web/views/admin/feed">
                 Nuevo proyecto
               </Link>
             </NavbarItem>
@@ -150,13 +148,13 @@ export default function NavBar({children}) {
         rol == "admin" ? (
           <>
             <NavbarItem>
-              <Link className="text-black"  href="/web/views/user/feed">
+              <Link className="text-white"  href="/web/views/user/feed">
                 Inicio
               </Link>
             </NavbarItem>
 
             <NavbarItem>
-              <Link className="text-black" href="#">
+              <Link className="text-white" href="#">
                 Dasboard
               </Link>
             </NavbarItem>   

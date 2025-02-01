@@ -9,3 +9,9 @@
   padding-right: 0rem !important;
 
 }
+
+@media screen and (max-width: 536px){
+  .NavBar > header{
+    max-width: 90% !important;
+  }
+}

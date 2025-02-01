@@ -32,7 +32,6 @@ const AuthOptions ={
           email: userFound.email,
           configuration : userFound.configurations,
           rol : userFound.rol,
-          finalFree : planUser.finalFree,
           plan : planUser.plan,
           id_company : planUser._id
         };

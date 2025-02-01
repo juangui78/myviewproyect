@@ -58,17 +58,27 @@ export async function POST(request) {
   }
 }
 
-export async function GET(request) {
-  // Se obtienen los proyectos por id_company que es enviado por params
+export async function GET(request) { //get all proyects by id_company and search
+
   try {
     const { searchParams } = new URL(request.url);
     const idCompany = searchParams.get('id_company');
+    const search = searchParams.get('search');
+    let proyects;
 
     if (!idCompany) return NextResponse.json({
       message: 'id_company is required'
     }, { status: 400 });
 
-    const proyects = await Proyect.find({ idCompany });
+
+    if (search && search !== 'null') {
+      proyects = await Proyect.find({
+        idCompany,
+        name: { $regex: search, $options: 'i' }
+      });
+    } else {
+      proyects = await Proyect.find({ idCompany });
+    }
 
     if (!proyects) return NextResponse.json({
       message: 'proyects not found'
