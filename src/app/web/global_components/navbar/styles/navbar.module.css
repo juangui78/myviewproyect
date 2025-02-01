@@ -1,3 +1,11 @@
+.NavBar{
+  background-color: transparent !important;
+
+}
+
 .NavBar > header{
-  max-width: 1400px;
+  max-width: 70% !important;
+  padding-left: 0rem !important;
+  padding-right: 0rem !important;
+
 }

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { validationSchemaLogin } from "./js/validationSchema";
 import { Formik, Form, Field } from "formik";
 import styleLogin from './styles/login.module.css'
-import { motion } from "framer-motion";
+import { color, motion } from "framer-motion";
 import { AlertCircleOutline } from "@/web/global_components/icons/AlertCircleOutline";
 import Link from "next/link";
 
@@ -21,26 +21,25 @@ export default function Login() {
   return (
     <>
     <section className="flex flex-row flex-wrap max-[876px]:flex-col">
-      <section className={`flex flex-row  justify-center  items-center grow w-2/5 ... max-[876px]:hidden bg-[#030D1C] ${styleLogin.backgrodunSection}  `}>
+      {/* <section className={`flex flex-row  justify-center  items-center grow w-2/5 ... max-[876px]:hidden bg-[#030D1C] ${styleLogin.backgrodunSection}  `}>
         <div>
           <Image
             alt="my view_"
             src="/logos/completo-fullblanco.png"
             className="w-[600px] h-auto"
           />
-              {/* <p className="text-[#fff] absolute z-10 mt-[-520px] ml-[142px] text-2xl italic">Redefinimos La Perspectiva</p> */}
         </div>
-      </section>
-      <section className={`flex justify-center ... items-center ... h-dvh  grow w-2/5 ... max-[876px]:w-full max-[876px]:bg-[#030D1C]`} >
-        <Card className="max-w-[400px] w-full drop-shadow-2xl ...">
+      </section> */}
+      <section className={`flex justify-center ... items-center ... h-dvh  grow w-2/5 ... max-[876px]:w-full bg-[url(/images/op22.webp)] ... bg-no-repeat bg-cover`} >
+        <Card className="max-w-[400px] w-full drop-shadow-2xl ... bg-transparent">
           <CardHeader className="flex gap-3 flex-col mt-[5px]">
-            <div className="grid place-items-center">
+            <div className="grid place-items-center mb-[-20px]">
             <Image
                 alt="logo"
-                src="/logos/isotipo-full-color.png"
-                className="w-[100px] h-[100px] align-center justify-center"
+                src="/logos/completo-fullblanco.png"
+                className="w-[250px] h-[250px] align-center justify-center"
               />
-              <h1 className="text-2xl">Iniciar Sesión</h1>
+              <h1 className="text-2xl text-white font-semibold mt-[-70px]">Iniciar Sesión</h1>
             </div>
             <div className="w-full pr-[1rem] pl-[1rem] ">
               {error ? (
@@ -98,6 +97,11 @@ export default function Login() {
                         isRequired
                         fullWidth
                         clearable
+                        classNames={{
+                          label: "text-white !important",
+                          input: "text-white",
+                          root: "text-white"
+                        }}
                         className={`pr-4 pl-4  ${meta.error ? styleLogin.errorInputColor : "" } `} 
                       />
                       <div className="mb-[10px] ml-[4px] pr-4 pl-4 ">
@@ -145,8 +149,8 @@ export default function Login() {
         </CardFooter> */}
       </Card>
       <div className="flex absolute right-5 bottom-0">
-        <Link href="/web/views/register" className="text-center text-[#030D1C] mr-[5px]"> Ayuda </Link>
-        <Link href="/web/views/register" className="text-center text-[#030D1C]"> | Terminos y condiciones</Link>
+        <Link href="/web/views/register" className="text-center text-[#030D1C] mr-[5px] text-white"> Ayuda </Link>
+        <Link href="/web/views/register" className="text-center text-[#030D1C] text-white"> | Terminos y condiciones</Link>
       </div>
     </section>
     </section>  

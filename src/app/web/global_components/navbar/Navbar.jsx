@@ -27,19 +27,19 @@ export default function NavBar({children}) {
 
   return (
     <Navbar disableAnimation isBordered className={style.NavBar}>
-      <NavbarContent className="sm:hidden" justify="start">
+      <NavbarContent className="sm:hidden text-white" justify="start">
           <NavbarMenuToggle />
       </NavbarContent>
 
       <NavbarContent className="sm:hidden" justify="start">
-          <Link href="/web/views/feed">
-            <Image src="/logos/completo-fullcolor.png" alt="logo" width={150} height={150} />
+          <Link href="/web/views/user/feed">
+            <Image src="/logos/completo-fullblanco.png" alt="logo" width={150} height={150} />
           </Link>
       </NavbarContent>
 
       <NavbarContent className="hidden sm:flex" justify="center">
-          <Link href="/web/views/feed">
-            <Image className="object-cover" src="/logos/completo-fullcolor.png" alt="logo" width={150} height={150} />
+          <Link href="/web/views/user/feed">
+            <Image className="object-cover" src="/logos/completo-fullblanco.png" alt="logo" width={150} height={65} />
           </Link>
           
          
@@ -47,13 +47,13 @@ export default function NavBar({children}) {
         {rol === "superadmin" ? (
           <>
             <NavbarItem>
-              <Link color="foreground" href="/web/views/admin/feed">
+              <Link className="text-white"  href="/web/views/admin/feed">
                 Inicio
               </Link>
             </NavbarItem>
 
             <NavbarItem>
-              <Link color="foreground" href="/web/views/admin/feed">
+              <Link className="text-white" href="/web/views/admin/feed">
                 Nuevo proyecto
               </Link>
             </NavbarItem>
@@ -63,13 +63,13 @@ export default function NavBar({children}) {
         rol == "admin" ? (
           <>
             <NavbarItem>
-              <Link color="foreground" href="/web/views/user/feed">
+              <Link className="text-white" href="/web/views/user/feed">
                 Inicio
               </Link>
             </NavbarItem>
 
             <NavbarItem>
-              <Link color="foreground" href="#">
+              <Link className="text-white" href="#">
                 Dasboard
               </Link>
             </NavbarItem>   
@@ -87,7 +87,7 @@ export default function NavBar({children}) {
             <DropdownTrigger>
               <div className="flex gap-4 items-center cursor-pointer">
                 <Badge color="danger" content="5" shape="rectangle" showOutline={false}>
-                  <Bell className="cursor-pointer" />
+                  <Bell className="cursor-pointer text-white" />
                 </Badge>
               </div>
             </DropdownTrigger>
@@ -134,13 +134,13 @@ export default function NavBar({children}) {
         {rol === "superadmin" ? (
           <>
             <NavbarItem>
-              <Link color="foreground" href="/web/views/admin/feed">
+              <Link className="text-black" href="/web/views/admin/feed">
                 Inicio
               </Link>
             </NavbarItem>
 
             <NavbarItem>
-              <Link color="foreground" href="/web/views/admin/feed">
+              <Link className="text-black" href="/web/views/admin/feed">
                 Nuevo proyecto
               </Link>
             </NavbarItem>
@@ -150,13 +150,13 @@ export default function NavBar({children}) {
         rol == "admin" ? (
           <>
             <NavbarItem>
-              <Link color="foreground" href="/web/views/user/feed">
+              <Link className="text-black"  href="/web/views/user/feed">
                 Inicio
               </Link>
             </NavbarItem>
 
             <NavbarItem>
-              <Link color="foreground" href="#">
+              <Link className="text-black" href="#">
                 Dasboard
               </Link>
             </NavbarItem>   
