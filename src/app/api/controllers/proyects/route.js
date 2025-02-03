@@ -75,9 +75,9 @@ export async function GET(request) { //get all proyects by id_company and search
       proyects = await Proyect.find({
         idCompany,
         name: { $regex: search, $options: 'i' }
-      });
+      }, 'name');
     } else {
-      proyects = await Proyect.find({ idCompany });
+      proyects = await Proyect.find({ idCompany }, 'name');
     }
 
     if (!proyects) return NextResponse.json({

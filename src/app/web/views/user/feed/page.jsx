@@ -1,5 +1,4 @@
 'use client'
-
 import React, { Suspense, useState, useEffect } from "react";
 import Header from "./components/header";
 import style from "./styles/feed.module.css";
@@ -8,10 +7,10 @@ import { BlocksShuffle3 } from "@/web/global_components/icons/BlocksShuffle3";
 import dynamic from 'next/dynamic';
 
 const Cards = dynamic(
-  () => import("./components/cards"),
+  () => import("./components/Cards"),
   { 
     ssr: false,
-    loading: () => <div className="m-auto text-6xl"><BlocksShuffle3 className="text-white"/></div>
+    loading: () => <section className={`w-full bg-transparent ${style.section} h-auto min-h-screen`}><div className="m-auto text-6xl"><BlocksShuffle3 className="text-white"/></div></section>
   }
 );
 
