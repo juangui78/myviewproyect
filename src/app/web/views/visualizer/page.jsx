@@ -23,6 +23,8 @@ import ClickHandler from "./components/clickhandler/ClickHandler";
 import * as THREE from 'three';
 import AreaVisual  from "./components/areaVisualizer/AreaVisual";
 import Toolbar from "./components/toolbar/Toolbar";
+import Terrains from "./components/tables/terrains/Terrains.jsx"
+import History from "./components/tables/history/History.jsx"
 
 function LoadingScreen({ progress }) {
     return (
@@ -242,16 +244,20 @@ const App = () => {
 
                     
                     <div className='py-4 md:m-w-[295px] sm:min-w-[10px] '>
+
+                        <p className="text-xs font-black italic">Terrenos</p>
+                        <Terrains />
                         
-                        <p className="text-tiny uppercase font-bold">Información</p>
+                        <p className="text-xs font-black italic">Información</p>
                         <h3 className='text-xs break-words '>
                             {currentProject?.description ? currentProject.description : "Cargando..."}
+                            <p> Lorem ipsum dolor sit, amet consectetur adipisicing elit. Deleniti, ipsam ab harum aliquid, minus ducimus tempore ullam, hic nostrum molestiae impedit provident delectus repellendus? Maiores illum iure in asperiores nobis.</p>
                         </h3>
                         <br />
                         <h3 className='italic text-xs'>{currentProject?.creation_date ? formatDate(currentProject?.creation_date) : null} </h3>
                         <h3 className='italic text-xs text-gray-500 border-b-1 border-l-red-950 pb-4'>Fecha de Subida: </h3>  
 
-                        <p className="text-tiny uppercase font-bold pt-4">Tools</p>      
+                        <p className="text-xs font-black pt-4 italic">Tools</p>      
                             
 
                             
@@ -275,11 +281,14 @@ const App = () => {
                             </div>
 
                             <div>
-                                <p className="text-tiny uppercase font-bold">Area Delimitada</p>
+                                <p className="text-xs font-black italic">Area Delimitada</p>
                                 <h3 className='italic text-md text-gray-500  pb-4'>{areaCalculated.toFixed(2)} m²</h3>
-                                <p className="text-tiny uppercase font-bold">Distancia (A - B)</p>
+                                <p className="text-xs  font-black italic">Distancia (A - B)</p>
                                 <h3 className='italic text-md text-gray-500 border-b-1 border-l-red-950 pb-4'>{distanceCalculated.toFixed(2)} mts</h3>
                             </div>
+
+                            <p className="text-xs font-black italic pt-4">Historial</p>
+                            <History></History>
 
                         </div>
                         
