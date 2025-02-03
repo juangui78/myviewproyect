@@ -1,7 +1,7 @@
 'use client'
 import { Image } from "@nextui-org/react";
 import axios from "axios";
-import { Tooltip, Button} from "@nextui-org/react";
+import { Tooltip } from "@nextui-org/react";
 import Eye from "@/web/global_components/icons/Eye.jsx";
 import  NoteText  from "@/web/global_components/icons/NoteText";
 import { Share } from "@/web/global_components/icons/Share";
@@ -10,12 +10,16 @@ import { encrypt } from "@/api/libs/crypto";
 import Link from 'next/link';
 import {  useEffect, useState } from "react";
 import { useSession} from "next-auth/react";
+import { useDisclosure } from "@nextui-org/react";
+import DrawerInfo from "./DrawerInfo";
 
 export default function Cards({ search, changeStatus}) { 
   
   const { data: session, status } = useSession();
   const [proyects, setProyects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [_id, setId] = useState('');
+  const {isOpen, onOpen, onOpenChange} = useDisclosure();
 
   useEffect(()  => { 
     const fetchData = async () => {
@@ -26,6 +30,7 @@ export default function Cards({ search, changeStatus}) {
         const response = await axios.get(`/api/controllers/proyects?id_company=${session?.user?.id_company}&search=${search}`);
         setProyects(response.data);
         setLoading(false)
+        console.log(response.data)
       } catch (error) {
         console.log(error, 'error con el fetch');
       } finally {
@@ -37,6 +42,12 @@ export default function Cards({ search, changeStatus}) {
     fetchData();
     
   }, [session, status]);
+
+
+  const handleOpen = (id) => {
+      setId(id);
+      onOpen()
+  }
 
   return (
       <div className="grid  2xl:grid-cols-4 gap-[60px] w-[70%] m-auto mt-[40px]  lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
@@ -61,7 +72,7 @@ export default function Cards({ search, changeStatus}) {
                         </Link >
 
                         <Tooltip content="Información del proyecto" showArrow={true}>
-                            <NoteText className="text-black cursor-pointer" />
+                            <NoteText className="text-black cursor-pointer" onClick={() => handleOpen(item._id)} />
                           </Tooltip>
                       <Share className="text-black" />
                   </div>
@@ -69,12 +80,14 @@ export default function Cards({ search, changeStatus}) {
               )
               })
           ) : (
-              <div className="w-[70%] h-full flex flex-col justify-center items-center absolute">
+              <div className="w-[70%] h-[30vh] flex flex-col justify-center items-center absolute">
                   <Ban className="text-white" />
                   <div className="text-white text-2xl">!ups, no hay proyectos para mostrar</div>
               </div>
           )
         )}
+
+        <DrawerInfo isOpen={isOpen} onOpen={onOpen} onOpenChange={onOpenChange} _id={_id}/>
       </div>
   );
 }
