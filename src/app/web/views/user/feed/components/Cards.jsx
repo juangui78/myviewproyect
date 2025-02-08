@@ -4,7 +4,7 @@ import axios from "axios";
 import { Tooltip } from "@nextui-org/react";
 import Eye from "@/web/global_components/icons/Eye.jsx";
 import  NoteText  from "@/web/global_components/icons/NoteText";
-import { Share } from "@/web/global_components/icons/Share";
+import Share from "@/web/global_components/icons/Share";
 import { Ban } from "@/web/global_components/icons/Ban";
 import { encrypt } from "@/api/libs/crypto";
 import Link from 'next/link';
@@ -12,6 +12,7 @@ import {  useEffect, useState } from "react";
 import { useSession} from "next-auth/react";
 import { useDisclosure } from "@nextui-org/react";
 import DrawerInfo from "./DrawerInfo";
+import ModalUsersInvited from "./ModalUsersInvited";
 
 export default function Cards({ search, changeStatus}) { 
   
@@ -19,7 +20,10 @@ export default function Cards({ search, changeStatus}) {
   const [proyects, setProyects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [_id, setId] = useState('');
-  const {isOpen, onOpen, onOpenChange} = useDisclosure();
+  const [ID_USER, setID_USER] = useState(null);
+
+  const {isOpen, onOpenChange} = useDisclosure(); // drawer unfo
+  const { isOpen: isOpenUsers, onOpenChange: onOpenChangeUsers} = useDisclosure(); // drawer users
 
   useEffect(()  => { 
     const fetchData = async () => {
@@ -30,7 +34,7 @@ export default function Cards({ search, changeStatus}) {
         const response = await axios.get(`/api/controllers/proyects?id_company=${session?.user?.id_company}&search=${search}`);
         setProyects(response.data);
         setLoading(false)
-        console.log(response.data)
+        // console.log(response.data)
       } catch (error) {
         console.log(error, 'error con el fetch');
       } finally {
@@ -44,12 +48,18 @@ export default function Cards({ search, changeStatus}) {
   }, [session, status]);
 
 
-  const handleOpen = (id) => {
+  const handleOpen = (id) => { //open drawer info
       setId(id);
-      onOpen()
+      onOpenChange(true);
+  }
+
+  const handleOpenUsers = () => { //open drawer users
+    onOpenChangeUsers(true);
+    setID_USER(session?.user?._id);
   }
 
   return (
+    <>
       <div className="grid  2xl:grid-cols-4 gap-[60px] w-[70%] m-auto mt-[40px]  lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
         {loading ? (<div></div>) : 
         (
@@ -67,14 +77,17 @@ export default function Cards({ search, changeStatus}) {
                     <div className="bg-[#fff] z-10 w-[60%] h-[10%] shadow-xl ... rounded-lg absolute bottom-[20px] right-[20px] flex justify-center items-center gap-[10px]">
                        <Link href={{ pathname: `/web/views/visualizer`, query: { id: encrypt(item._id) } }}>
                           <Tooltip content="Visualizar el modelo 3D" showArrow={true}>
-                            <Eye className="text-black cursor-pointer" />
+                            <Eye className="text-black cursor-pointer" aria-label="Viualizar el modelo 3d"/>
                           </Tooltip>
                         </Link >
 
                         <Tooltip content="Información del proyecto" showArrow={true}>
-                            <NoteText className="text-black cursor-pointer" onClick={() => handleOpen(item._id)} />
+                            <NoteText className="text-black cursor-pointer" onClick={() => handleOpen(item._id)} aria-label="Informacíon del proyecto" />
                           </Tooltip>
-                      <Share className="text-black" />
+
+                        <Tooltip content="Compartir Modelo" showArrow={true}>
+                          <Share className="text-black cursor-pointer" onClick={() => handleOpenUsers() } aria-label="Compartir modelo"/>
+                        </Tooltip>
                   </div>
                </div>
               )
@@ -86,8 +99,9 @@ export default function Cards({ search, changeStatus}) {
               </div>
           )
         )}
-
-        <DrawerInfo isOpen={isOpen} onOpen={onOpen} onOpenChange={onOpenChange} _id={_id}/>
       </div>
+      {_id != '' &&  <DrawerInfo isOpen={isOpen} onOpenChange={onOpenChange} _id={_id}/>}
+      {ID_USER && <ModalUsersInvited isOpenUsers={isOpenUsers}  onOpenChangeUsers={onOpenChangeUsers} ID_USER={ID_USER} />}
+    </>
   );
 }

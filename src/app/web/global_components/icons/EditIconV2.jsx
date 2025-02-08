@@ -1,6 +1,6 @@
 import React from "react";
 
-export const EditIconV2 = () => (
+const EditIconV2 = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     className="icon icon-tabler icon-tabler-edit"
@@ -19,3 +19,5 @@ export const EditIconV2 = () => (
     <path d="M16 5l3 3" />
   </svg>
 );
+
+export default EditIconV2

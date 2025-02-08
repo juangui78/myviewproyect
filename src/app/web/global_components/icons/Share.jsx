@@ -1,6 +1,9 @@
-export function Share(props) {
+import React from "react"
+
+const Share =  React.forwardRef(function Share(props, ref) {
     return (
       <svg
+        ref={ref}
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         width="1.5em"
@@ -13,5 +16,6 @@ export function Share(props) {
         ></path>
       </svg>
     )
-  }
+  })
   
+  export default Share;

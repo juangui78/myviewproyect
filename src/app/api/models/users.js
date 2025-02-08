@@ -4,11 +4,11 @@ mongoose.models = {};
 const Schema = mongoose.Schema;
 
 const user_schema = new Schema({
-  type :{ // three options normal | company | admin => us
+  type :{ // three options user => only to view the model | admin => to manage the model and invite new users | company => to manage everything, us  
     type: String,
     trim: true,
     lowercase: true,
-    enum : ['normal', 'company', 'admin'],
+    enum : ['user', 'admin', 'company'],
     required: true
   },
   name : {
@@ -52,12 +52,6 @@ const user_schema = new Schema({
     required: false,
     default: false,
   },
-  rol: {
-    type: String,
-    required: true,
-    default: 'admin',
-    enum : ['user', 'admin', 'superadmin']
-  },
   configurations : {
     feed : {
       type: String,
@@ -66,6 +60,36 @@ const user_schema = new Schema({
       enum : ['cards', 'table']
     }
   },
+  usersInvited : [
+    {
+      email: {
+        type: String,
+        required: true,
+        max : [50, 'max length exceded'],
+        trim: true,
+      },
+     cadastralFile: {
+      type: Boolean,
+      required: true,
+     },
+     writing: {
+      type: Boolean,
+      required: true,
+     },
+     certificateOfFreedom: {
+      type: Boolean,
+      required: true,
+     },
+     landUse: {
+      type: Boolean,
+      required: true,
+     },
+     topographicalPlan: {
+      type: Boolean,
+      required: true,
+     }
+    }
+  ],
   id_Company : {
     type: Schema.Types.ObjectId,
     ref: 'Company',
