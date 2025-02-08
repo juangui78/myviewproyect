@@ -16,4 +16,20 @@ export const getTodoList = async (id) => {
   
 }
 
+export const getTodoUsers = async (ID_USER) => { //get all user from one user => the admin
+
+    try {
+        const response = await axios.get(`/api/controllers/users/${ID_USER}`);
+
+        if (response.status !== 200){
+            return ["error", []]
+        }
+
+        return ["success", response.data]
+    } catch (error) {
+        console.error(error)
+        return ["error", []]
+    }
+
+}
 
