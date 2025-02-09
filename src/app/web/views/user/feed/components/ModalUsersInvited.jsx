@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input, CheckboxGroup, Checkbox } from "@nextui-org/react";
 import { Autocomplete, AutocompleteItem } from "@heroui/autocomplete";
 import { Button } from "@nextui-org/react";
-import { getTodoUsers } from "../js/todo";
+import { getTodoUsers, shareModelToUser } from "../js/todo";
 import { PlusIcon } from "@/web/global_components/icons/PlusIcon";
 import feedStyle from "../styles/feed.module.css";
 import * as Yup from "yup";
@@ -28,7 +28,6 @@ const ModalUsersInvited = ({ isOpenUsers, onOpenChangeUsers, ID_USER }) => {
           try {
             const response = await getTodoUsers(ID_USER);
             const [status, json] = response;
-            console.log(status, json)
 
             if (status != "success") {
               setError(true)
@@ -55,7 +54,6 @@ const ModalUsersInvited = ({ isOpenUsers, onOpenChangeUsers, ID_USER }) => {
     }, [ID_USER])
 
     const getUserSelected = (key) => { // get user from autocomplete component
-      console.log(key)
       if (key === null) {
         setPermissions([])
         setShowPermissions(false)
@@ -95,7 +93,23 @@ const ModalUsersInvited = ({ isOpenUsers, onOpenChangeUsers, ID_USER }) => {
     }
 
     const handleSubmit = async () => {
+      const inputEmail = valueEmail == null ? "" : valueEmail;
+      const selectEmail = valueSelect == null ? "" : valueSelect;
+      const errorInEmail = errorEmail;
 
+      console.log(inputEmail, selectEmail, errorInEmail)
+
+      if (inputEmail.length == 0 && selectEmail.length == 0) {
+        alert("Debe seleccionar un correo electrónico o digitar uno")
+        return
+      }
+
+      if (errorInEmail) {
+        alert("Correo electrónico invalido")
+        return
+      }
+
+      const respose = await shareModelToUser(inputEmail == "" ? selectEmail : inputEmail, permissions);
     }
 
     return (
@@ -160,6 +174,7 @@ const ModalUsersInvited = ({ isOpenUsers, onOpenChangeUsers, ID_USER }) => {
                         className=" bg-[#0CDBFF] h-full flex items-center justify-center"
                         radius="sm"
                         size="sm"
+                        disabled={valueSelect === "" ? false : true}
                         onClick={() => getUserSelected(valueEmail)}
                       >
                         <PlusIcon className="h-[48px]"/>

@@ -71,22 +71,27 @@ const user_schema = new Schema({
      cadastralFile: {
       type: Boolean,
       required: true,
+      default: false
      },
      writing: {
       type: Boolean,
       required: true,
+      default: false
      },
      certificateOfFreedom: {
       type: Boolean,
       required: true,
+      default: false
      },
      landUse: {
       type: Boolean,
       required: true,
+      default: false
      },
      topographicalPlan: {
       type: Boolean,
       required: true,
+      default: false
      }
     }
   ],
