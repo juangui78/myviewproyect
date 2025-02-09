@@ -76,8 +76,27 @@ const App = () => {
     const [areaCalculated, setAreaCalculated] = useState(0);
     const [distanceCalculated, setDistanceCalculated] = useState(0)
     const [isModelLoaded, setIsModelLoaded] = useState(false);
+    const [terrains, setTerrains] = useState([]);
+    const [currentTerrainMarkers, setCurrentTerrainMarkers] = useState([]);
+    const [allTerrains, setAllTerrains] = useState([]);
 
+    const handleAddTerrain = () => {
+        if (currentTerrainMarkers.length > 2) {
+            const newTerrain = {
+                id: terrains.length + 1, // ID único para el terreno
+                type: "default", // Puedes cambiar esto para permitir al usuario seleccionar el tipo
+                markers: currentTerrainMarkers, // Marcadores del terreno
+            };
+            setTerrains((prevTerrains) => [...prevTerrains, newTerrain]); // Añadir el terreno
+            setCurrentTerrainMarkers([]); // Limpiar los marcadores actuales
 
+            // Actualizar allTerrains
+            setAllTerrains((prevAllTerrains) => [...prevAllTerrains, newTerrain]);
+
+            // Llamar a handleResetMarkers
+            handleResetMarkers();
+        }
+    };
 
     const handleEditMarkersMode = (event) => {
         event.preventDefault();
@@ -95,18 +114,20 @@ const App = () => {
         // Lógica para añadir el marcador visualmente
 
         const newMarker = {
-            id: markers.length + 1, // Genera un nuevo ID basado en la longitud del array actual
+            id: currentTerrainMarkers.length + 1,
             position,
-            label: `Punto ${markers.length + 1}` // Etiqueta dinámica
+            label: `Punto ${currentTerrainMarkers.length + 1}`,
         };
-
+    
+        setCurrentTerrainMarkers((prevMarkers) => [...prevMarkers, newMarker]);
+    
         // Calcular distancia entre dos markers
-        if (markers.length > 0) {
-            const lastMarkerPosition = new THREE.Vector3(...markers[markers.length - 1].position);
+        if (currentTerrainMarkers.length > 0) {
+            const lastMarkerPosition = new THREE.Vector3(...currentTerrainMarkers[currentTerrainMarkers.length - 1].position);
             const newMarkerPosition = new THREE.Vector3(...position);
             const distance = lastMarkerPosition.distanceTo(newMarkerPosition);
             console.log('Distancia entre el último marcador y el nuevo:', distance);
-            setDistanceCalculated(distance)
+            setDistanceCalculated(distance);
         }
 
         // Añadir el nuevo marcador al estado
@@ -179,6 +200,8 @@ const App = () => {
         }
       }, [currentProject, isModelLoaded]);
     
+      console.log('terrenos guardados: ', terrains);
+      
 
   return (
     <div className=" flex flex-col justify-center items-center h-[100vh] overflow-hidden relative">
@@ -204,7 +227,15 @@ const App = () => {
                             <ambientLight intensity={1} />
                             <directionalLight color="white" position={[0, 2, 50]} />
                             { editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef}/>}
-                            {markers.map(marker => (
+                            {/* {markers.map(marker => (
+                                <Marker
+                                    key={marker.id}
+                                    position={marker.position}
+                                    label={marker.label}
+                                    onClick={() => setSelectedMarker(marker.id)}
+                                />
+                            ))} */}
+                            {currentTerrainMarkers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
@@ -212,8 +243,27 @@ const App = () => {
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
                             ))}
+                            {terrains.map((terrain) => (
+                                <React.Fragment key={terrain.id}>
+                                    {terrain.markers.map(marker => (
+                                        <Marker
+                                            key={marker.id}
+                                            position={marker.position}
+                                            label={marker.label}
+                                            onClick={() => setSelectedMarker(marker.id)}
+                                        />
+                                    ))}
+                                    {terrain.markers.length > 2 && (
+                                        <AreaVisual
+                                            terrains={terrains}
+                                            markers={terrain.markers}
+                                            areaCalculated={handleAreaCalculated}
+                                        />
+                                    )}
+                                </React.Fragment>
+                            ))}
 
-                            {markers.length > 2 && <AreaVisual markers={markers} areaCalculated={handleAreaCalculated}/>}
+                            {/* {markers.length > 2 && <AreaVisual terrains={terrains} markers={markers} areaCalculated={handleAreaCalculated} />} */}
                             
                             {gltf && <ModelComponent gltf={gltf} ref={objectRef}/>}
                             <CameraPositioner />
@@ -246,7 +296,12 @@ const App = () => {
                     <div className='py-4 md:m-w-[295px] sm:min-w-[10px] '>
 
                         <p className="text-xs font-black italic">Terrenos</p>
-                        <Terrains />
+                        {currentTerrainMarkers.length > 2 && (
+                            <Button onClick={handleAddTerrain} color="primary">
+                                Añadir Terreno
+                            </Button>
+                        )}
+                        <Terrains terrains={terrains} />
                         
                         <p className="text-xs font-black italic">Información</p>
                         <h3 className='text-xs break-words '>
