@@ -30,7 +30,7 @@ const columns = [
 ];
 
 // Componente Terrains
-export default function Terrains({ terrains }) {
+export default function Terrains({ terrains, onSelectTerrain }) {
     // Transformar los terrenos en filas para la tabla
     const rows = terrains.map((terrain) => ({
         key: terrain.id.toString(),
@@ -45,7 +45,7 @@ export default function Terrains({ terrains }) {
             </TableHeader>
             <TableBody items={rows} className="text-xs">
                 {(item) => (
-                    <TableRow key={item.key}>
+                    <TableRow key={item.key} onClick={() => onSelectTerrain(terrains.find(t => t.id.toString() === item.key))}>
                         {(columnKey) => <TableCell>{getKeyValue(item, columnKey)}</TableCell>}
                     </TableRow>
                 )}

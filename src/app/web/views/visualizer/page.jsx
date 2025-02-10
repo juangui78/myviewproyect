@@ -25,6 +25,7 @@ import AreaVisual  from "./components/areaVisualizer/AreaVisual";
 import Toolbar from "./components/toolbar/Toolbar";
 import Terrains from "./components/tables/terrains/Terrains.jsx"
 import History from "./components/tables/history/History.jsx"
+import CameraController from './components/cameras/CameraController';
 
 function LoadingScreen({ progress }) {
     return (
@@ -60,6 +61,7 @@ const CameraPositioner = () => {
 };
 
 
+
 const App = () => {
 
     const [light, setLight] = useState('lobby')
@@ -79,6 +81,7 @@ const App = () => {
     const [terrains, setTerrains] = useState([]);
     const [currentTerrainMarkers, setCurrentTerrainMarkers] = useState([]);
     const [allTerrains, setAllTerrains] = useState([]);
+    const [selectedTerrain, setSelectedTerrain] = useState(null);
 
     const handleAddTerrain = () => {
         if (currentTerrainMarkers.length > 2) {
@@ -135,6 +138,8 @@ const App = () => {
         
 
     };
+
+    
 
     
 
@@ -267,6 +272,7 @@ const App = () => {
                             
                             {gltf && <ModelComponent gltf={gltf} ref={objectRef}/>}
                             <CameraPositioner />
+                            <CameraController terrain={selectedTerrain} />
                             <OrbitControls minDistance={0}  target={[0, 0, 0]}/>
                             <Environment preset={light} background blur backgroundBlurriness />
                         </Suspense>
@@ -301,7 +307,7 @@ const App = () => {
                                 Añadir Terreno
                             </Button>
                         )}
-                        <Terrains terrains={terrains} />
+                        <Terrains terrains={terrains} onSelectTerrain={setSelectedTerrain}/>
                         
                         <p className="text-xs font-black italic">Información</p>
                         <h3 className='text-xs break-words '>
