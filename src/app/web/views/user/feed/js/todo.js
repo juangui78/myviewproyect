@@ -1,6 +1,6 @@
 import axios from "axios"
 
-export const getTodoList = async (id) => {
+export const getTodoList = async (id) => { // get all data from one proyect
     try {
         const response = await axios.get(`/api/controllers/proyects/${id}`);
 

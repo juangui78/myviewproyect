@@ -23,7 +23,6 @@ export default function NavBar({children}) {
   const { data: session } = useSession();
   const idUser = session?.user._id;
   const rol = session?.user.rol;
-  console.log(session)
 
   return (
     <Navbar disableAnimation isBordered className={style.NavBar}>
