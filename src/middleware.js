@@ -7,8 +7,6 @@ export async function middleware(request){
   const session = await getToken({ req : request, secret : process.env.NEXTAUTH_SECRET}) // get the token
   const path = request.nextUrl.pathname;
 
-
-  
   if (!session){ // the session does not exist
     if (path !== '/web/views/signup' && path !== '/web/views/login'){
       const urlRedirect = new URL('/web/views/login' , request.url);
@@ -27,6 +25,8 @@ export async function middleware(request){
 
 export const config = {
   matcher : [
-    '/web/views/login', '/web/views/user/feed'
-  ] // see in the future
+    '/web/views/login', 
+    '/web/views/user/feed',
+    '/web/views/admin/allProjects',
+  ]
 }

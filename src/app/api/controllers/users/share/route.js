@@ -7,11 +7,11 @@ import { AuthOptions } from '@/api/auth/[...nextauth]/route';
 import { encrypt } from '@/api/libs/crypto';
 import z from 'zod';
 import sendEmail from '@/api/libs/mailer';
-import { get } from 'mongoose';
+import QRCode from 'qrcode';
 
 dbConnected();
 
-export async function POST(request) {
+export async function POST(request) { // send data to share model to user at email
     try {
 
         //get data from request and validate
@@ -26,7 +26,7 @@ export async function POST(request) {
         const resultSchemaRequest = schemaRequest.safeParse(requestData)
         
         if (!resultSchemaRequest.success){
-            return NextResponse.json({ message: "Datos incorrectos" }, { status: 500 })
+            return NextResponse.json({ message: "Tipo de datos incorrectos." }, { status: 500 })
         }
 
         const { email, permissions, idProyect } = requestData
@@ -35,7 +35,7 @@ export async function POST(request) {
         //=======================================================================================
         const session = await getServerSession(AuthOptions)
         if (!session){
-            return NextResponse.json({ message: "No autenticado" }, { status: 500 })
+            return NextResponse.json({ message: "Usuario no autenticado." }, { status: 500 })
         }
         const { user } = session
         const { _id, name, lastName } = user
@@ -45,7 +45,7 @@ export async function POST(request) {
         //=======================================================================================
         const proyect = await Proyect.findById(idProyect, { name: 1 })
         if (!proyect){
-            return NextResponse.json({ message : "Proyecto no encontrado" }, { status: 404 })
+            return NextResponse.json({ message : "Proyecto no encontrado." }, { status: 404 })
         }
 
         const nameProyect = proyect.name
@@ -55,7 +55,7 @@ export async function POST(request) {
         const getInfoUser = await User.findById(_id, { usersInvited: 1 }).lean()
 
         if (!getInfoUser){
-            return NextResponse.json({ message: "Usuario no encontrado" }, { status: 404 })
+            return NextResponse.json({ message: "Usuarios no encontrados." }, { status: 404 })
         }
 
         const { usersInvited } = getInfoUser
@@ -76,7 +76,7 @@ export async function POST(request) {
             )
 
             if (update.matchedCount === 0){
-                return NextResponse.json({ message: "Error al actualizar" }, { status: 500 })
+                return NextResponse.json({ message: "Se ha producido un error al actualizar los permisos." }, { status: 500 })
             }
 
         }else {
@@ -97,7 +97,7 @@ export async function POST(request) {
             )
 
             if (add.matchedCount === 0){
-                return NextResponse.json({ message: "Error al enviar" }, { status: 500 }) 
+                return NextResponse.json({ message: "Se ha producido un error al guardar el usuario." }, { status: 500 }) 
             }
         }
 
@@ -132,10 +132,49 @@ export async function POST(request) {
             `
         const SUBJECT = "Invitación a visualizar modelo"
         const sendToEmail = await sendEmail(email, SUBJECT, SUBJECT, HTML)
-        return NextResponse.json({ status: "ok" })
+
+        if (!sendToEmail){
+            return NextResponse.json({ message: "Error al enviar al correo." }, { status: 500 })
+        }
+
+        return NextResponse.json({ message: "El correo se ha enviado con éxito." }, { status : 200 })
 
     } catch (error) {
-        console.log(error)
+        return NextResponse.json({ message: "Error del servidor, vuelva a intentar." }, { status: 500 })
     }
-
 }     
+
+export async function GET(request){
+    try{
+        //get parameters from request and validate
+        //=======================================================================================
+        const { searchParams } = new URL(request.url)
+        const idProyect = searchParams.get('idProyect')
+
+        const schemaId = z.object({
+            idProyect: z.string().regex(/^[a-f\d]{24}$/i, "Invalid ObjectId")
+        })
+
+        const validationResult = schemaId.safeParse({ idProyect })
+
+        if (!validationResult.success){
+            return NextResponse.json({ message: "Tipo de datos incorrectos." }, { status: 500 })
+        }
+
+        const encryptId = encrypt(idProyect)
+
+        //generate url to share visualizer
+        const baseUrl = process.env.URL_PROJECT
+        const url = "web/views/visualizer"
+        const params = `?id=${encryptId}`
+        const urlShare = baseUrl + url + params
+
+        //generate qr code
+        const qrCode = await QRCode.toDataURL(urlShare)
+
+        return NextResponse.json({ qrCode }, { status: 200 })
+
+    }catch(error){
+        return NextResponse.json({ message: "Error del servidor, vuelva a intentar." }, { status: 500 })
+    }
+}

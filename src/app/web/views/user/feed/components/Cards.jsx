@@ -14,6 +14,7 @@ import { useSession } from "next-auth/react";
 import { useDisclosure } from "@nextui-org/react";
 import DrawerInfo from "./DrawerInfo";
 import ModalUsersInvited from "./ModalUsersInvited";
+import ModalQr from "./ModalQr";
 
 export default function Cards({ search, changeStatus }) {
 
@@ -24,7 +25,8 @@ export default function Cards({ search, changeStatus }) {
   const [ID_USER, setID_USER] = useState(null);
 
   const { isOpen, onOpenChange } = useDisclosure(); // drawer unfo
-  const { isOpen: isOpenUsers, onOpenChange: onOpenChangeUsers } = useDisclosure(); // drawer users
+  const { isOpen: isOpenUsers, onOpenChange: onOpenChangeUsers } = useDisclosure(); // modal users
+  const { isOpen: isOpenQr, onOpenChange: onOpenChangeQr } = useDisclosure(); // modal qr
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,9 +56,14 @@ export default function Cards({ search, changeStatus }) {
     onOpenChange(true);
   }
 
-  const handleOpenUsers = (id) => { //open drawer users
+  const handleOpenUsers = (id) => { //open modal users
     onOpenChangeUsers(true);
     setID_USER(session?.user?._id);
+    setId(id);
+  }
+
+  const handleOpenQr = (id) => { //open modal qr
+    onOpenChangeQr(true);
     setId(id);
   }
 
@@ -120,15 +127,11 @@ export default function Cards({ search, changeStatus }) {
                           className="text-tiny bg-[#030D1C]"
                           color="default"
                           radius="full"
-                          size="sm">
+                          size="sm"
+                          onClick={() => handleOpenQr(item._id)}
+                        >
                         </Button>
                       </CardFooter>
-                      <div className="h-[20%] text-white text-xl p-[20px] font-semibold">{item.name}</div>
-                      <div className="flex flex-col items-center w-[100%] h-[70%]">
-                        <div className="flex relative w-[85%] h-[100%]">
-                          <Image isBlurred src="/images/imagen___.png" className="object-cover h-[100%]" />
-                        </div>
-                      </div>
                     </Card>
                   )
                 })
@@ -140,8 +143,9 @@ export default function Cards({ search, changeStatus }) {
               )
           )}
       </div>
-      {_id != '' && <DrawerInfo isOpen={isOpen} onOpenChange={onOpenChange} _id={_id} />}
-      {ID_USER && <ModalUsersInvited isOpenUsers={isOpenUsers} onOpenChangeUsers={onOpenChangeUsers} ID_USER={ID_USER} _ID={_id} />}
+      {_id != '' && <DrawerInfo isOpen={isOpen} onOpenChange={onOpenChange} _id={_id} />} {/* drawer info of the proyect */}
+      {ID_USER && <ModalUsersInvited isOpenUsers={isOpenUsers} onOpenChangeUsers={onOpenChangeUsers} ID_USER={ID_USER} _ID={_id} />} {/* modal users to share via email */}
+      {_id != '' && <ModalQr isOpenQr={isOpenQr} onOpenChangeQr={onOpenChangeQr} _id={_id} />} {/* modal qr */}
     </>
   );
 }
