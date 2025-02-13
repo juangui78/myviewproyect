@@ -23,6 +23,8 @@ function FeedContent() {
 
   useEffect(() => {
     setKey(Date.now());
+
+    document.title = "Myview_ | Feed";
   }, [search]);
 
   const changeStatusLoad = () => setLoading(false);

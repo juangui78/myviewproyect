@@ -33,7 +33,6 @@ export const getTodoUsers = async (ID_USER) => { //get all user from one user =>
 }
 
 export const shareModelToUser = async (email, permissions, idProyect) => {
-    console.log(email, permissions)
     try {
         const response = await axios.post(`/api/controllers/users/share`, {
             email,
@@ -41,8 +40,15 @@ export const shareModelToUser = async (email, permissions, idProyect) => {
             idProyect
         });
 
+        if (response.status == 200) return {
+            status: true, 
+            message: "El correo se ha enviado correctamente."
+        }
         
     } catch (error) {
-        console.error(error)
+        return {
+            status: false,
+            message : error.response.data.message
+        }
     }
 }
