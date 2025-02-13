@@ -12,7 +12,7 @@ const emailSchema = Yup.string()
 .matches( /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Correo invalido")
 .required("El correo electrónico es requerido");
 
-const ModalUsersInvited = ({ isOpenUsers, onOpenChangeUsers, ID_USER }) => {
+const ModalUsersInvited = ({ isOpenUsers, onOpenChangeUsers, ID_USER, _ID}) => {
 
     const [error, setError] = useState(false);
     const [data, setData] = useState([]);
@@ -21,6 +21,7 @@ const ModalUsersInvited = ({ isOpenUsers, onOpenChangeUsers, ID_USER }) => {
     const [errorEmail, setErrorEmail] = useState(false);
     const [valueEmail, setValueEmail] = useState("");
     const [valueSelect, setValueSelect] = useState("");
+
     
     useEffect(() => {
         const fetchData = async () => {
@@ -51,7 +52,7 @@ const ModalUsersInvited = ({ isOpenUsers, onOpenChangeUsers, ID_USER }) => {
         }
 
         fetchData()
-    }, [ID_USER])
+    }, [ID_USER, _ID])
 
     const getUserSelected = (key) => { // get user from autocomplete component
       if (key === null) {
@@ -109,7 +110,7 @@ const ModalUsersInvited = ({ isOpenUsers, onOpenChangeUsers, ID_USER }) => {
         return
       }
 
-      const respose = await shareModelToUser(inputEmail == "" ? selectEmail : inputEmail, permissions);
+      const respose = await shareModelToUser(inputEmail == "" ? selectEmail : inputEmail, permissions, _ID);
     }
 
     return (

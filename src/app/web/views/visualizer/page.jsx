@@ -26,6 +26,7 @@ import Toolbar from "./components/toolbar/Toolbar";
 import Terrains from "./components/tables/terrains/Terrains.jsx"
 import History from "./components/tables/history/History.jsx"
 import CameraController from './components/cameras/CameraController';
+import { decrypt } from '@/api/libs/crypto';
 
 function LoadingScreen({ progress }) {
     return (
@@ -67,7 +68,7 @@ const App = () => {
     const [light, setLight] = useState('lobby')
     const [quality, setQuality] = useState(0.8)
     const searchParams = useSearchParams();
-    const idProyect = searchParams.get("id");
+    const idProyect = decrypt(searchParams.get("id"));
     const [currentProject, setCurrentProject] = useState(null);
     const [gltf, setGltf] = useState(null);
     const { progress } = useProgress();

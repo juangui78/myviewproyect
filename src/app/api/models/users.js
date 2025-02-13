@@ -62,6 +62,7 @@ const user_schema = new Schema({
   },
   usersInvited : [
     {
+      _id: false,
       email: {
         type: String,
         required: true,
