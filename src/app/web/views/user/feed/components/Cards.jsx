@@ -54,9 +54,10 @@ export default function Cards({ search, changeStatus }) {
     onOpenChange(true);
   }
 
-  const handleOpenUsers = () => { //open drawer users
+  const handleOpenUsers = (id) => { //open drawer users
     onOpenChangeUsers(true);
     setID_USER(session?.user?._id);
+    setId(id);
   }
 
   return (
@@ -69,7 +70,7 @@ export default function Cards({ search, changeStatus }) {
                 proyects.map((item) => {
                   return (
                     <Card key={item._id} isFooterBlurred className="relative flex flex-col col-span-1 ... backdrop-blur-[40px] ... border-1 border-solid ... border-white  h-[40vh] w-full rounded-lg ... max-[730px]:w-[65%] max-[730px]:m-auto max-[500px]:w-[100%] ">
-                      <CardHeader className="absolute z-10  flex-col items-start bg-white/30 backdrop-blur-sm ...">
+                      <CardHeader className="absolute z-10  flex-col items-start bg-white/30 backdrop-blur-sm ... rounded-sm ...">
                         <p className="text-tiny text-black uppercase font-bold">Proyecto</p>
                         <h4 className="text-black font-medium text-2xl ">{item.name}</h4>
                       </CardHeader>
@@ -79,8 +80,7 @@ export default function Cards({ search, changeStatus }) {
                         className="z-0 w-full h-full scale-125 -translate-y-6 object-cover"
                         src="/images/parcela.avif"
                       />
-                      <CardFooter className="absolute bg-white/30 bottom-0 border-t-1 border-zinc-100/50 z-10 justify-between">
-
+                      <CardFooter className="absolute bg-white/30 bottom-0 border-t-1 border-zinc-100/50 z-10 justify-between rounded-sm ...">
                         <Tooltip content="Visualizar el modelo 3D" showArrow={true}>
                           <Button
                             className="text-tiny bg-[#030D1C]"
@@ -111,7 +111,7 @@ export default function Cards({ search, changeStatus }) {
                             color="default"
                             radius="full"
                             size="sm"
-                            onClick={() => handleOpenUsers()}
+                            onClick={() => handleOpenUsers(item._id)}
                           >
                           </Button>
                         </Tooltip>
@@ -141,7 +141,7 @@ export default function Cards({ search, changeStatus }) {
           )}
       </div>
       {_id != '' && <DrawerInfo isOpen={isOpen} onOpenChange={onOpenChange} _id={_id} />}
-      {ID_USER && <ModalUsersInvited isOpenUsers={isOpenUsers} onOpenChangeUsers={onOpenChangeUsers} ID_USER={ID_USER} />}
+      {ID_USER && <ModalUsersInvited isOpenUsers={isOpenUsers} onOpenChangeUsers={onOpenChangeUsers} ID_USER={ID_USER} _ID={_id} />}
     </>
   );
 }

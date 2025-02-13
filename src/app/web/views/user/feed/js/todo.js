@@ -32,12 +32,13 @@ export const getTodoUsers = async (ID_USER) => { //get all user from one user =>
     }
 }
 
-export const shareModelToUser = async (email, permissions) => {
+export const shareModelToUser = async (email, permissions, idProyect) => {
     console.log(email, permissions)
     try {
         const response = await axios.post(`/api/controllers/users/share`, {
             email,
-            permissions
+            permissions,
+            idProyect
         });
 
         

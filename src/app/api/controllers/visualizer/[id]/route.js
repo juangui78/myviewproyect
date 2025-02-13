@@ -10,7 +10,7 @@ dbConnected();
 export async function GET(request, {params}) {
     const { id } = params;
     try {
-        const findProyect = await Proyect.findById(decrypt(id));
+        const findProyect = await Proyect.findById(id);
         
 
         if (findProyect) {
@@ -22,6 +22,6 @@ export async function GET(request, {params}) {
             console.log('no ha encontrado proyecto del query');
         }
     } catch (error) {
-        return NextResponse.json({message: 'Invalid Id'}).status(500);
+        return NextResponse.json({message: 'Invalid Id'}, { status: 500 })
     }
 }
