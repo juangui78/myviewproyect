@@ -3,7 +3,7 @@ import { Providers } from './providers'
 
 export const metadata = {
   title: "MyView_",
-  description: "Tu nueva forma de ver.",
+  description: "MyView_",
 };
 
 export default function RootLayout({ children }) {

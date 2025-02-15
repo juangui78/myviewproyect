@@ -43,16 +43,10 @@ export default function NavBar({children}) {
           
         {rol === "company" ? ( 
           <>
-          {/* company => this is my view */}
-          <NavbarItem>
-              <Link className="text-white" href="#">
-                Inmobiliarias
-              </Link>
-            </NavbarItem>
-
+          {/* company => this is my view */}     
             <NavbarItem>
               <Link className="text-white" href="/web/views/admin/allProjects">
-                Proyectos
+              Inmobiliarias
               </Link>
             </NavbarItem>
           </>
@@ -127,11 +121,11 @@ export default function NavBar({children}) {
                 
         {rol === "company" ? (
           <>
-            <NavbarItem>
+            {/* <NavbarItem>
               <Link className="text-white" href="/web/views/admin/feed">
                 Nuevo proyecto
               </Link>
-            </NavbarItem>
+            </NavbarItem> */}
           </>
         ) :
 
