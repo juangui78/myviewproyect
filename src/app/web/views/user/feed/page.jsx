@@ -10,7 +10,9 @@ const Cards = dynamic(
   () => import("./components/Cards"),
   { 
     ssr: false,
-    loading: () => <section className={`w-full bg-transparent ${style.section} h-auto min-h-screen`}><div className="m-auto text-6xl"><BlocksShuffle3 className="text-white"/></div></section>
+    loading: () => <section className={`w-full bg-transparent ${style.section} h-auto min-h-screen`}>
+                      <div className="m-auto text-6xl"><BlocksShuffle3 className="text-white"/></div>
+                    </section>
   }
 );
 
@@ -22,9 +24,11 @@ function FeedContent() {
   const search = searchParams?.get('search');
 
   useEffect(() => {
-    setKey(Date.now());
-
     document.title = "Myview_ | Feed";
+  }, []);
+
+  useEffect(() => {
+    setKey(Date.now());
   }, [search]);
 
   const changeStatusLoad = () => setLoading(false);

@@ -5,6 +5,10 @@ mongoose.models = {};
 const Schema = mongoose.Schema;
 
 const company_schema = new Schema({
+  name: {
+    type: String,
+    required: true
+  },
   plan: {
     type: String,
     enum: ['static', 'basic', 'medium', 'pro', 'enterprise'],
