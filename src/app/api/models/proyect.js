@@ -34,27 +34,6 @@ const proyectSchema = new Schema({
     max : [300, 'max length exceded'],
     required : true
   },
-  //client info
-  clientNames : {
-    type: String,
-    max : [100, 'max length exceded'],
-    required : true
-  },
-  clientLastNames : {
-    type: String,
-    max : [100, 'max length exceded'],
-    required : true
-  },
-  clientTel : {
-    type: Number,
-    required: true,
-  },
-  clientEmail : {
-    type: String,
-    max : [10, 'max length exceded'],
-    min : [10, 'minium exceded'],
-    required: true
-  },
   //temporal info
   dateInit : {
     type : Date,

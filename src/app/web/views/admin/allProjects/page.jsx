@@ -1,12 +1,15 @@
 "use client"
 import React, { useEffect, useMemo, useState } from "react";
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@heroui/table";
-import { Pagination, Input, Button, useDisclosure, Chip } from "@nextui-org/react";
+import { Pagination, Input, Button, useDisclosure, Chip, Tooltip } from "@nextui-org/react";
 import { getPagination } from "./actions/pagination";
 import { Toaster, toast } from "sonner";
+import Link from 'next/link';
 import { SearchIcon } from "@/web/global_components/icons/SearchIcon";
 import { PlusIcon } from "@/web/global_components/icons/PlusIcon";
+import Eye from "@/web/global_components/icons/Eye";
 import ModalCreateCompany from "./components/ModalCrateCompany";
+import { encrypt } from "@/api/libs/crypto";
 
 const Page = () => {
   const [page, setPage] = useState(1);
@@ -147,13 +150,16 @@ const Page = () => {
                   </Chip>
                 </TableCell>
                 <TableCell>
-                  <Button
-                    color="warning"
-                    size="sm"
-                    variant="outlined"
+                  <Link 
+                    href={{ pathname: `/web/views/admin/Projects`, 
+                            query: { id: encrypt(item._id), name: item?.name } 
+                          }} 
+                    target="_blank"
                   >
-                    Editar
-                  </Button>
+                    <Tooltip content="Ver proyectos">
+                      <Eye />
+                    </Tooltip>
+                  </Link >
                 </TableCell>
               </TableRow>
             )}
