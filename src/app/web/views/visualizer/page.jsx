@@ -300,16 +300,16 @@ const App = () => {
                             </AccordionItem>
                         </Accordion> */}
 
-                        <p className="text-xs font-black italic">Información</p>
+                        <p className="text-xs font-black italic text-white">Información</p>
                         <h3 className='text-xs break-words text-white '>
                             {currentProject?.description ? currentProject.description : "Cargando..."}
                             <p> Lorem ipsum dolor sit, amet consectetur adipisicing elit. Deleniti, ipsam ab harum aliquid, minus ducimus tempore ullam, hic nostrum molestiae impedit provident delectus repellendus? Maiores illum iure in asperiores nobis.</p>
                         </h3>
                         <br />
-                        <h3 className='italic text-xs'>{currentProject?.creation_date ? formatDate(currentProject?.creation_date) : null} </h3>
+                        <h3 className='italic text-xs text-white'>{currentProject?.creation_date ? formatDate(currentProject?.creation_date) : null} </h3>
                         <h3 className='italic text-xs text-gray-500 border-b-1 border-l-red-950 pb-4'>Fecha de Subida: </h3>
 
-                        <p className="text-xs font-black pt-4 italic">Tools</p> 
+                        <p className="text-xs font-black pt-4 italic text-white">Tools</p> 
                          <div>
                             <div className=" md:gap-4 md:px-9 md:py-3 sm:gap-3 sm:p-3">
                                 <Slider
@@ -326,13 +326,13 @@ const App = () => {
                                 </Slider>
                             </div>
                             <div>
-                                <p className="text-xs font-black italic">Area Delimitada</p>
+                                <p className="text-xs font-black italic text-white">Area Delimitada</p>
                                 <h3 className='italic text-md text-gray-500  pb-4'>{areaCalculated.toFixed(2)} m²</h3>
-                                <p className="text-xs  font-black italic">Distancia (A - B)</p>
+                                <p className="text-xs  font-black italic text-white">Distancia (A - B)</p>
                                 <h3 className='italic text-md text-gray-500 border-b-1 border-l-red-950 pb-4'>{distanceCalculated.toFixed(2)} mts</h3>
                             </div>
 
-                            <p className="text-xs font-black italic pt-4">Historial</p>
+                            <p className="text-xs font-black italic pt-4 text-white">Historial</p>
                             <History />
                         </div>
                     </div>
