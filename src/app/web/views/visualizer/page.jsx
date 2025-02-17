@@ -183,8 +183,8 @@ const App = () => {
             const modelLocation = currentProject?.model?.folder;
             if (modelLocation) {
                 const loader = new GLTFLoader();
-                //Aqui va la URL dinamica de cada proyecto. De momento esta estatica para pruebas.
-                loader.load(`https://myview-bucketdemo.s3.us-east-1.amazonaws.com/Conception/scene.gltf`, (gltfLoaded) => {
+                //Aqui va la URL dinamica de cada proyecto. De momento esta estatica para pruebas. Parcela Concepcion: https://myview-bucketdemo.s3.us-east-1.amazonaws.com/Conception/scene.gltf
+                loader.load(`https://myview-bucketdemo.s3.us-east-1.amazonaws.com/Penol/scene.gltf`, (gltfLoaded) => {
                     setGltf(gltfLoaded);
                     setIsModelLoaded(true);
                 });
