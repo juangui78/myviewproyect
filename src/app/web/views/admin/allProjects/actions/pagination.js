@@ -22,6 +22,7 @@ export async function getPagination(page) {
         const limit = 10
     
         const companies = await Company.find().skip(skip).limit(limit).lean()
+        const countDocuments = await Company.countDocuments()
     
         const serializedCompanies = companies.map(company => ({
             ...company,
@@ -30,6 +31,7 @@ export async function getPagination(page) {
         
         return {
             data: serializedCompanies,
+            total: countDocuments,
             success: true
         }
     } catch (error) {

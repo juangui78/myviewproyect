@@ -9,48 +9,45 @@ const company_schema = new Schema({
     type: String,
     required: true
   },
-  plan: {
+  country: {
     type: String,
-    enum: ['static', 'basic', 'medium', 'pro', 'enterprise'],
-    default: 'static',
-    required: true
+    required: true,
+    default: "Colombia"
   },
-  numberRequest: {
-    type: Number,
-    min: 0,
-    required: true
-  },
-  numbersOfModels: { // number of model per project
-    type: Number,
-    min: 3,
-    required: true
-  },
-  updateFrequency: { // update frequency of the model, needs to be updated after we know the real values
+  department: {
     type: String,
-    enum: ['1 per month', 'weekly', 'monthly'],
     required: true
   },
-  modelQuality: {
+  city: {
     type: String,
-    enum: ['low', 'medium', 'high'],
     required: true
   },
-  area: { // these values are for the area in hectares
-    type: Number,
-    default: 0.5,
+  address: {
+    type: String,
     required: true
   },
-  monthsOfScan: {
-    type: [Number], // first value is the total months and the second is the month we are in
+  cell: {
+    type: String,
     required: true
   },
-  totalPrice: { // this is the total price of the plan
-    type: Number,
+  email: {
+    type: String,
     required: true
   },
-  pricePerMonth: { // this is the price per month
-    type: Number,
-    required: true
+  propertyType: {
+    type : String,
+    required: true,
+    enum: ['residenciales', 'comerciales', 'industriales', 'rústicas o rurales', 'de lujo', 'otros']
+  },
+  geographicScope: {
+    type: String,
+    required: true,
+    enum: ['local', 'regional', 'nacional', 'internacional']
+  },
+  marketApproach: {
+    type: String,
+    required: true,
+    enum: ['residencial', 'comercial','inversiones', 'gestion de patrimonio', 'otros']
   },
   active: {
     type: Boolean,
@@ -63,6 +60,15 @@ const company_schema = new Schema({
     required: true
   },
 });
+
+
+company_schema.pre('save', function (next) {
+  if (this.country) this.country = this.country.toLowerCase();
+  if (this.city) this.city = this.city.toLowerCase();
+  if (this.department) this.department = this.department.toLowerCase();
+  next();
+})
+
 
 const Company = mongoose.models.Company ?? mongoose.model('Company', company_schema);
 export default Company;
