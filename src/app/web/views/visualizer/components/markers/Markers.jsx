@@ -4,7 +4,7 @@ import { Html } from '@react-three/drei';
 function Marker({ position, label, onClick }) {
     return (
         <mesh position={position} onClick={onClick}>
-            <sphereGeometry args={[0.2, 32, 32]} />
+            <sphereGeometry args={[0.8, 32, 32]} />
             <meshStandardMaterial color="red" />
             {/* <Html position={[0, 0.5, 0]} style={{ pointerEvents: 'none' }}>
                 <div style={{

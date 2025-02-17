@@ -19,5 +19,31 @@ module.exports = {
     },
   },
   darkMode: "class",
-  plugins: [nextui()],
+  plugins: [nextui({
+    defaultTheme: "light",
+    themes: {
+      // light: {
+      //   colors: {
+      //     danger: "#FF1A1A", // Color de peligro para el tema claro
+      //     primary: "#FF4ECD", // Color primario
+      //     secondary: "#9750DD", // Color secundario
+      //     background: "#FFFFFF", // Fondo claro
+      //     foreground: "#000000", // Texto claro
+      //   },
+      // },
+      light: {
+        colors: {
+          danger: {
+            DEFAULT: "#e60000",
+            foreground: "#fff0f0",
+            background: "#000",
+          },
+          primary: {
+            DEFAULT: "#0CDBFF",
+            foreground: "#000",
+          }
+        },
+      },
+    },
+  })],
 };

@@ -23,7 +23,6 @@ export default function NavBar({children}) {
   const { data: session } = useSession();
   const idUser = session?.user._id;
   const rol = session?.user.rol;
-  console.log(session)
 
   return (
     <Navbar disableAnimation isBordered className={style.NavBar}>
@@ -42,19 +41,12 @@ export default function NavBar({children}) {
             <Image className="object-cover" src="/logos/completo-fullblanco.png" alt="logo" width={150} height={65} />
           </Link>
           
-         
-
-        {rol === "superadmin" ? (
+        {rol === "company" ? ( 
           <>
+          {/* company => this is my view */}     
             <NavbarItem>
-              <Link className="text-white"  href="/web/views/admin/feed">
-                Inicio
-              </Link>
-            </NavbarItem>
-
-            <NavbarItem>
-              <Link className="text-white" href="/web/views/admin/feed">
-                Nuevo proyecto
+              <Link className="text-white" href="/web/views/admin/allProjects">
+              Inmobiliarias
               </Link>
             </NavbarItem>
           </>
@@ -62,6 +54,7 @@ export default function NavBar({children}) {
 
         rol == "admin" ? (
           <>
+          {/* admin => user  */}
             <NavbarItem>
               <Link className="text-white" href="/web/views/user/feed">
                 Inicio
@@ -76,9 +69,6 @@ export default function NavBar({children}) {
           </>
         ) : null
         }
-
-          
-
       </NavbarContent>
 
       <NavbarContent justify="end">
@@ -129,19 +119,13 @@ export default function NavBar({children}) {
       {/* menu when its a small screen, often a mobile's screen */}
       <NavbarMenu>
                 
-        {rol === "superadmin" ? (
+        {rol === "company" ? (
           <>
-            <NavbarItem>
-              <Link className="text-white" href="/web/views/admin/feed">
-                Inicio
-              </Link>
-            </NavbarItem>
-
-            <NavbarItem>
+            {/* <NavbarItem>
               <Link className="text-white" href="/web/views/admin/feed">
                 Nuevo proyecto
               </Link>
-            </NavbarItem>
+            </NavbarItem> */}
           </>
         ) :
 

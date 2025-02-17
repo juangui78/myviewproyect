@@ -370,3 +370,13 @@
     height: 0.4srem;
   }
 }
+
+.errorInputColor {
+  & div > div{
+      border-color: rgb(253 99 88);
+
+      & label{
+          color: rgb(253 99 88) !important;
+      }
+  }
+}
