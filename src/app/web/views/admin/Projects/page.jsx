@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { getAllProjects } from "./actions/getAllProjects";
 import { Toaster, toast } from "sonner";
@@ -7,7 +7,7 @@ import { Button } from "@nextui-org/react";
 import { useDisclosure } from "@nextui-org/react";
 import ModalAddModel from "./components/ModalAddModel";
 
-const Page = () => {
+const ContentPage = () => {
     const searchParams = useSearchParams();
     const id = searchParams.get("id");
     const nameProject = searchParams.get("name");
@@ -70,6 +70,14 @@ const Page = () => {
             {isOpen && <ModalAddModel isOpen={isOpen} onOpenChange={onOpenChange} idProject={idProject}/>}
         </>
     );
+}
+
+const Page = () => {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <ContentPage />
+        </Suspense>
+    )
 }
 
 export default Page;
