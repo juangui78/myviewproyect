@@ -39,13 +39,13 @@ export default function Terrains({ terrains, onSelectTerrain }) {
     }));
 
     return (
-        <Table aria-label="Tabla de terrenos" className="py-4">
+        <Table aria-label="Tabla de terrenos" className="py-4 dark" selectionMode="single" isCompact >
             <TableHeader columns={columns}>
                 {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
             </TableHeader>
-            <TableBody items={rows} className="text-xs">
+            <TableBody items={rows} className="text-xs text-white" emptyContent={"Selecciona Terrenos."}>
                 {(item) => (
-                    <TableRow key={item.key} onClick={() => onSelectTerrain(terrains.find(t => t.id.toString() === item.key))}>
+                    <TableRow key={item.key} onClick={() => onSelectTerrain(terrains.find(t => t.id.toString() === item.key))} className="text-xs text-white">
                         {(columnKey) => <TableCell>{getKeyValue(item, columnKey)}</TableCell>}
                     </TableRow>
                 )}

@@ -27,17 +27,19 @@ import {  Table,  TableHeader,  TableBody,  TableColumn,  TableRow,  TableCell, 
   
   export default function App() {
     return (
-      <Table aria-label="Example table with dynamic content" className="py-4">
+      
+      <Table aria-label="Example table with dynamic content" className="py-4 dark" isCompact>
         <TableHeader columns={columns}>
           {(column) => <TableColumn key={column.key}>{column.label}</TableColumn>}
         </TableHeader>
-        <TableBody items={rows} className="text-xs">
+        <TableBody items={rows} className="text-xs text-white">
           {(item) => (
-            <TableRow key={item.key}>
+            <TableRow key={item.key} className="text-xs text-white">
               {(columnKey) => <TableCell>{getKeyValue(item, columnKey)}</TableCell>}
             </TableRow>
           )}
         </TableBody>
       </Table>
+      
     );
   }
