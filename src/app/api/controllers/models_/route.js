@@ -5,7 +5,6 @@ import { decrypt } from "@/api/libs/crypto";
 import unzipper from "unzipper";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
-import { uploadToS3, getS3File, deleteTempFile } from "@/api/libs/s3";
 
 dbConnected();
 
