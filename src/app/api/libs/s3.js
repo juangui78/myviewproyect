@@ -1,52 +1,37 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-const s3 = new S3Client({
-  region: "sa-east-1"
-  
-});
+const S3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+})
+
+export const putObject = async (idProject, idModel, fileType) => {
+
+  try {
+
+      //structure  idPRojec/idModel/ => model/scene.gltf
+                                            //scene.bin
+                                            //textures
+                                  //=> files/ writes.pdf
+                                          // etc 
+
+      const key = `${idProject}/${idModel}/model`;
+
+      const command = new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKET_NAME,
+        key: key,
+        ContentType: fileType
+      })
+
+      const response = await S3Client.send(command);
+      return response;
 
 
-export const uploadToS3 = async (bucket, key, fileContent, contentType) => {
-    const command = new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      Body: fileContent,
-      ContentType: contentType,
-    });
-  
-    try {
-      await s3.send(command); // Usamos send() para ejecutar el comando
-    } catch (error) {
-      console.error("Error uploading to S3:", error);
-      throw error;
-    }
-  };
+  } catch (error) {
+    console.log(error)
+  }
 
-  export const getS3File = async (bucket, key) => {
-    const command = new GetObjectCommand({
-      Bucket: bucket,
-      Key: key,
-    });
-  
-    try {
-      const { Body } = await s3.send(command); // 'Body' contiene el archivo
-      return { Body }; // Retornamos solo el 'Body' del archivo
-    } catch (error) {
-      console.error("Error fetching file from S3:", error);
-      throw error;
-    }
-  };
-
-  export const deleteTempFile = async (bucket, key) => {
-    const command = new DeleteObjectCommand({
-      Bucket: bucket,
-      Key: key,
-    });
-  
-    try {
-      await s3.send(command); // Ejecutamos el comando para eliminar el archivo
-    } catch (error) {
-      console.error("Error deleting file from S3:", error);
-      throw error;
-    }
-  };
+}
