@@ -26,6 +26,7 @@ import Toolbar from "./components/toolbar/Toolbar";
 import Terrains from "./components/tables/terrains/Terrains.jsx"
 import History from "./components/tables/history/History.jsx"
 import CameraController from './components/cameras/CameraController';
+import InformationCard from './components/information/InformationCard.jsx';
 import { decrypt } from '@/api/libs/crypto';
 
 function LoadingScreen({ progress }) {
@@ -272,7 +273,18 @@ const App = () => {
                             onReset={handleResetMarkers}
                             lightMode={light}
                         />
+
+                        
+                        
                     </div>
+
+                    <div className="pointer-events-auto relative dark" style={{ right: '0.2rem', top: '0.2rem' }}>
+                        <InformationCard/>   
+                    </div>
+                    
+                        
+                    
+                    
                     {progress < 100 && <LoadingScreen progress={progress} />}
                 </div>
 
@@ -338,6 +350,7 @@ const App = () => {
 
                             <p className="text-base font-semibold italic pt-4 text-white tracking-wide">Historial</p>
                             <History />
+                            
                         </div>
                     </div>
                 </div>
