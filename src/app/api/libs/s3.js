@@ -1,6 +1,6 @@
 import { S3Client, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-const S3Client = new S3Client({
+const S3Client_ = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -26,7 +26,7 @@ export const putObject = async (idProject, idModel, fileType) => {
         ContentType: fileType
       })
 
-      const response = await S3Client.send(command);
+      const response = await S3Client_.send(command);
       return response;
 
 
