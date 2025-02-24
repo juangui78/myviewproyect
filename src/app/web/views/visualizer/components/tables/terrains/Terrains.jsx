@@ -38,6 +38,8 @@ export default function Terrains({ terrains, onSelectTerrain }) {
         area: calculateArea(terrain.markers).toFixed(2), // Calcular el área y formatear a 2 decimales
     }));
 
+    
+    
     return (
         <Table aria-label="Tabla de terrenos" className="py-4 dark" selectionMode="single" isCompact >
             <TableHeader columns={columns}>

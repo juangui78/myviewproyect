@@ -1,5 +1,5 @@
 'use client'
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useRef } from 'react';
 import { Canvas, useThree } from "@react-three/fiber";
 import { useLoader } from "@react-three/fiber";
 import { Button } from "@nextui-org/react";
@@ -84,6 +84,7 @@ const App = () => {
     const [currentTerrainMarkers, setCurrentTerrainMarkers] = useState([]);
     const [allTerrains, setAllTerrains] = useState([]);
     const [selectedTerrain, setSelectedTerrain] = useState(null);
+   
 
     const handleAddTerrain = () => {
         if (currentTerrainMarkers.length > 2) {
@@ -157,6 +158,10 @@ const App = () => {
             const response = await axios.get(`/api/controllers/visualizer/${idProyect}`)
             if (response.data != undefined) {
                 setCurrentProject(response.data)
+                if (response.data.terrains) {
+                    setTerrains(response.data.terrains);
+                    setAllTerrains(response.data.terrains);
+                }
             }
         } catch (error) {
             console.log(error);
@@ -195,6 +200,18 @@ const App = () => {
 
     console.log('terrenos guardados: ', terrains);
 
+    const saveTerrainsToDB = async () => {
+        try {
+            const response = await axios.post(`/api/controllers/visualizer/${idProyect}`, {
+                terrains: allTerrains
+            });
+            console.log('Terrenos guardados:', response.data);
+        } catch (error) {
+            console.error('Error al guardar los terrenos:', error);
+        }
+    };
+
+    console.log('allTerrains:', allTerrains);
 
     return (
         <div className=" flex flex-col justify-center items-center h-[100vh] overflow-hidden relative">
@@ -223,7 +240,7 @@ const App = () => {
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
                             ))} */}
-                            {currentTerrainMarkers.map(marker => (
+                            {isModelLoaded && currentTerrainMarkers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
@@ -231,7 +248,7 @@ const App = () => {
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
                             ))}
-                            {terrains.map((terrain) => (
+                            {isModelLoaded && terrains.map((terrain) => (
                                 <React.Fragment key={terrain.id}>
                                     {terrain.markers.map(marker => (
                                         <Marker
@@ -255,8 +272,8 @@ const App = () => {
 
                             {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
                             <CameraPositioner />
-                            <CameraController terrain={selectedTerrain} />
-                            <OrbitControls minDistance={0} target={[0, 0, 0]} />
+                            <CameraController terrain={selectedTerrain}  />
+                            <OrbitControls minDistance={0} />
                             <Environment preset={light} background blur backgroundBlurriness />
                             {/* <Stage preset="rembrandt" shadows></Stage> */}
                             
@@ -303,6 +320,9 @@ const App = () => {
                                 Añadir Terreno
                             </Button>
                         )}
+                        <Button onClick={saveTerrainsToDB} color="primary">
+                            Subir Terrains (solo usar para subir markers)
+                        </Button>
                         <Terrains terrains={terrains} onSelectTerrain={setSelectedTerrain} />
 
                         {/* <Accordion variant="bordered" className="text-white">
