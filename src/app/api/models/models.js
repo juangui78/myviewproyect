@@ -52,33 +52,10 @@ const models_schema = new Schema({
     ref: 'Proyect',
     required : true
   },
-  terrains : [{
-    type: {
-      type: String,
-      required: [true, "Terrain type is required"],
-      trim: true,
-      enum: ['forest', 'mountain', 'urban', 'desert'] // ejemplo de tipos permitidos
-    },
-    markers: [{
-      coordinates: {
-        type: [Number],
-        required: [true, "Coordinates are required"],
-        validate: {
-          validator: v => v.length === 2,
-          message: props => `Coordinates must be [longitude, latitude], got ${props.value}`
-        }
-      },
-      description: {
-        type: String,
-        trim: true,
-        max: [100, "Max length exceeded"]
-      },
-      timestamp: {
-        type: Date,
-        default: Date.now
-      }
-    }],
-  }],
+  terrains : {
+    type : Array,
+    required : false
+  },
   creation_date: {
      type: Date, 
      default: Date.now 

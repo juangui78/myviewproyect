@@ -24,7 +24,7 @@ function FeedContent() {
   const search = searchParams?.get('search');
 
   useEffect(() => {
-    document.title = "Myview_ | Feed";
+    document.title = "MyView_ | Feed";
   }, []);
 
   useEffect(() => {

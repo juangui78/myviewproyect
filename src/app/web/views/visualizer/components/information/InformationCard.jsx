@@ -79,8 +79,8 @@ export default function App() {
             src: "https://i.pravatar.cc/150?u=a04258114e29026702d",
           }}
           className="transition-transform"
-          description="Product Designer"
-          name="Zoe Lang"
+          description="Campestre"
+          name="Mirador"
         />
       </PopoverTrigger>
       <PopoverContent className="p-1">

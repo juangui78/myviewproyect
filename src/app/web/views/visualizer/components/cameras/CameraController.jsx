@@ -1,68 +1,72 @@
 import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
+import gsap from "gsap";
 
-const CameraController = ({ terrain }) => {
+const CameraController = ({ terrain  }) => {
     const { camera, invalidate } = useThree();
 
     useEffect(() => {
-        if (terrain && terrain.markers.length > 0) {
-            // Calcula el centro del terreno
-            const terrainCenter = terrain.markers.reduce(
-                (center, marker) => {
-                    return [
-                        center[0] + marker.position[0] / terrain.markers.length,
-                        center[1] + marker.position[1] / terrain.markers.length,
-                        center[2] + marker.position[2] / terrain.markers.length,
-                    ];
-                },
-                [0, 0, 0]
-            );
+        if (!terrain?.markers?.length) return;
 
-            // Calcula los límites del terreno para determinar su tamaño
-            const terrainBounds = terrain.markers.reduce(
-                (bounds, marker) => {
-                    return [
-                        Math.min(bounds[0], marker.position[0]), // X mínimo
-                        Math.max(bounds[1], marker.position[0]), // X máximo
-                        Math.min(bounds[2], marker.position[2]), // Z mínimo
-                        Math.max(bounds[3], marker.position[2]), // Z máximo
-                    ];
-                },
-                [Infinity, -Infinity, Infinity, -Infinity]
-            );
-            const terrainWidth = terrainBounds[1] - terrainBounds[0]; // Ancho del terreno
-            const terrainDepth = terrainBounds[3] - terrainBounds[2]; // Profundidad del terreno
+        // 1. Cancelar animaciones previas de la cámara
+        gsap.killTweensOf(camera.position);
+        
+        // 2. Calcular el centro geométrico del terreno
+        const terrainBounds = terrain.markers.reduce(
+            (bounds, marker) => [
+                Math.min(bounds[0], marker.position[0]),
+                Math.max(bounds[1], marker.position[0]),
+                Math.min(bounds[2], marker.position[1]),
+                Math.max(bounds[3], marker.position[1]),
+                Math.min(bounds[4], marker.position[2]),
+                Math.max(bounds[5], marker.position[2]),
+            ],
+            [Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity]
+        );
 
-            // Calcula una distancia adecuada para la cámara basada en el tamaño del terreno
-            const distanceFactor = 1.5; // Factor para ajustar la distancia
-            const minDistance = Math.max(terrainWidth, terrainDepth) * 0.5; // Distancia mínima
-            const cameraDistance = Math.max(terrainWidth, terrainDepth) * distanceFactor;
+        const terrainCenter = [
+            (terrainBounds[0] + terrainBounds[1]) / 2,
+            (terrainBounds[2] + terrainBounds[3]) / 2,
+            (terrainBounds[4] + terrainBounds[5]) / 2,
+        ];
 
-            // Establece la posición de la cámara
-            const cameraPosition = [
-                terrainCenter[0], // X: Centrado en el terreno
-                terrainCenter[1] + cameraDistance, // Y: Coloca la cámara arriba del terreno
-                terrainCenter[2] + cameraDistance, // Z: Aleja la cámara hacia atrás
-            ];
 
-            // Aplica la nueva posición de la cámara
-            camera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
+        // 3. Calcular posición de la cámara con orientación forzada
+        const maxDimension = Math.max(
+            terrainBounds[1] - terrainBounds[0],
+            terrainBounds[3] - terrainBounds[2],
+            terrainBounds[5] - terrainBounds[4]
+        );
+        
+        const cameraDistance = maxDimension * 2;
+        const cameraPosition = [
+            terrainCenter[0] + cameraDistance,
+            terrainCenter[1] + cameraDistance,
+            terrainCenter[2] + cameraDistance,
+        ];
 
-            // Forza la actualización de la matriz de transformación de la cámara
-            camera.updateMatrixWorld();
+        // 4. Configurar rotación inicial antes de animar
+        camera.lookAt(...terrainCenter);
+        camera.updateProjectionMatrix();
 
-            // Asegúrate de que la cámara apunte al centro del terreno
-            camera.lookAt(terrainCenter[0], terrainCenter[1], terrainCenter[2]);
+        // 5. Animación con actualización continua de la rotación
+        gsap.to(camera.position, {
+            x: cameraPosition[0],
+            y: cameraPosition[1],
+            z: cameraPosition[2],
+            duration: 2,
+            ease: "power2.inOut",
+            onUpdate: () => {
+                camera.lookAt(...terrainCenter); // Fuerza la dirección de la cámara
+                camera.updateMatrixWorld(); // Actualiza la matriz de transformación
+                invalidate();
+            },
+            onStart: () => {
+                camera.rotation.order = "YXZ"; // Mejor control de rotación
+            }
+        });
 
-            // Solicita una nueva renderización de la escena
-            invalidate();
-
-            console.log(terrainCenter, cameraPosition);
-        }
     }, [terrain, camera, invalidate]);
-
-    
-    
 
     return null;
 };
