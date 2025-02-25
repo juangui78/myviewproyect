@@ -179,15 +179,26 @@ const App = () => {
     }, [])
 
     useEffect(() => {
+        //NOTA: PARRA,
+        //ACUERDESE DE TRAER AQUI EL MODELO MAS ACTUAL
+        //ESE ES EL QUE SE CARGA SIEMPRE PRIMERO
+        //=============================================
+        //============================================
+        //========================================
+
+        //============================
+
         if (currentProject && !isModelLoaded) {
-            const modelLocation = currentProject?.model?.folder;
-            if (modelLocation) {
+            const modelLocation = currentProject?.model;
+            if (modelLocation !== "") {
                 const loader = new GLTFLoader();
                 //Aqui va la URL dinamica de cada proyecto. De momento esta estatica para pruebas. Parcela Concepcion: https://myview-bucketdemo.s3.us-east-1.amazonaws.com/Conception/scene.gltf
-                loader.load(`https://d7qkkiy9wjm6s.cloudfront.net/Penol/scene.gltf`, (gltfLoaded) => {
+                loader.load(modelLocation.url, (gltfLoaded) => {
                     setGltf(gltfLoaded);
                     setIsModelLoaded(true);
                 });
+            }else{
+                alert("no existe modelo")
             }
         }
     }, [currentProject, isModelLoaded]);

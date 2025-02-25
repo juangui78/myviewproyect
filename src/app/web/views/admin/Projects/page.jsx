@@ -6,6 +6,8 @@ import { Toaster, toast } from "sonner";
 import { Button } from "@nextui-org/react";
 import { useDisclosure } from "@nextui-org/react";
 import ModalAddModel from "./components/ModalAddModel";
+import ModalNewProject from "./components/ModalNewProject";
+import { PlusIcon } from "@/web/global_components/icons/PlusIcon";
 
 const ContentPage = () => {
     const searchParams = useSearchParams();
@@ -15,6 +17,7 @@ const ContentPage = () => {
     const [data, setData] = useState([]);
     const [idProject, setIdProject] = useState(null);
     const { isOpen, onOpenChange} = useDisclosure()
+    const { isOpen: isOpenNewProject, onOpenChange: onOpenChangeNewProject} = useDisclosure()
 
     useEffect(() => {
         document.title = "MyView_ | Proyectos";
@@ -47,8 +50,9 @@ const ContentPage = () => {
         <>
             <section className="w-full mt-[20px]">
                 <section className="w-[70%] m-auto">
-                    <div className="w-full">
-                        <h2 className="text-3xl font-bold mt-5 text-white text-left border-b-1">{nameProject}</h2>
+                    <div className="flex w-full items-center justify-between ...">
+                        <h2 className="text-3xl font-bold mt-5 text-white text-left ">{nameProject}</h2>
+                        <Button startContent={<PlusIcon/>} onClick={() => onOpenChangeNewProject()}>Crear nuevo proyecto</Button>
                     </div>
                     <div className="w-full">
                         {data.map((item) => (
@@ -58,7 +62,7 @@ const ContentPage = () => {
                                     <p className="text-white italic text-sm">{item.description}</p>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <Button color="primary" size="sm" className="mt-3">Historial de modelos</Button>
+                                    <Button  size="sm" className="mt-3">Historial de modelos</Button>
                                     <Button color="default" size="sm" className="mt-3" onClick={(e) => handleAddModel(item._id)}>Añadir modelo</Button>
                                 </div>
                             </div>
@@ -68,6 +72,7 @@ const ContentPage = () => {
             </section>
             <Toaster richColors position="top-right"  />
             {isOpen && <ModalAddModel isOpen={isOpen} onOpenChange={onOpenChange} idProject={idProject}/>}
+            {isOpenNewProject && <ModalNewProject isOpenNewProject={isOpenNewProject} onOpenChangeNewProject={onOpenChangeNewProject}/>}
         </>
     );
 }

@@ -15,10 +15,6 @@ const proyectSchema = new Schema({
     min : [1, 'min length exceded'],
     required: true
   },
-  hectares : {
-    type: Number,
-    required: true
-  },
   department : {
     type: String,
     max : [60, 'max length exceded'],
@@ -33,6 +29,11 @@ const proyectSchema = new Schema({
     type: String,
     max : [300, 'max length exceded'],
     required : true
+  },
+  plan: {
+    type: Schema.Types.ObjectId,
+    ref: 'Plan',
+    required: true  
   },
   //temporal info
   dateInit : {

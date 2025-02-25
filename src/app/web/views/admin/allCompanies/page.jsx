@@ -19,7 +19,7 @@ const Page = () => {
   const { isOpen: isOpenCompany, onOpenChange: onOpenChangeCompany } = useDisclosure()
 
   useEffect(() => {
-    document.title = "MyView_ | Proyectos"
+    document.title = "MyView_ | Inmobiliarias"
 
     const fechtInitialData = async () => {
       const response = await getPagination(page)
