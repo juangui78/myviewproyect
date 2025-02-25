@@ -11,7 +11,7 @@ const models_schema = new Schema({
     max: [50, "max length exceded"],
     min: [5, "min length required"],
     trim: true,
-    
+
   },
   description: {
     type: String,
@@ -19,49 +19,29 @@ const models_schema = new Schema({
     max: [200, "max length exceded"],
     min: [5, "min length required"],
     trim: true,
-    
+
   },
-  thumbnail : {
-    type : String,
-    trim : true,
-    required : false
-  },
-  model : {
-    name : {
+  model: {
+    url: {
       type: String,
-      trim : true,
-      required : true
-    },
-    folder : {
-      type : String,
-      trim : true,
-      required : true
-    },
-    extension : {
-      type : String,
-      trim : true,
-      required : true
-    },
-    size : {
-      type :Number,
-      required : true
+      required: true
     }
   },
-  idProyect : {
-    type : Schema.Types.ObjectId,
+  idProyect: {
+    type: Schema.Types.ObjectId,
     ref: 'Proyect',
-    required : true
+    required: true
   },
   terrains : {
     type : Array,
     required : false
   },
   creation_date: {
-     type: Date, 
-     default: Date.now 
-    },
+    type: Date,
+    default: Date.now
+  },
 
 });
 
-const Model = mongoose.model.Model ??  mongoose.model('Model', models_schema);
+const Model = mongoose.model.Model ?? mongoose.model('Model', models_schema);
 export default Model;

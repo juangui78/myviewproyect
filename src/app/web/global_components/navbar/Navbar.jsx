@@ -45,7 +45,7 @@ export default function NavBar({children}) {
           <>
           {/* company => this is my view */}     
             <NavbarItem>
-              <Link className="text-white" href="/web/views/admin/allProjects">
+              <Link className="text-white" href="/web/views/admin/allCompanies">
               Inmobiliarias
               </Link>
             </NavbarItem>
