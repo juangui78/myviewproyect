@@ -25,3 +25,27 @@ export async function GET(request, {params}) {
         return NextResponse.json({message: 'Invalid Id'}, { status: 500 })
     }
 }
+
+export async function POST(request, { params }) {
+    const { id } = params;
+    try {
+        const { terrains } = await request.json();
+        console.log('Terrains received:', terrains);
+
+        // Encuentra el proyecto y actualiza los terrenos
+        const project = await Model.findOne({ idProyect: id });
+        if (!project) {
+            console.log('Project not found');
+            return NextResponse.json({ message: 'Project not found' }, { status: 404 });
+        }
+
+        project.terrains = terrains;
+        await project.save();
+
+        console.log('Terrains saved successfully');
+        return NextResponse.json({ message: 'Terrains saved successfully', project });
+    } catch (error) {
+        console.error('Error en POST:', error);
+        return NextResponse.json({ message: 'Error saving terrains', error }, { status: 500 });
+    }
+}

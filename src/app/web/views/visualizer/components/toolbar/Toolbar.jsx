@@ -7,6 +7,7 @@ import MoonIcon  from '@/web/global_components/icons/MoonIcon.jsx';
 import SunIcon from '@/web/global_components/icons/SunIcon.jsx';
 import MapMarkerDistance from '@/web/global_components/icons/MapMarkerDistance';
 import DeleteIcon from '@/web/global_components/icons/DeleteIcon';
+import InformationCard from '../information/InformationCard.jsx';
 
 const Toolbar = ({ 
   onToggleLight,
@@ -24,12 +25,13 @@ const Toolbar = ({
   };
 
   return (
+    
     <div className={styles.toolbarContainer}>
 
         
         <Tooltip content="Cambiar Iluminación" placement='bottom'>
             <Button isIconOnly variant="flat" aria-label="Iluminación" onClick={onToggleLight}>
-                {lightMode === 'lobby' ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
+                {lightMode === 'sunset' ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
             </Button>
         </Tooltip>
 
@@ -58,7 +60,10 @@ const Toolbar = ({
         <RulerIcon className="w-4 h-4" />
       </Button>
       
+      
     </div>
+
+    
   );
 };
 

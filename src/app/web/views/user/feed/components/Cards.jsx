@@ -67,6 +67,7 @@ export default function Cards({ search, changeStatus }) {
     setId(id);
   }
 
+
   return (
     <>
       <div className="grid  2xl:grid-cols-4 gap-[60px] w-[70%] m-auto mt-[40px]  lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
@@ -89,16 +90,18 @@ export default function Cards({ search, changeStatus }) {
                       />
                       <CardFooter className="absolute bg-white/30 bottom-0 border-t-1 border-zinc-100/50 z-10 justify-between rounded-sm ...">
                         <Tooltip content="Visualizar el modelo 3D" showArrow={true}>
-                          <Button
-                            className="text-tiny bg-[#030D1C]"
-                            color="default"
-                            radius="full"
-                            size="sm"
-                          >
-                            <Link href={{ pathname: `/web/views/visualizer`, query: { id: encrypt(item._id) } }} >
-                              <Eye className="text-white cursor-pointer" aria-label="Viualizar el modelo 3d" />
-                            </Link >
-                          </Button>
+                          <Link href={{ pathname: `/web/views/visualizer`, query: { id: encrypt(item._id) } }} className=" mt-[1px]" >
+                            <Button
+                              className="text-tiny bg-[#030D1C]"
+                              color="default"
+                              radius="full"
+                              size="sm"
+                            >
+                              
+                                <Eye className="text-white cursor-pointer" aria-label="Viualizar el modelo 3d" />
+                              
+                            </Button>
+                          </Link >
                         </Tooltip>
                         <Tooltip content="Información del proyecto" showArrow={true}>
                           <Button

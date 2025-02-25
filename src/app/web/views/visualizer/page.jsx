@@ -1,9 +1,9 @@
 'use client'
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useRef } from 'react';
 import { Canvas, useThree } from "@react-three/fiber";
 import { useLoader } from "@react-three/fiber";
 import { Button } from "@nextui-org/react";
-import { Environment, OrbitControls, useProgress, Html } from "@react-three/drei";
+import { Environment, Stage, OrbitControls, useProgress, Html } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { Suspense, useEffect } from "react";
 import { Card, CardHeader, CardBody, CardFooter, Accordion, AccordionItem } from "@nextui-org/react";
@@ -26,6 +26,7 @@ import Toolbar from "./components/toolbar/Toolbar";
 import Terrains from "./components/tables/terrains/Terrains.jsx"
 import History from "./components/tables/history/History.jsx"
 import CameraController from './components/cameras/CameraController';
+import InformationCard from './components/information/InformationCard.jsx';
 import { decrypt } from '@/api/libs/crypto';
 
 function LoadingScreen({ progress }) {
@@ -65,8 +66,8 @@ const CameraPositioner = () => {
 
 const App = () => {
 
-    const [light, setLight] = useState('lobby')
-    const [quality, setQuality] = useState(0.8)
+    const [light, setLight] = useState('sunset')
+    const [quality, setQuality] = useState(1)
     const searchParams = useSearchParams();
     const idProyect = decrypt(searchParams.get("id"));
     const [currentProject, setCurrentProject] = useState(null);
@@ -83,6 +84,7 @@ const App = () => {
     const [currentTerrainMarkers, setCurrentTerrainMarkers] = useState([]);
     const [allTerrains, setAllTerrains] = useState([]);
     const [selectedTerrain, setSelectedTerrain] = useState(null);
+   
 
     const handleAddTerrain = () => {
         if (currentTerrainMarkers.length > 2) {
@@ -143,7 +145,7 @@ const App = () => {
     }
 
     const changeLight = () => {
-        setLight(prevLight => prevLight === 'lobby' ? 'sunset' : 'lobby')
+        setLight(prevLight => prevLight === 'sunset' ? 'lobby' : 'sunset')
     }
 
     // Función para recibir el área calculada desde AreaVisual
@@ -156,6 +158,10 @@ const App = () => {
             const response = await axios.get(`/api/controllers/visualizer/${idProyect}`)
             if (response.data != undefined) {
                 setCurrentProject(response.data)
+                if (response.data.terrains) {
+                    setTerrains(response.data.terrains);
+                    setAllTerrains(response.data.terrains);
+                }
             }
         } catch (error) {
             console.log(error);
@@ -205,6 +211,18 @@ const App = () => {
 
     console.log('terrenos guardados: ', terrains);
 
+    const saveTerrainsToDB = async () => {
+        try {
+            const response = await axios.post(`/api/controllers/visualizer/${idProyect}`, {
+                terrains: allTerrains
+            });
+            console.log('Terrenos guardados:', response.data);
+        } catch (error) {
+            console.error('Error al guardar los terrenos:', error);
+        }
+    };
+
+    console.log('allTerrains:', allTerrains);
 
     return (
         <div className=" flex flex-col justify-center items-center h-[100vh] overflow-hidden relative">
@@ -233,7 +251,7 @@ const App = () => {
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
                             ))} */}
-                            {currentTerrainMarkers.map(marker => (
+                            {isModelLoaded && currentTerrainMarkers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
@@ -241,7 +259,7 @@ const App = () => {
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
                             ))}
-                            {terrains.map((terrain) => (
+                            {isModelLoaded && terrains.map((terrain) => (
                                 <React.Fragment key={terrain.id}>
                                     {terrain.markers.map(marker => (
                                         <Marker
@@ -265,9 +283,11 @@ const App = () => {
 
                             {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
                             <CameraPositioner />
-                            <CameraController terrain={selectedTerrain} />
-                            <OrbitControls minDistance={0} target={[0, 0, 0]} />
+                            <CameraController terrain={selectedTerrain}  />
+                            <OrbitControls minDistance={0} />
                             <Environment preset={light} background blur backgroundBlurriness />
+                            {/* <Stage preset="rembrandt" shadows></Stage> */}
+                            
                         </Suspense>
                     </Canvas>
 
@@ -281,7 +301,18 @@ const App = () => {
                             onReset={handleResetMarkers}
                             lightMode={light}
                         />
+
+                        
+                        
                     </div>
+
+                    <div className="pointer-events-auto relative dark" style={{ right: '0.2rem', top: '0.2rem' }}>
+                        <InformationCard/>   
+                    </div>
+                    
+                        
+                    
+                    
                     {progress < 100 && <LoadingScreen progress={progress} />}
                 </div>
 
@@ -290,14 +321,19 @@ const App = () => {
                 {/* here is the information from a model */}
                 {/* ====================================== */}
 
-                <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] h-full overflow-auto bg-[url(/images/op11.webp)] ... bg-no-repeat bg-cover bg-center">
-                    <div className="py-4 w-[100%]">
-                        <p className="text-base text-white italic font-lg">Terrenos</p>
+                <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
+
+                
+                    <div className="py-4 w-[100%] px-4" >
+                        <p className="text-base text-white italic font-lg font-semibold tracking-wide">Terrenos</p>
                         {currentTerrainMarkers.length > 2 && (
                             <Button onClick={handleAddTerrain} color="primary">
                                 Añadir Terreno
                             </Button>
                         )}
+                        <Button onClick={saveTerrainsToDB} color="primary">
+                            Subir Terrains (solo usar para subir markers)
+                        </Button>
                         <Terrains terrains={terrains} onSelectTerrain={setSelectedTerrain} />
 
                         {/* <Accordion variant="bordered" className="text-white">
@@ -311,7 +347,7 @@ const App = () => {
                             </AccordionItem>
                         </Accordion> */}
 
-                        <p className="text-xs font-black italic text-white">Información</p>
+                        <p className="text-base italic text-white font-semibold tracking-wide">Información</p>
                         <h3 className='text-xs break-words text-white '>
                             {currentProject?.description ? currentProject.description : "Cargando..."}
                             <p> Lorem ipsum dolor sit, amet consectetur adipisicing elit. Deleniti, ipsam ab harum aliquid, minus ducimus tempore ullam, hic nostrum molestiae impedit provident delectus repellendus? Maiores illum iure in asperiores nobis.</p>
@@ -320,16 +356,16 @@ const App = () => {
                         <h3 className='italic text-xs text-white'>{currentProject?.creation_date ? formatDate(currentProject?.creation_date) : null} </h3>
                         <h3 className='italic text-xs text-gray-500 border-b-1 border-l-red-950 pb-4'>Fecha de Subida: </h3>
 
-                        <p className="text-xs font-black pt-4 italic text-white">Tools</p> 
+                        <p className="text-xs pt-4 italic text-white font-semibold tracking-wide">Tools</p> 
                          <div>
-                            <div className=" md:gap-4 md:px-9 md:py-3 sm:gap-3 sm:p-3">
+                            <div className=" md:gap-4 md:px-9 md:py-3 sm:gap-3 sm:p-3 text-white">
                                 <Slider
                                     size="md"
                                     showSteps
                                     maxValue={1}
                                     minValue={0}
                                     step={0.2}
-                                    color="warning"
+                                    color="primary"
                                     label="Calidad"
                                     value={quality}
                                     onChange={(value) => setQuality(value)}
@@ -338,13 +374,14 @@ const App = () => {
                             </div>
                             <div>
                                 <p className="text-xs font-black italic text-white">Area Delimitada</p>
-                                <h3 className='italic text-md text-gray-500  pb-4'>{areaCalculated.toFixed(2)} m²</h3>
+                                <h3 className='italic text-md text-gray-400  pb-4'>{areaCalculated.toFixed(2)} m²</h3>
                                 <p className="text-xs  font-black italic text-white">Distancia (A - B)</p>
-                                <h3 className='italic text-md text-gray-500 border-b-1 border-l-red-950 pb-4'>{distanceCalculated.toFixed(2)} mts</h3>
+                                <h3 className='italic text-md text-gray-400 border-b-1 border-l-red-950 pb-4'>{distanceCalculated.toFixed(2)} mts</h3>
                             </div>
 
-                            <p className="text-xs font-black italic pt-4 text-white">Historial</p>
+                            <p className="text-base font-semibold italic pt-4 text-white tracking-wide">Historial</p>
                             <History />
+                            
                         </div>
                     </div>
                 </div>
