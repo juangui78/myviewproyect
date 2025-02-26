@@ -6,8 +6,8 @@ export function Providers({children, session}) {
   return (
     <NextUIProvider>
         <SessionProvider session={session}>
-            {children}
-        </SessionProvider>
+              {children}
+          </SessionProvider> 
     </NextUIProvider>
   )
 }

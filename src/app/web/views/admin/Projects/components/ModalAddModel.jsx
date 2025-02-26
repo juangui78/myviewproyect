@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@nextui-org/react";
 import Dropzone from "react-dropzone";
 import { addNewModel } from "../actions/addNewModel";
+import { toast } from "sonner";
 
 const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
 
@@ -58,7 +59,7 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
  
 
         if (bin.length === 0 || gltf.length === 0 || textures.length === 0) {
-            alert("Debe seleccionar todos los archivos")
+            toast.warning("Debe seleccionar todos los archivos")
             return
         }
 
@@ -84,7 +85,7 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
             setSending(true)
             const response = await addNewModel(formData)
             console.log(response)
-            alert("Modelo agregado")
+            toast.success("Modelo agregado")
             setSending(false)
         } catch (error) {
             console.log(error)
@@ -94,6 +95,7 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
     }
 
     return (
+         
         <Modal
             backdrop={"blur"}
             placement="center"
@@ -103,9 +105,11 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
             onClose={onOpenChange}
             className="bg-[#000000ab]"
         >
+            
             <ModalContent>
                 {(onClose) => (
                     <>
+                        
                         <ModalHeader>
                             <h2 className="text-3xl font-bold text-white">Agregar modelo</h2>
                         </ModalHeader>
@@ -186,6 +190,7 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
                                 {send ? "Enviando..." : "Enviar"}
                             </Button>
                         </ModalFooter>
+                        
                     </>
                 )}
             </ModalContent>
