@@ -70,7 +70,14 @@ const ContentPage = () => {
                     </div>
                 </section>
             </section>
-            <Toaster richColors position="top-right"  />
+            <Toaster richColors position="top-right" 
+            toastOptions={{
+                className: 'font-work-sans', // Aplica la clase personalizada
+                style: {
+                  fontFamily: 'Work Sans, sans-serif', // Asegúrate de que esta fuente esté cargada en tu proyecto
+                },
+              }}
+              />
             {isOpen && <ModalAddModel isOpen={isOpen} onOpenChange={onOpenChange} idProject={idProject}/>}
             {isOpenNewProject && <ModalNewProject isOpenNewProject={isOpenNewProject} onOpenChangeNewProject={onOpenChangeNewProject}/>}
         </>

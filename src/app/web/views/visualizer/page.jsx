@@ -28,6 +28,7 @@ import History from "./components/tables/history/History.jsx"
 import CameraController from './components/cameras/CameraController';
 import InformationCard from './components/information/InformationCard.jsx';
 import { decrypt } from '@/api/libs/crypto';
+import { Toaster, toast } from 'sonner'
 
 function LoadingScreen({ progress }) {
     return (
@@ -222,6 +223,17 @@ const App = () => {
         }
     };
 
+    const handleSaveButtonClick = () => {
+        toast.promise(
+          saveTerrainsToDB(), // Ejecutamos la promesa
+          {
+            loading: "Guardando terrenos...",
+            success: (data) => `Terrenos guardados!`, // Ajusta según tu respuesta
+            error: (err) => `Error!`
+          }
+        );
+      };
+
     console.log('allTerrains:', allTerrains);
 
     return (
@@ -231,6 +243,7 @@ const App = () => {
                     <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent border rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
                         <span>Feed</span>
                     </button>
+                    
                 </Link>
             </div>
             <div className='flex md:w-[100%] md:h-[100vh] flex-col sm:flex-row'>
@@ -331,9 +344,11 @@ const App = () => {
                                 Añadir Terreno
                             </Button>
                         )}
-                        <Button onClick={saveTerrainsToDB} color="primary">
-                            Subir Terrains (solo usar para subir markers)
+                        <Button onClick={handleSaveButtonClick} color="primary" 
+                        >
+                            Guardar Terrenos
                         </Button>
+                        
                         <Terrains terrains={terrains} onSelectTerrain={setSelectedTerrain} />
 
                         {/* <Accordion variant="bordered" className="text-white">
@@ -381,6 +396,19 @@ const App = () => {
 
                             <p className="text-base font-semibold italic pt-4 text-white tracking-wide">Historial</p>
                             <History />
+                            
+                            <Toaster richColors position='bottom-left'
+                            toastOptions={{
+                                className: 'font-custom', // Aplica una clase personalizada
+                                style: {
+                                    fontFamily: 'Work Sans, sans-serif', // Asegúrate de que esta fuente esté cargada en tu proyecto
+                                },
+                            }}/>
+      <button className="btn text-white" onClick={() => toast.success('My first toast')}>
+        Give me a toast
+      </button>
+    
+      
                             
                         </div>
                     </div>
