@@ -27,6 +27,7 @@ export const config = {
   matcher : [
     '/web/views/login', 
     '/web/views/user/feed',
-    '/web/views/admin/allProjects',
+    '/web/views/admin/Projects',
+    '/web/wiews/admin/allCompanies'
   ]
 }
