@@ -1,80 +1,154 @@
 'use client'
-import Image from "next/image";
-import {Card, CardHeader, CardBody} from "@nextui-org/react";
-import {Skeleton} from "@nextui-org/react";
-import {Button, ButtonGroup} from "@nextui-org/react";
+import { Navbar, NavbarBrand, NavbarMenu, NavbarContent, NavbarItem, NavbarMenuItem, NavbarMenuToggle, Button, Image } from "@nextui-org/react";
 import Link from "next/link";
 import axios from "axios";
+import style from './web/global_components/navbar/styles/navbar.module.css'
 
 axios.defaults.baseURL = 'http://localhost:3000/';
 
 export default function Home() {
   return (
-    <main className="flex flex-col items-center box-border justify-between w-full min-h-screen p-4 max-w-[md] mt-[-40px] transform scale-90">  
-      <div className="flex w-full gap-4 box-border">
+    <div className="bg-[#02121B] bg-[url(/images/op11.webp)] ... bg-no-repeat bg-cover overflow-hidden h-full" >
+      <div className="overflow-auto h-[100vh] scrollbar">
+        <Navbar disableAnimation isBordered className={style.NavBar} position="static">
+          <NavbarContent className="sm:hidden" justify="start">
+            <NavbarMenuToggle className="text-white" />
+          </NavbarContent>
 
-        <div className="flex md:flex-col md:min-w-[50%] gap-1">
+          <NavbarContent className="sm:hidden pr-3" justify="center">
+            <NavbarBrand>
+              <Image src="/logos/completo-fullblanco.png" className="object-cover" alt="logo" width={150} height={150} />
+            </NavbarBrand>
+          </NavbarContent>
 
-          <div className="flex flex-col min-h-[50vh]">
-            <div className="p-2" style={{ zIndex: 10 }}>
-              <div className=" px-8 py-12 w-[100%] min-h-[50vh] rounded-2xl flex flex-col justify-center items-center bg-gradient-to-tr from-orange-100 to-slate-50 bg-white hover:bg-gradient-to-tr hover:from-orange-200 hover:to-gray-100 hover:shadow-lg text-[#81582e] hover:text-[#614426] transition-transform duration-500 transform hover:scale-110  box-border " >
-                <div className="flex items-center flex-col gap-2">
-                  <div>
-                    <h1 className=" text-6xl font-bold">myView_</h1>
-                    <h2>testing</h2>
-                  </div>
+          <NavbarContent className="hidden sm:flex gap-4" justify="center">
+            <NavbarBrand>
+              <Image src="/logos/completo-fullblanco.png" className="object-cover" alt="logo" width={150} height={150} />
+            </NavbarBrand>
+            <NavbarItem>
+              <Link className="text-white" href="#">
+                Precios
+              </Link>
+            </NavbarItem>
+          </NavbarContent>
 
-                  <div className="flex items-center flex-col">
-                    {/* <h2 className=" font-semibold uppercase text-4xl  ">Observa tus creaciones como nunca</h2> */}
-                    <div className="flex gap-6 p-5">
-                        <Link href='/web/views/user/feed'>
-                        <Button color="warning" size="lg" variant="shadow" radius="full" className=" font-semibold text-white bg-gradient-to-tr from-yellow-700 to-orange-400">Empieza Ya</Button>
-                        </Link>
-                        
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <NavbarContent justify="end">
+            <NavbarItem className="hidden lg:flex">
+              <Button
+                as={Link}
+                color="default"
+                variant="light"
+                href="/web/views/login"
+                className="text-white"
+              >
+                
+                Iniciar Sesion
+              </Button>
+            </NavbarItem>
+            <NavbarItem>
+              <Button as={Link} color="primary" href="#" >
+                Empezar ya
+              </Button>
+            </NavbarItem>
+          </NavbarContent>
+
+          <NavbarMenu>
+            <NavbarMenuItem>
+              <Link
+                className="w-full text-white"
+                href="#"
+                size="lg"
+              >
+                Precios
+              </Link>
+            </NavbarMenuItem>
+          </NavbarMenu>
+        </Navbar>
+
+        <div className="flex flex-col items-center justify-center  h-[50vh] w-[100%] mx-auto">
+          <div className="w-[70%]">
+            <h1 className="text-white text-4xl font-bold text-left italic">Transforma parcelaciones en modelos 3D precisos con fotogrametría avanzada.</h1>
+            <h2 className="text-white text-lg text-left">Construye, planifica y gestiona tus proyectos de una forma más eficiente</h2>
+            <Button color="primary" className="mt-6">
+              Empezar ya
+            </Button>
+          </div>
+        </div>
+
+        <div className="w-[100%] h-[80vh] mx-auto flex justify-center bg-white ">
+          <div className="w-[70%] h-[100%] grid grid-cols-2 gap-2 pt-10">
+            <div className="h-[60vh] flex justify-center ">
+              <Image src="/images/explore.png" isBlurred height={700} />
+            </div>
+            <div className="bg-white">
+              <h1 className="font-bold text-3xl italic text-left">Escaneo 3D de Alta Precisión</h1>
+              <p className="pt-6 text-lg">
+                Captura cada detalle con precisión milimétrica gracias a nuestra tecnología
+                de <strong>fotogrametría aérea </strong> mediante drones de última generación. Obtén modelos 3D realistas y detallados de terrenos,
+                edificaciones, parcelaciones y entornos urbanos en tiempo récord.
+              </p>
+              <ul className="pt-6 list-disc list-inside">
+                <li>Mapeo rápido y eficiente sin necesidad de mediciones manuales.</li>
+                <li>Imágenes de alta resolución procesadas con algoritmos avanzados.</li>
+                <li>Modelos 3D precisos para planificación, diseño y análisis.</li>
+              </ul>
             </div>
           </div>
+        </div>
 
-            <div className="flex min-h-[47.5vh] gap-5 p-2">
-              <div className=" px-8 py-12 w-[50%] rounded-2xl flex items-start bg-gradient-to-tr from-orange-200 to-gray-200 text-white hover:bg-gradient-to-tr hover:from-orange-300 hover:to-gray-100 hover:shadow-lg box-border transition-transform duration-300 transform hover:scale-105">
-                <h2 className=" font-semibold text-6xl">prueba</h2>
-              </div>
-              <div className=" px-8 py-12 w-[50%] rounded-2xl flex items-start bg-gradient-to-tr from-orange-100 to-gray-300 text-white hover:shadow-lg hover:bg-gradient-to-tr hover:from-orange-100 hover:to-gray-300 box-border transition-transform duration-300 transform hover:scale-105">
-                <h2 className=" font-semibold text-6xl">prueba</h2>
-              </div>
+        <div className="w-[100%] h-[60vh] mx-auto flex justify-center pt-20">
+          <div className="w-[70%] h-[100%] grid grid-cols-2 gap-2 pt-10">
+            <div className="">
+              <h1 className="font-bold text-3xl italic text-left text-white">Evolución en el Tiempo: Modelos 3D con Registro Histórico</h1>
+              <p className="pt-6 text-lg text-white">
+                Visualiza la transformación de terrenos,
+                edificaciones y parcelaciones a lo largo del tiempo con nuestra línea del tiempo interactiva.
+                Accede a modelos 3D detallados de cada fecha y analiza los cambios con precisión.
+              </p>
+              <ul className="pt-6 list-disc list-inside text-white">
+                <li><strong>Comparación temporal</strong> para evaluar progreso y modificaciones.</li>
+                <li><strong>Acceso a versiones anteriores</strong> de cada modelo en 3D.</li>
+                <li><strong>Seguimiento detallado</strong> de obras, desarrollos urbanos y cambios topográficos.</li>
+              </ul>
             </div>
-
-        </div>
-          
-
-        <div className="min-w-[50%] flex justify-center p-2" style={{ minHeight: 'calc(100vh - 2rem)' }}>
-          <div className=" px-8 py-12 w-[100%] rounded-2xl flex justify-center items-center bg-gradient-to-tr from-orange-200 to-gray-100 text-white  box-border transition-transform duration-500 transform hover:scale-105 hover:shadow-lg">
-            
+            <div className="text-white">
+              AQUI VA UN VIDEO DEMOSTRANDOLO
+            </div>
           </div>
         </div>
 
-      </div>
-
-
-
-      <div className="h-min-[100vh] w-full flex justify-center">
-        <div className="pt-14 justify-center flex flex-col items-start gap-8">
-          <h2 className="text-5xl font-bold text-[#614426] italic">¿Quienes somos?</h2>
-          <div className="flex flex-col gap-4 w-[50%]">
-            <p className="text-md">Somos MyView_ una empresa especializada en fotogrametría de estructuras. Nos dedicamos apasionadamente a capturar la esencia de cada estructura mediante tecnología avanzada de imágenes. Utilizamos técnicas de vanguardia para crear modelos precisos en 3D que revelan perspectivas únicas y detalladas.</p>
-
-            <p className="text-md">Nuestro objetivo es transformar la manera en que se visualizan las estructuras, ofreciendo una comprensión profunda y accesible de cada detalle. Ya sea para la inspección, documentación o presentación visual, estamos comprometidos con la excelencia y la innovación en cada proyecto.</p>
-
-            <p className="text-md">Descubre cómo MyView_ puede ampliar tu visión con nuestra experiencia en fotogrametría. Con MyView_ cada estructura cuenta su propia historia.</p>
-
+        <div className="w-[100%] bg-white h-[20vh] mx-auto flex justify-center">
+          <div className="w-[70%]  pt-20 pb-20">
+            <h1 className="font-bold text-3xl italic text-left">Aprovechate del marketing 3D</h1>
+            <p className="pt-3 text-lg">
+              Comparte tus modelos
+              3D en redes sociales, páginas web y aplicaciones móviles para
+              mostrar tus proyectos de forma interactiva y atractiva.
+            </p>
           </div>
-            
         </div>
+
+        <div className="w-[100%] h-[60vh] mx-auto flex justify-center pt-20">
+          <div className="w-[70%] h-[100%] grid grid-cols-2 gap-2 pt-10">
+            <div className="">
+              <h1 className="font-bold text-3xl italic text-left text-white">Precios</h1>
+              <p className="pt-6 text-lg text-white">
+                Almacena, organiza y
+                comparte tus modelos 3D en la nube. Accede a tus proyectos desde
+                cualquier lugar y dispositivo, y colabora con tu equipo en tiempo
+                real.
+              </p>
+              <ul className="pt-6 list-disc list-inside text-white">
+                <li><strong>Almacenamiento seguro</strong> en servidores de alta disponibilidad.</li>
+                <li><strong>Colaboración en tiempo real</strong> con tu equipo de trabajo.</li>
+                <li><strong>Acceso desde cualquier lugar</strong> y dispositivo.</li>
+              </ul>
+              </div>
+              </div>
+              </div>
+
       </div>
-    </main>
+    </div>
   );
 }
 

@@ -420,7 +420,7 @@ const App = () => {
 
 export default function WrappedApp() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div>Cargando...</div>}>
             <App />
         </Suspense>
     )
