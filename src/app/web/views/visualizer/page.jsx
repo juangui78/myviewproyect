@@ -85,7 +85,13 @@ const App = () => {
     const [currentTerrainMarkers, setCurrentTerrainMarkers] = useState([]);
     const [allTerrains, setAllTerrains] = useState([]);
     const [selectedTerrain, setSelectedTerrain] = useState(null);
+    const [currentModelUrl, setCurrentModelUrl] = useState(null);
+    const [currentModelId, setCurrentModelId] = useState(null);
+    const [showTerrains, setShowTerrains] = useState(true);
    
+    const toggleTerrains = () => {
+        setShowTerrains((prev) => !prev);
+    }
 
     const handleAddTerrain = () => {
         if (currentTerrainMarkers.length > 2) {
@@ -185,36 +191,88 @@ const App = () => {
         getModel();
     }, [])
 
+    // useEffect para cargar el modelo inicial
     useEffect(() => {
-        //NOTA: PARRA,
-        //ACUERDESE DE TRAER AQUI EL MODELO MAS ACTUAL
-        //ESE ES EL QUE SE CARGA SIEMPRE PRIMERO
-        //=============================================
-        //============================================
-        //========================================
-
-        //============================
-
+        // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentProject && !isModelLoaded) {
             const modelLocation = currentProject?.model;
             if (modelLocation !== "") {
                 const loader = new GLTFLoader();
-                //Aqui va la URL dinamica de cada proyecto. De momento esta estatica para pruebas. Parcela Concepcion: https://myview-bucketdemo.s3.us-east-1.amazonaws.com/Conception/scene.gltf
+                
+                // Guarda el ID antes de iniciar la carga asíncrona
+                const projectId = currentProject._id;
+                
                 loader.load(modelLocation.url, (gltfLoaded) => {
                     setGltf(gltfLoaded);
                     setIsModelLoaded(true);
+                    setCurrentModelUrl(modelLocation.url);
+                    setCurrentModelId(projectId); // Usa la variable local
+                    console.log('ID CARGADA:', projectId); // Usa la variable local
+                    
+                    // Si necesitas hacer algo con los terrenos después de cargar
+                    if (currentProject.terrains) {
+                        setTerrains(currentProject.terrains);
+                        setAllTerrains(currentProject.terrains);
+                    }
                 });
-            }else{
-                alert("no existe modelo")
+            } else {
+                alert("No existe modelo");
             }
         }
     }, [currentProject, isModelLoaded]);
 
     console.log('terrenos guardados: ', terrains);
 
+    // Función para cargar un modelo específico
+    const loadModel = (model) => {
+
+        
+        console.log("Recibido en loadModel:", model); // Debugging
+    
+        // Asegúrate de que model.model.url existe
+        if (model && model.model && model.model.url) {
+            const modelUrl = model.model.url;
+            
+            if (modelUrl === currentModelUrl) {
+                console.log("El modelo ya está cargado.");
+                return;
+            }
+            
+            setTerrains([]); // Limpiar terrenos
+            setAllTerrains([]); // Limpiar todos los terrenos
+
+            // Obtener el ID directamente del modelo original
+            const modelId = model._id;
+            
+            
+            const loader = new GLTFLoader();
+            loader.load(modelUrl, (gltfLoaded) => {
+                setGltf(gltfLoaded);
+                setIsModelLoaded(true);
+                setCurrentModelUrl(modelUrl);
+                setCurrentModelId(model.key);
+                
+                // Actualizar terrenos y delimitaciones
+                if (model.model.terrains.length > 0) {
+                    setTerrains(model.model.terrains);
+                    setAllTerrains(model.model.terrains);
+                    console.log('Terrains loaded:', model.model.terrains);
+                } 
+                
+                console.log('Modelo cargado correctamente. ID:', model.key);
+            });
+        } else {
+            console.error("Estructura del modelo inválida o URL no definida", model);
+        }
+    };
+
     const saveTerrainsToDB = async () => {
+
+        const modelID = currentModelId || idProyect;
+
         try {
             const response = await axios.post(`/api/controllers/visualizer/${idProyect}`, {
+                modelID: modelID,
                 terrains: allTerrains
             });
             console.log('Terrenos guardados:', response.data);
@@ -272,7 +330,7 @@ const App = () => {
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
                             ))}
-                            {isModelLoaded && terrains.map((terrain) => (
+                            {isModelLoaded && showTerrains && terrains.map((terrain) => (
                                 <React.Fragment key={terrain.id}>
                                     {terrain.markers.map(marker => (
                                         <Marker
@@ -313,6 +371,7 @@ const App = () => {
                             onSelectMode={() => console.log('')}
                             onReset={handleResetMarkers}
                             lightMode={light}
+                            showTerrains={toggleTerrains}
                         />
 
                         
@@ -371,22 +430,9 @@ const App = () => {
                         <h3 className='italic text-xs text-white'>{currentProject?.creation_date ? formatDate(currentProject?.creation_date) : null} </h3>
                         <h3 className='italic text-xs text-gray-500 border-b-1 border-l-red-950 pb-4'>Fecha de Subida: </h3>
 
-                        <p className="text-xs pt-4 italic text-white font-semibold tracking-wide">Tools</p> 
-                         <div>
-                            <div className=" md:gap-4 md:px-9 md:py-3 sm:gap-3 sm:p-3 text-white">
-                                <Slider
-                                    size="md"
-                                    showSteps
-                                    maxValue={1}
-                                    minValue={0}
-                                    step={0.2}
-                                    color="primary"
-                                    label="Calidad"
-                                    value={quality}
-                                    onChange={(value) => setQuality(value)}
-                                >
-                                </Slider>
-                            </div>
+                       
+                         <div className='pt-4'>
+                            
                             <div>
                                 <p className="text-xs font-black italic text-white">Area Delimitada</p>
                                 <h3 className='italic text-md text-gray-400  pb-4'>{areaCalculated.toFixed(2)} m²</h3>
@@ -395,7 +441,7 @@ const App = () => {
                             </div>
 
                             <p className="text-base font-semibold italic pt-4 text-white tracking-wide">Historial</p>
-                            <History />
+                            <History idProyect={idProyect} onModelSelect={loadModel}/>
                             
                             <Toaster richColors position='bottom-left'
                             toastOptions={{
