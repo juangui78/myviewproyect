@@ -15,7 +15,8 @@ const Toolbar = ({
   onMeasureArea,
   onSelectMode,
   onReset,
-  lightMode
+  lightMode,
+  showTerrains
 }) => {
   const [isMeasuringDistance, setIsMeasuringDistance] = useState(false);
 
@@ -55,10 +56,11 @@ const Toolbar = ({
         </Button>
       </Tooltip>
       
-
-      <Button isIconOnly variant="flat" aria-label="Modo selección" onClick={onSelectMode}>
-        <RulerIcon className="w-4 h-4" />
-      </Button>
+      <Tooltip content="Ocultar/Mostrar terrenos" placement='bottom'>
+        <Button isIconOnly variant="flat" aria-label="Modo selección" onClick={showTerrains}>
+          <RulerIcon className="w-4 h-4" />
+        </Button>
+      </Tooltip>
       
       
     </div>

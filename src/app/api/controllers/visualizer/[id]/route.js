@@ -7,6 +7,7 @@ import { decrypt } from '@/api/libs/crypto';
 
 dbConnected();
 
+// Obtener proyecto
 export async function GET(request, {params}) {
     const { id } = params;
     try {
@@ -26,24 +27,28 @@ export async function GET(request, {params}) {
     }
 }
 
+// Actualizar terrenos de un Modelo
 export async function POST(request, { params }) {
     const { id } = params;
     try {
-        const { terrains } = await request.json();
+        
+        
+        const { terrains, modelID } = await request.json();
+        console.log('aqui llega el ID: ', modelID);
         console.log('Terrains received:', terrains);
 
         // Encuentra el proyecto y actualiza los terrenos
-        const project = await Model.findOne({ idProyect: id });
-        if (!project) {
-            console.log('Project not found');
-            return NextResponse.json({ message: 'Project not found' }, { status: 404 });
+        const model = await Model.findById(modelID);
+        if (!model) {
+            console.log('Model not found');
+            return NextResponse.json({ message: 'Model not found' }, { status: 404 });
         }
 
-        project.terrains = terrains;
-        await project.save();
+        model.terrains = terrains;
+        await model.save();
 
         console.log('Terrains saved successfully');
-        return NextResponse.json({ message: 'Terrains saved successfully', project });
+        return NextResponse.json({ message: 'Terrains saved successfully', model });
     } catch (error) {
         console.error('Error en POST:', error);
         return NextResponse.json({ message: 'Error saving terrains', error }, { status: 500 });
