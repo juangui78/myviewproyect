@@ -76,7 +76,7 @@ export default function NavBar({children}) {
           <Dropdown  placement="bottom-end">
             <DropdownTrigger>
               <div className="flex gap-4 items-center cursor-pointer">
-                <Badge color="danger" content="5" shape="rectangle" showOutline={false}>
+                <Badge color="default" content="0" shape="rectangle" showOutline={false}>
                   <Bell className="cursor-pointer text-white" />
                 </Badge>
               </div>
