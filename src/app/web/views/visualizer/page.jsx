@@ -70,6 +70,7 @@ const App = () => {
     const [showTerrains, setShowTerrains] = useState(true);
     const [isPublish, setIsPublish] = useState(true);
     const [projectInfo, setProjectInfo] = useState(null)
+    const [pjname, setPjname] = useState(null)
 
     //search Params to validate info
     const searchParams = useSearchParams();
@@ -175,6 +176,8 @@ const App = () => {
         // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
+            console.log('model: ', currentModel);
+            
             if (modelLocation !== "") {
                 const loader = new GLTFLoader();
 
@@ -186,6 +189,7 @@ const App = () => {
                     setIsModelLoaded(true);
                     setCurrentModelUrl(modelLocation.url);
                     setCurrentModelId(projectId); // Usa la variable local
+                    setPjname(currentModel.name) // Usa la variable local
                     // console.log('ID CARGADA:', projectId); // Usa la variable local
 
                     // Si necesitas hacer algo con los terrenos después de cargar
@@ -285,6 +289,15 @@ const App = () => {
                         lightMode={light}
                         showTerrains={toggleTerrains}
                     />
+                    {currentTerrainMarkers.length > 2 && (
+                            <Button onClick={handleAddTerrain} color="primary">
+                                Añadir Terreno
+                            </Button>
+                        )}
+                        <Button onClick={handleSaveButtonClick} color="primary"
+                        >
+                            Guardar Terrenos
+                        </Button>
                 </div>
 
                 <div>
@@ -330,6 +343,7 @@ const App = () => {
                                     ))}
                                     {terrain.markers.length > 2 && (
                                         <AreaVisual
+                                            pjname={pjname}
                                             terrains={terrains}
                                             markers={terrain.markers}
                                             areaCalculated={handleAreaCalculated}

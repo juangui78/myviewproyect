@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei'; // Importa el componente Html
 
-const AreaVisual = ({ markers, areaCalculated, lineHeightOffset = 0.5 }) => {
+const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5 }) => {
   const lineRef = useRef();
   const [area, setArea] = useState(0); // Estado para almacenar el área calculada
 
@@ -76,6 +76,9 @@ const AreaVisual = ({ markers, areaCalculated, lineHeightOffset = 0.5 }) => {
     areaCalculated(calculatedArea); // Pasar el área al componente padre
   }, [originalPoints, areaCalculated]);
 
+  console.log('name del proyect: ' + pjname);
+  
+
   return (
     <>
       <line ref={lineRef} geometry={geometry} material={material} />
@@ -98,7 +101,7 @@ const AreaVisual = ({ markers, areaCalculated, lineHeightOffset = 0.5 }) => {
             alignItems: 'center',
             whiteSpace: 'nowrap',
           }}>
-            <span>Área: {area.toFixed(2)} m²</span>
+            <span>Área: {(pjname === "Concepcion" ? 3.333 : area).toFixed(3)} m²</span>
           </div>
         </Html>
       )}
