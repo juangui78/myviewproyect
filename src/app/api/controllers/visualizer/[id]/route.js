@@ -2,23 +2,26 @@ import { dbConnected } from '@/api/libs/mongoose';
 import Model from '@/api/models/models'
 import Proyect from "@/api/models/proyect";
 import { NextResponse } from 'next/server';
-import { decrypt } from '@/api/libs/crypto';
-
 
 dbConnected();
 
-// Obtener proyecto
+// get model by id
 export async function GET(request, {params}) {
     const { id } = params;
     try {
         const findProyect = await Proyect.findById(id);
-        
 
         if (findProyect) {
             const idProyect = findProyect?._id;
-            const findModels = await Model.findOne({idProyect: idProyect}).sort({ creation_date : -1 });
-            console.log(findModels);
-            return NextResponse.json(findModels);
+            const getModel = await Model.findOne({idProyect: idProyect},  { __v : 0, idProyect: 0}).sort({ creation_date : -1 });
+            const getProject = await Proyect.findById(idProyect, { __v : 0, _id: 0, state: 0, creation_date: 0});
+            
+            const data = {
+                model: getModel,
+                proyect: getProject
+            }
+
+            return NextResponse.json(data, { status: 200 });
         } else {
             console.log('no ha encontrado proyecto del query');
         }

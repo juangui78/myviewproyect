@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { validationSchemaLogin } from "./js/validationSchema";
 import { Formik, Form, Field } from "formik";
 import styleLogin from './styles/login.module.css'
-import { color, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { AlertCircleOutline } from "@/web/global_components/icons/AlertCircleOutline";
 import Link from "next/link";
 
@@ -70,13 +70,13 @@ export default function Login() {
                   return
                 }
 
-                return router.push('/web/views/user/feed') // go to feed page
+                await router.push('/web/views/user/feed') // go to feed page
               }}
             >
             {({ handleSubmit, isSubmitting}) => (
               <Form onSubmit={handleSubmit} className="flex flex-col ">
                 <Field name="email">
-                  {({ field, form, meta }) => (
+                  {({ field, meta }) => (
                      <>
                       <Input
                         {...field}
@@ -109,7 +109,7 @@ export default function Login() {
                   )}
                 </Field>
                 <Field name="password" >
-                  {({ field, form, meta }) => (
+                  {({ field, meta }) => (
                      <>
                       <Input
                         {...field}

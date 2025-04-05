@@ -90,7 +90,7 @@ export default function Cards({ search, changeStatus }) {
                       />
                       <CardFooter className="absolute bg-white/30 bottom-0 border-t-1 border-zinc-100/50 z-10 justify-between rounded-sm ...">
                         <Tooltip content="Visualizar el modelo 3D" showArrow={true}>
-                          <Link href={{ pathname: `/web/views/visualizer`, query: { id: encrypt(item._id) } }} className=" mt-[1px]" >
+                          <Link href={{ pathname: `/web/views/visualizer`, query: { id: encrypt(item._id) } }} className=" mt-[1px]" target="_blank" >
                             <Button
                               className="text-tiny bg-[#030D1C]"
                               color="default"
