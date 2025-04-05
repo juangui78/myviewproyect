@@ -305,7 +305,7 @@ const App = () => {
                 </div>
 
             </div>
-            <div className='flex md:w-[100%] md:h-[100vh] flex-col sm:flex-row'>
+            <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'> {/* Aquí se ajusta el tamaño del canvas */}
 
                     <Canvas dpr={quality}>
