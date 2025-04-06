@@ -1,15 +1,13 @@
 'use client'
-import React, { forwardRef, useRef } from 'react';
+import React, { forwardRef } from 'react';
 import { Canvas, useThree } from "@react-three/fiber";
-import { Button } from "@nextui-org/react";
-import { Environment, OrbitControls, useProgress, Html } from "@react-three/drei";
+import { Environment, OrbitControls, useProgress } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { Suspense, useEffect } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
-import { Progress } from "@nextui-org/progress";
 import Marker from "./components/markers/Markers";
 import ClickHandler from "./components/clickhandler/ClickHandler";
 import * as THREE from 'three';
@@ -22,9 +20,10 @@ import InformationCard from './components/information/InformationCard.jsx';
 import { decrypt } from '@/api/libs/crypto';
 import { Toaster, toast } from 'sonner'
 import { formatDate } from './js/dateFormat';
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { BlocksShuffle3 } from '@/web/global_components/icons/BlocksShuffle3';
 import SliderLoading from './components/sliderLoading/SliderLoading';
+import Whatsapp from '@/web/global_components/icons/Whatsapp';
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
@@ -271,7 +270,7 @@ const App = () => {
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
             console.log('model: ', currentModel);
-            
+
             if (modelLocation !== "") {
                 const loader = new GLTFLoader();
 
@@ -361,23 +360,24 @@ const App = () => {
         );
     };
 
-    
-    
 
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
-            {progress <= 100 &&
+            {!isModelLoaded &&
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
-                    <div className='w-[70%]'>
+                    <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
                     </div>
                     <div>
                         < BlocksShuffle3 className="text-6xl" />
                     </div>
-                    <div>
-                        <p>Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
+                    <div className='w-full text-center'>
+                        <p>Cargando modelo, esto pue de tomar un tiempo la primera vez.</p>
                     </div>
+                    <Link href='https://wa.me/573192067689' target='_blank' className='absolute bg-green-400 right-[30px] bottom-[30px] flex gap-[10px] h-[7vh] rounded-[100%] bg-[#02121B] p-[13px]'>
+                        <Whatsapp className="text-white text-3xl"/>
+                    </Link>
                 </div>
             }
 
@@ -393,17 +393,17 @@ const App = () => {
                     }
                 </div>
                 <div>
-                    {isModelLoaded && 
-                    <Toolbar
-                    onToggleLight={changeLight}
-                    onMeasureDistance={() => setEditMarkersMode(!editMarkersMode)}
-                    onMeasureArea={() => console.log('')}
-                    onSelectMode={() => console.log('')}
-                    onReset={handleResetMarkers}
-                    lightMode={light}
-                    showTerrains={toggleTerrains}
-                />}
-                    
+                    {isModelLoaded &&
+                        <Toolbar
+                            onToggleLight={changeLight}
+                            onMeasureDistance={() => setEditMarkersMode(!editMarkersMode)}
+                            onMeasureArea={() => console.log('')}
+                            onSelectMode={() => console.log('')}
+                            onReset={handleResetMarkers}
+                            lightMode={light}
+                            showTerrains={toggleTerrains}
+                        />}
+
                     {/* {currentTerrainMarkers.length > 2 && (
                             <Button onClick={handleAddTerrain} color="primary">
                                 Añadir Terreno
@@ -413,12 +413,7 @@ const App = () => {
                         >
                             Guardar Terrenos
                         </Button> */}
-
-                    
-                    
                 </div>
-
-
                 <div>
                     <InformationCard info={projectInfo} />
                 </div>
@@ -426,7 +421,7 @@ const App = () => {
             </div>
             <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'>
-                    <Canvas dpr={quality} ref={objectRef}>
+                    <Canvas dpr={1} ref={objectRef}>
                         <Suspense fallback={null}>
                             {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
@@ -476,7 +471,7 @@ const App = () => {
                             {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
                             <CameraPositioner />
                             <CameraController terrain={selectedTerrain} />
-                            <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2}/>
+                            <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} />
                             <Environment preset={light} background blur backgroundBlurriness />
 
                         </Suspense>
