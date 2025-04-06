@@ -77,6 +77,66 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
     "Precio de venta: 133.000.000 COP",
 ]
 
+const CameraViewManager = ({ cameraView }) => {
+    const { camera, gl } = useThree();
+
+    useEffect(() => {
+        switch (cameraView) {
+            case 0:
+                camera.position.set(0, 200, 0); // Vista superior
+                break;
+            case 1:
+                camera.position.set(4.69, 99.87, -94.092); // Vista lateral derecha
+                break;
+            case 2:
+                camera.position.set(475.40, 223.10, -84.77); // Vista frontal
+                break;
+            case 3:
+                camera.position.set(-91.45, 71.300, -28.779); // Vista lateral izquierda
+                break;
+            case 4:
+                camera.position.set(90.581, 32.404, 51.591); // Vista isométrica
+                break;
+            default:
+                break;
+        }
+        // Asegúrate de que la cámara siempre mire al origen
+        camera.lookAt(0, 0, 0);
+
+        // Restablece la distancia de la cámara (opcional, si usas zoom)
+        camera.updateProjectionMatrix();
+
+        // Actualiza los controles de la cámara para reflejar los cambios
+        if (gl && gl.controls) {
+            gl.controls.update();
+        }
+    }, [cameraView, camera, gl]);
+
+    return null; // Este componente no renderiza nada, solo maneja la cámara
+};
+
+const CameraDebugger = () => {
+    const { camera, gl } = useThree();
+
+    useEffect(() => {
+        const handleCameraChange = () => {
+            console.log(camera.position, "CAMERA POSITION");
+        };
+
+        // Escuchar el evento de cambio en OrbitControls
+        gl.domElement.addEventListener("pointermove", handleCameraChange);
+
+        return () => {
+            // Limpiar el evento al desmontar el componente
+            gl.domElement.removeEventListener("pointermove", handleCameraChange);
+        };
+    }, [camera, gl]);
+
+    return null; // Este componente no renderiza nada
+};
+
+
+
 const App = () => {
     const [light, setLight] = useState('sunset')
     const [currentModel, setcurrentModel] = useState(null);
@@ -98,12 +158,19 @@ const App = () => {
     const [showTerrains, setShowTerrains] = useState(true);
     const [isPublish, setIsPublish] = useState(true);
     const [projectInfo, setProjectInfo] = useState(null)
+    const [pjname, setPjname] = useState(null)
+    const [cameraView, setCameraView] = useState(0);
+    // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
     //search Params to validate info
     const searchParams = useSearchParams();
     const idProyect = decrypt(searchParams.get("id"));
 
     const { data: session } = useSession();
+
+    const handleCameraViewChange = () => {
+        setCameraView((prevView) => (prevView + 1) % 5); // Cambia entre 0, 1, 2 y 3
+    };
 
     const toggleTerrains = () => {
         setShowTerrains((prev) => !prev);
@@ -173,6 +240,7 @@ const App = () => {
     };
 
 
+
     useEffect(() => {
 
         const getModel = async () => {
@@ -202,6 +270,8 @@ const App = () => {
         // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
+            console.log('model: ', currentModel);
+            
             if (modelLocation !== "") {
                 const loader = new GLTFLoader();
 
@@ -213,6 +283,7 @@ const App = () => {
                     setIsModelLoaded(true);
                     setCurrentModelUrl(modelLocation.url);
                     setCurrentModelId(projectId); // Usa la variable local
+                    setPjname(currentModel.name) // Usa la variable local
                     // console.log('ID CARGADA:', projectId); // Usa la variable local
 
                     // Si necesitas hacer algo con los terrenos después de cargar
@@ -290,6 +361,9 @@ const App = () => {
         );
     };
 
+    
+    
+
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
@@ -319,16 +393,31 @@ const App = () => {
                     }
                 </div>
                 <div>
+                    {isModelLoaded && 
                     <Toolbar
-                        onToggleLight={changeLight}
-                        onMeasureDistance={() => setEditMarkersMode(!editMarkersMode)}
-                        onMeasureArea={() => console.log('')}
-                        onSelectMode={() => console.log('')}
-                        onReset={handleResetMarkers}
-                        lightMode={light}
-                        showTerrains={toggleTerrains}
-                    />
+                    onToggleLight={changeLight}
+                    onMeasureDistance={() => setEditMarkersMode(!editMarkersMode)}
+                    onMeasureArea={() => console.log('')}
+                    onSelectMode={() => console.log('')}
+                    onReset={handleResetMarkers}
+                    lightMode={light}
+                    showTerrains={toggleTerrains}
+                />}
+                    
+                    {/* {currentTerrainMarkers.length > 2 && (
+                            <Button onClick={handleAddTerrain} color="primary">
+                                Añadir Terreno
+                            </Button>
+                        )}
+                        <Button onClick={handleSaveButtonClick} color="primary"
+                        >
+                            Guardar Terrenos
+                        </Button> */}
+
+                    
+                    
                 </div>
+
 
                 <div>
                     <InformationCard info={projectInfo} />
@@ -337,13 +426,14 @@ const App = () => {
             </div>
             <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'>
-
-                    <Canvas dpr={1}>
+                    <Canvas dpr={quality} ref={objectRef}>
                         <Suspense fallback={null}>
                             {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
                             <ambientLight intensity={1} />
                             <directionalLight color="white" position={[0, 2, 50]} />
+                            <CameraViewManager cameraView={cameraView} />
+                            <CameraDebugger />
                             {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
                             {/* {markers.map(marker => (
                                 <Marker
@@ -373,6 +463,7 @@ const App = () => {
                                     ))}
                                     {terrain.markers.length > 2 && (
                                         <AreaVisual
+                                            pjname={pjname}
                                             terrains={terrains}
                                             markers={terrain.markers}
                                             areaCalculated={handleAreaCalculated}
@@ -385,7 +476,7 @@ const App = () => {
                             {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
                             <CameraPositioner />
                             <CameraController terrain={selectedTerrain} />
-                            <OrbitControls minDistance={0} />
+                            <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2}/>
                             <Environment preset={light} background blur backgroundBlurriness />
 
                         </Suspense>
