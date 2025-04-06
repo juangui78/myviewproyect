@@ -23,8 +23,8 @@ import { decrypt } from '@/api/libs/crypto';
 import { Toaster, toast } from 'sonner'
 import { formatDate } from './js/dateFormat';
 import { useSession, signOut } from "next-auth/react";
-import { FaWhatsapp } from 'react-icons/fa'; // Importa el ícono de WhatsApp
-import { BlocksShuffle3 } from "@/web/global_components/icons/BlocksShuffle3";
+import { BlocksShuffle3 } from '@/web/global_components/icons/BlocksShuffle3';
+import SliderLoading from './components/sliderLoading/SliderLoading';
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
@@ -49,6 +49,33 @@ const CameraPositioner = () => {
 
     return null; // Este componente no renderiza nada, solo maneja la cámara
 };
+
+export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
+    "📍 Ubicación – Vereda Barro Blanco, Concepción, Antioquia",
+    "🟢 A 20 min del casco urbano de Concepción",
+    "🟢 A 25 min de San Vicente",
+    "🟢 A 10 min del estadero El Tapón",
+    "🟢 🚗 A 1h 30 del aeropuerto internacional José María Córdova",
+    "🟢 🛣️ A 1h 10 de Rionegro y Marinilla",
+    "🟢 🏙️ A 2h de Medellín",
+    "🟢 🌄 A 40 min de Barbosa",
+    "📐 Área total del lote: 3.333 m²",
+    "🔨 Incluye explanación de 400 m² lista para construir",
+    "🚗 A solo 10 min de la vía pavimentada que conecta San Vicente con Concepción",
+    "Cuenta con 💡 Energía",
+    "Cuenta con 🚰 Acueducto",
+    "Cuenta con 📶 Internet",
+    "Uso posible para ✅ Turismo rural",
+    "Uso posible para ✅ Proyectos de vivienda",
+    "Uso posible para ✅ Proyectos productivos",
+    "Uso posible para ✅ Proyectos de Inversión natural",
+    "Atractivos del lote: 🌳 Bosque nativo",
+    "Atractivos del lote: 🐦 Avistamiento de aves",
+    "Atractivos del lote: 😌 Zona tranquila para descanso",
+    "Cuenta con ✔️ Escrituras al día en proindiviso",
+    "Cuenta con ✔️ Licencia de construcción viable según EOT municipal",
+    "Precio de venta: 133.000.000 COP",
+]
 
 const CameraViewManager = ({ cameraView }) => {
     const { camera, gl } = useThree();
@@ -112,7 +139,6 @@ const CameraDebugger = () => {
 
 const App = () => {
     const [light, setLight] = useState('sunset')
-    const [quality, setQuality] = useState(1)
     const [currentModel, setcurrentModel] = useState(null);
     const [gltf, setGltf] = useState(null);
     const { progress } = useProgress();
@@ -139,7 +165,6 @@ const App = () => {
     //search Params to validate info
     const searchParams = useSearchParams();
     const idProyect = decrypt(searchParams.get("id"));
-
 
     const { data: session } = useSession();
 
@@ -222,7 +247,7 @@ const App = () => {
             try {
                 const response = await axios.get(`/api/controllers/visualizer/${idProyect}`)
 
-                if (response.data != undefined && response.data.model !== undefined ) {
+                if (response.data != undefined && response.data.model !== undefined) {
                     setcurrentModel(response.data.model)
                     if (response.data.terrains) {
                         setTerrains(response.data.terrains);
@@ -341,6 +366,22 @@ const App = () => {
 
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
+            {/* div de carga inicial */}
+            {progress <= 100 &&
+                <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+                    <div className='w-[70%]'>
+                        <SliderLoading data={DATARANDOM} />
+                    </div>
+                    <div>
+                        < BlocksShuffle3 className="text-6xl" />
+                    </div>
+                    <div>
+                        <p>Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
+                    </div>
+                </div>
+            }
+
+
             <div className="flex justify-between ... w-[85%] pt-[15px] bg-transparent z-[10] absolute">
                 <div>
                     {!isPublish &&
@@ -384,8 +425,7 @@ const App = () => {
 
             </div>
             <div className='flex w-full h-full flex-col sm:flex-row'>
-                <div className='flex w-full h-full'> {/* Aquí se ajusta el tamaño del canvas */}
-
+                <div className='flex w-full h-full'>
                     <Canvas dpr={quality} ref={objectRef}>
                         <Suspense fallback={null}>
                             {/* <gridHelper args={[500, 500, 'gray']}/>
@@ -441,41 +481,7 @@ const App = () => {
 
                         </Suspense>
                     </Canvas>
-
-                    {/* Contenedor del Toolbar ajustado */}
-
-                    {progress < 100 &&
-                    
-                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} className="flex flex-col justify-center items-center">
-                            <div className="m-auto text-5xl "><BlocksShuffle3 className="text-green"/></div>
-                            <Progress aria-label="Loading..." label="Cargando Modelo..." value={progress} className="max-w-md" size="md" color="success" />
-                            
-                        </div>
-                    }
-
-                    
-                    {isModelLoaded && 
-                        <div>
-                            <div className="absolute bottom-4 left-4">
-                                <Button onClick={handleCameraViewChange} className="text-sm md:text-sm">
-                                    Cambiar Vista
-                                </Button>
-                        </div>
-
-                        <div className="absolute bottom-4 right-4">
-                            <a
-                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                            >
-                                <FaWhatsapp className="text-white text-2xl" />
-                                
-                            </a>
-                        </div>
-                    </div>}
-                    
-                </div>           
+                </div>
 
                 {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
 
