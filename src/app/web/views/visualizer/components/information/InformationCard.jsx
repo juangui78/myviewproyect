@@ -24,7 +24,7 @@ export const InformationCard = ({ info }) => {
         <p className="text-small pl-px pb-[5px]"><strong>Área: </strong>{info?.hectares} hectareas</p>
         <p className="text-small pl-px pb-[5px]"><strong>Descripción: </strong>{info?.description}</p>
       </CardBody>
-      <CardFooter className="gap-3">
+      {/* <CardFooter className="gap-3">
         <div className="flex gap-1 text-lg">
           <p className="font-semibold">Email: </p>
           <p>{info?.clientEmail}</p>
@@ -33,7 +33,7 @@ export const InformationCard = ({ info }) => {
           <p className="font-semibold ">Celular: </p>
           <p>{info?.clientTel}</p>
         </div>
-      </CardFooter>
+      </CardFooter> */}
     </Card>
   );
 };
