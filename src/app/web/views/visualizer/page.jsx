@@ -470,6 +470,7 @@ const App = () => {
                                 className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
                             >
                                 <FaWhatsapp className="text-white text-2xl" />
+                                
                             </a>
                         </div>
                     </div>}
