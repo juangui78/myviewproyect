@@ -23,6 +23,8 @@ import { decrypt } from '@/api/libs/crypto';
 import { Toaster, toast } from 'sonner'
 import { formatDate } from './js/dateFormat';
 import { useSession, signOut } from "next-auth/react";
+import { FaWhatsapp } from 'react-icons/fa'; // Importa el ícono de WhatsApp
+import { BlocksShuffle3 } from "@/web/global_components/icons/BlocksShuffle3";
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
@@ -48,6 +50,66 @@ const CameraPositioner = () => {
     return null; // Este componente no renderiza nada, solo maneja la cámara
 };
 
+const CameraViewManager = ({ cameraView }) => {
+    const { camera, gl } = useThree();
+
+    useEffect(() => {
+        switch (cameraView) {
+            case 0:
+                camera.position.set(0, 200, 0); // Vista superior
+                break;
+            case 1:
+                camera.position.set(4.69, 99.87, -94.092); // Vista lateral derecha
+                break;
+            case 2:
+                camera.position.set(475.40, 223.10, -84.77); // Vista frontal
+                break;
+            case 3:
+                camera.position.set(-91.45, 71.300, -28.779); // Vista lateral izquierda
+                break;
+            case 4:
+                camera.position.set(90.581, 32.404, 51.591); // Vista isométrica
+                break;
+            default:
+                break;
+        }
+        // Asegúrate de que la cámara siempre mire al origen
+        camera.lookAt(0, 0, 0);
+
+        // Restablece la distancia de la cámara (opcional, si usas zoom)
+        camera.updateProjectionMatrix();
+
+        // Actualiza los controles de la cámara para reflejar los cambios
+        if (gl && gl.controls) {
+            gl.controls.update();
+        }
+    }, [cameraView, camera, gl]);
+
+    return null; // Este componente no renderiza nada, solo maneja la cámara
+};
+
+const CameraDebugger = () => {
+    const { camera, gl } = useThree();
+
+    useEffect(() => {
+        const handleCameraChange = () => {
+            console.log(camera.position, "CAMERA POSITION");
+        };
+
+        // Escuchar el evento de cambio en OrbitControls
+        gl.domElement.addEventListener("pointermove", handleCameraChange);
+
+        return () => {
+            // Limpiar el evento al desmontar el componente
+            gl.domElement.removeEventListener("pointermove", handleCameraChange);
+        };
+    }, [camera, gl]);
+
+    return null; // Este componente no renderiza nada
+};
+
+
+
 const App = () => {
     const [light, setLight] = useState('sunset')
     const [quality, setQuality] = useState(1)
@@ -71,6 +133,8 @@ const App = () => {
     const [isPublish, setIsPublish] = useState(true);
     const [projectInfo, setProjectInfo] = useState(null)
     const [pjname, setPjname] = useState(null)
+    const [cameraView, setCameraView] = useState(0);
+    // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
     //search Params to validate info
     const searchParams = useSearchParams();
@@ -78,6 +142,10 @@ const App = () => {
 
 
     const { data: session } = useSession();
+
+    const handleCameraViewChange = () => {
+        setCameraView((prevView) => (prevView + 1) % 5); // Cambia entre 0, 1, 2 y 3
+    };
 
     const toggleTerrains = () => {
         setShowTerrains((prev) => !prev);
@@ -145,6 +213,7 @@ const App = () => {
     const handleAreaCalculated = (calculatedArea) => {
         setAreaCalculated(calculatedArea);
     };
+
 
 
     useEffect(() => {
@@ -267,6 +336,9 @@ const App = () => {
         );
     };
 
+    
+    
+
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             <div className="flex justify-between ... w-[85%] pt-[15px] bg-transparent z-[10] absolute">
@@ -280,16 +352,18 @@ const App = () => {
                     }
                 </div>
                 <div>
+                    {isModelLoaded && 
                     <Toolbar
-                        onToggleLight={changeLight}
-                        onMeasureDistance={() => setEditMarkersMode(!editMarkersMode)}
-                        onMeasureArea={() => console.log('')}
-                        onSelectMode={() => console.log('')}
-                        onReset={handleResetMarkers}
-                        lightMode={light}
-                        showTerrains={toggleTerrains}
-                    />
-                    {currentTerrainMarkers.length > 2 && (
+                    onToggleLight={changeLight}
+                    onMeasureDistance={() => setEditMarkersMode(!editMarkersMode)}
+                    onMeasureArea={() => console.log('')}
+                    onSelectMode={() => console.log('')}
+                    onReset={handleResetMarkers}
+                    lightMode={light}
+                    showTerrains={toggleTerrains}
+                />}
+                    
+                    {/* {currentTerrainMarkers.length > 2 && (
                             <Button onClick={handleAddTerrain} color="primary">
                                 Añadir Terreno
                             </Button>
@@ -297,8 +371,12 @@ const App = () => {
                         <Button onClick={handleSaveButtonClick} color="primary"
                         >
                             Guardar Terrenos
-                        </Button>
+                        </Button> */}
+
+                    
+                    
                 </div>
+
 
                 <div>
                     <InformationCard info={projectInfo} />
@@ -308,12 +386,14 @@ const App = () => {
             <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'> {/* Aquí se ajusta el tamaño del canvas */}
 
-                    <Canvas dpr={quality}>
+                    <Canvas dpr={quality} ref={objectRef}>
                         <Suspense fallback={null}>
                             {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
                             <ambientLight intensity={1} />
                             <directionalLight color="white" position={[0, 2, 50]} />
+                            <CameraViewManager cameraView={cameraView} />
+                            <CameraDebugger />
                             {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
                             {/* {markers.map(marker => (
                                 <Marker
@@ -356,7 +436,7 @@ const App = () => {
                             {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
                             <CameraPositioner />
                             <CameraController terrain={selectedTerrain} />
-                            <OrbitControls minDistance={0} />
+                            <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2}/>
                             <Environment preset={light} background blur backgroundBlurriness />
 
                         </Suspense>
@@ -365,10 +445,36 @@ const App = () => {
                     {/* Contenedor del Toolbar ajustado */}
 
                     {progress < 100 &&
-                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-                            <Progress aria-label="Loading..." label="Cargando Modelo..." value={progress} className="max-w-md" size="sm" color="success" />
+                    
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} className="flex flex-col justify-center items-center">
+                            <div className="m-auto text-5xl "><BlocksShuffle3 className="text-green"/></div>
+                            <Progress aria-label="Loading..." label="Cargando Modelo..." value={progress} className="max-w-md" size="md" color="success" />
+                            
                         </div>
                     }
+
+                    
+                    {isModelLoaded && 
+                        <div>
+                            <div className="absolute bottom-4 left-4">
+                                <Button onClick={handleCameraViewChange} className="text-sm md:text-sm">
+                                    Cambiar Vista
+                                </Button>
+                        </div>
+
+                        <div className="absolute bottom-4 right-4">
+                            <a
+                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                            >
+                                <FaWhatsapp className="text-white text-2xl" />
+                                
+                            </a>
+                        </div>
+                    </div>}
+                    
                 </div>           
 
                 {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
