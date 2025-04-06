@@ -21,7 +21,7 @@ export const InformationCard = ({ info }) => {
       </CardHeader>
       <CardBody className="px-3 py-0">
         <p className="text-small pl-px pb-[5px]"><strong>Ubicacion:</strong> {info?.department}, {info?.city}, {info?.address}</p>
-        <p className="text-small pl-px pb-[5px]"><strong>Área: </strong>{info?.hectares} hectareas</p>
+        <p className="text-small pl-px pb-[5px]"><strong>Área: </strong>{info?.hectares} metros cuadrados</p>
         <p className="text-small pl-px pb-[5px]"><strong>Descripción: </strong>{info?.description}</p>
       </CardBody>
       {/* <CardFooter className="gap-3">
