@@ -5,6 +5,7 @@ import { Environment, OrbitControls, useProgress } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { Suspense, useEffect } from "react";
 import { useState } from "react";
+import { Button } from "@nextui-org/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
@@ -375,22 +376,32 @@ const App = () => {
                     <div className='w-full text-center'>
                         <p>Cargando modelo, esto pue de tomar un tiempo la primera vez.</p>
                     </div>
-                    <Link href='https://wa.me/573192067689' target='_blank' className='absolute bg-green-400 right-[30px] bottom-[30px] flex gap-[10px] h-[7vh] rounded-[100%] bg-[#02121B] p-[13px]'>
-                        <Whatsapp className="text-white text-3xl"/>
-                    </Link>
+                    <div className="absolute bottom-4 right-4">
+                            <a
+                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                            >
+                                <Whatsapp className="text-white text-1xl"/>
+                                
+                            </a>
+                    </div>
                 </div>
             }
 
 
-            <div className="flex justify-between ... w-[85%] pt-[15px] bg-transparent z-[10] absolute">
+            <div className="flex justify-between ... w-[100%] pt-[15px] px-[15px] bg-transparent z-[10] absolute">
                 <div>
+                    
                     {!isPublish &&
-                        <Link href='/web/views/user/feed'>
-                            <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent border rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
+                        <Link href='/web/views/user/feed' >
+                            <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent  rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
                                 <span>Regresar</span>
                             </button>
                         </Link>
                     }
+                    
                 </div>
                 <div>
                     {isModelLoaded &&
@@ -476,6 +487,28 @@ const App = () => {
 
                         </Suspense>
                     </Canvas>
+
+                    {isModelLoaded && 
+                        <div>
+                            <div className="absolute bottom-4 left-4">
+                                <Button onClick={handleCameraViewChange} className="text-sm md:text-sm">
+                                    Cambiar Vista
+                                </Button>
+                        </div>
+
+                        <div className="absolute bottom-4 right-4">
+                            <a
+                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                            >
+                                <Whatsapp className="text-white text-1xl"/>
+                                
+                            </a>
+                        </div>
+                        
+                    </div>}
                 </div>
 
                 {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
