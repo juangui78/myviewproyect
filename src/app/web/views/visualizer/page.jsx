@@ -374,7 +374,7 @@ const App = () => {
                         < BlocksShuffle3 className="text-6xl" />
                     </div>
                     <div className='w-full text-center'>
-                        <p>Cargando modelo, esto pue de tomar un tiempo la primera vez.</p>
+                        <p>Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
                     </div>
                     <div className="absolute bottom-4 right-4">
                             <a
@@ -501,10 +501,9 @@ const App = () => {
                                 href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                                className="flex items-center justify-center w-14 h-14 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
                             >
-                                <Whatsapp className="text-white text-1xl"/>
-                                
+                                <Whatsapp className="text-white text-3xl md:text-4xl" />
                             </a>
                         </div>
                         
@@ -572,7 +571,7 @@ const App = () => {
 
 export default function WrappedApp() {
     return (
-        <Suspense fallback={<div>Cargando...</div>}>
+        <Suspense >
             <App />
         </Suspense>
     )
