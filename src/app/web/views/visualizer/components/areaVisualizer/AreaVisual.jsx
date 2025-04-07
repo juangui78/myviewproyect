@@ -1,10 +1,18 @@
 import React, { useMemo, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { Html } from '@react-three/drei'; // Importa el componente Html
+import { Html } from '@react-three/drei';
 
 const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5 }) => {
   const lineRef = useRef();
-  const [area, setArea] = useState(0); // Estado para almacenar el área calculada
+  const geometry = useRef(new THREE.BufferGeometry());
+  const material = useRef(new THREE.LineDashedMaterial({
+    color: 0xffff00,
+    dashSize: 0.5,
+    gapSize: 0.3,
+    linewidth: 2,
+    depthTest: false,
+  }));
+  const [area, setArea] = useState(0);
 
   // Puntos originales para cálculo
   const originalPoints = useMemo(() => {
@@ -26,40 +34,23 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5 })
     );
   }, [originalPoints, lineHeightOffset]);
 
-  // Crear geometría con datos de línea
-  const geometry = useMemo(() => {
-    const geom = new THREE.BufferGeometry();
-    const points = [...elevatedPoints];
-    
-    if (points.length > 1) {
-      points.push(points[0]); // Cerrar el polígono
+ // Actualizar geometría
+  useEffect(() => {
+    if (elevatedPoints.length > 1) {
+      // Agregar el primer punto al final para cerrar el área
+      const closedPoints = [...elevatedPoints, elevatedPoints[0]];
+      const positions = new Float32Array(closedPoints.flatMap(p => [p.x, p.y, p.z]));
+      geometry.current.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.current.computeBoundingSphere(); // Recalcula la geometría
     }
-    
-    const positions = new Float32Array(points.flatMap(p => [p.x, p.y, p.z]));
-    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    
-    // Calcular distancias manualmente si es necesario
-    const distances = new Float32Array(points.length);
-    let total = 0;
-    for (let i = 0; i < points.length; i++) {
-      distances[i] = total;
-      if (i > 0) {
-        total += points[i].distanceTo(points[i - 1]);
-      }
-    }
-    geom.setAttribute('lineDistance', new THREE.BufferAttribute(distances, 1));
-    
-    return geom;
   }, [elevatedPoints]);
 
-  // Material con patrón de guiones
-  const material = useMemo(() => new THREE.LineDashedMaterial({
-    color: 0xffff00,
-    dashSize: 0.5,
-    gapSize: 0.3,
-    linewidth: 2,
-    depthTest: false
-  }), []);
+  // Calcular distancias para LineDashedMaterial
+  useEffect(() => {
+    if (lineRef.current) {
+      lineRef.current.computeLineDistances(); // Necesario para LineDashedMaterial
+    }
+  }, [geometry]);
 
   // Cálculo del área
   useEffect(() => {
@@ -72,17 +63,13 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5 })
       calculatedArea += originalPoints[i].x * originalPoints[j].z - originalPoints[j].x * originalPoints[i].z;
     }
     calculatedArea = Math.abs(calculatedArea) / 2;
-    setArea(calculatedArea); // Actualizar el estado del área
-    areaCalculated(calculatedArea); // Pasar el área al componente padre
+    setArea(calculatedArea);
+    areaCalculated(calculatedArea);
   }, [originalPoints, areaCalculated]);
-
-  console.log('name del proyect: ' + pjname);
-  
 
   return (
     <>
-      <line ref={lineRef} geometry={geometry} material={material} />
-      {/* Mostrar el área en el último marcador */}
+      <line ref={lineRef} geometry={geometry.current} material={material.current} />
       {markers.length > 0 && (
         <Html
           position={[
@@ -91,6 +78,7 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5 })
             markers[markers.length - 1].position[2],
           ]}
           style={{ pointerEvents: 'none' }}
+          zIndexRange={[0, 5000]}
         >
           <div style={{
             color: 'black',
