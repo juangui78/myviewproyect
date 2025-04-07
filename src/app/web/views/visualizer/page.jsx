@@ -25,6 +25,8 @@ import { useSession } from "next-auth/react";
 import { BlocksShuffle3 } from '@/web/global_components/icons/BlocksShuffle3';
 import SliderLoading from './components/sliderLoading/SliderLoading';
 import Whatsapp from '@/web/global_components/icons/Whatsapp';
+import { Image } from '@nextui-org/react';
+import Eye from '@/web/global_components/icons/Eye';
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
@@ -365,41 +367,41 @@ const App = () => {
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
-            {!isModelLoaded &&
-                <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
-                    <div className='md:w-[90% sm:w-[98%] w-[98%]'>
+            {progress < 100 && !isModelLoaded && (
+                <div className="bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]">
+                    <div className="md:w-[90%] sm:w-[98%] w-[98%]">
                         <SliderLoading data={DATARANDOM} />
                     </div>
                     <div>
-                        < BlocksShuffle3 className="text-6xl" />
+                        <BlocksShuffle3 className="text-6xl" />
                     </div>
-                    <div className='w-full text-center'>
+                    <div className="w-full text-center">
                         <p>Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
                     </div>
-                    <div className="absolute bottom-4 right-4">
-                            <a
-                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                            >
-                                <Whatsapp className="text-white text-1xl"/>
-                                
-                            </a>
-                    </div>
                 </div>
-            }
+            )}
 
 
-            <div className="flex justify-between ... w-[100%] pt-[15px] px-[15px] bg-transparent z-[10] absolute">
+            <div className="flex justify-between ... w-[100%] pt-[15px] px-[15px] bg-transparent z-[10] absolute items-center">
                 <div>
                     
-                    {!isPublish &&
+                    {!isPublish ?
                         <Link href='/web/views/user/feed' >
                             <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent  rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
                                 <span>Regresar</span>
                             </button>
-                        </Link>
+                        </Link> : 
+
+                        <div>
+                        <Image 
+                        src='/logos/isotipo-full-color.png' // Ruta de la imagen
+                        alt="My View Icon" 
+                        width={50} // Ancho de la imagen
+                        height={50} // Altura de la imagen
+                        className="rounded-full" // Clases adicionales de Tailwind CSS
+                    
+                        />
+                        </div>
                     }
                     
                 </div>
@@ -491,7 +493,8 @@ const App = () => {
                     {isModelLoaded && 
                         <div>
                             <div className="absolute bottom-4 left-4">
-                                <Button onClick={handleCameraViewChange} className="text-sm md:text-sm">
+                                <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
+                                    <Eye></Eye>
                                     Cambiar Vista
                                 </Button>
                         </div>
@@ -501,9 +504,9 @@ const App = () => {
                                 href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center w-14 h-14 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                                className="flex items-center justify-center w-[40px] h-[40px] bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
                             >
-                                <Whatsapp className="text-white text-3xl md:text-4xl" />
+                                <Whatsapp className="text-white text-3xl md:text-4xl " />
                             </a>
                         </div>
                         
