@@ -263,7 +263,23 @@ const App = () => {
             }
         };
 
+        //save analytics from views
+        const saveAnalyticsPerView = async () => {
+            try {
+                const fecth = await axios.post(`/api/controllers/analytics`, {
+                    idProyect: idProyect,
+                });
+
+                if (fecth.status != 200){
+                    console.error("Error al guardar la información de Analytics");
+                }
+            }catch (error) {
+                console.log("Error en el servidor");
+            }
+        }
+
         getModel();
+        saveAnalyticsPerView();
 
     }, [])
 

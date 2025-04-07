@@ -1,33 +1,45 @@
-import mongoose from "mongoose";
+import mongoose, { mongo } from "mongoose";
 
 const { MOONGODB_URI } = process.env;
 
-let conn = {
+const conn = {
   isConnected: false,
 };
 
 export async function dbConnected() {
-  if (conn.isConnected) return;
+
+  if (conn.isConnected) {
+    console.log("Ya está conectado a la base de datos");
+    return;
+  }
+
+  if (mongoose.connections.length > 0) {
+    conn.isConnected = mongoose.connections[0].readyState === 1;
+    if (conn.isConnected) {
+      console.log("Usando conexión existente");
+      return;
+    }
+
+    await mongoose.disconnect();
+  }
+
 
   try {
-    // Usar mongoose.connect() directamente
     const db = await mongoose.connect(MOONGODB_URI);
-
-    // Actualizar el estado de la conexión
     conn.isConnected = db.connections[0].readyState === 1;
 
     console.log("Conectado a la base de datos:", db.connection.db.databaseName);
-
-    // Escuchar eventos de conexión
-    mongoose.connection.on("connected", () => {
-      console.log("MongoDB está conectado");
-    });
-
-    mongoose.connection.on("error", (err) => {
-      console.error("Error de conexión de MongoDB:", err);
-    });
 
   } catch (error) {
     console.error("Error al conectar a MongoDB:", error);
   }
 }
+
+// Escuchar eventos de conexión
+mongoose.connection.on("connected", () => {
+  console.log("MongoDB está conectado");
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("Error de conexión de MongoDB:", err);
+});
