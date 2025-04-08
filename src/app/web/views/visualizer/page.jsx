@@ -117,25 +117,25 @@ const CameraViewManager = ({ cameraView }) => {
     return null; // Este componente no renderiza nada, solo maneja la cámara
 };
 
-const CameraDebugger = () => {
-    const { camera, gl } = useThree();
+// const CameraDebugger = () => {
+//     const { camera, gl } = useThree();
 
-    useEffect(() => {
-        const handleCameraChange = () => {
-            console.log(camera.position, "CAMERA POSITION");
-        };
+//     useEffect(() => {
+//         const handleCameraChange = () => {
+//             console.log(camera.position, "CAMERA POSITION");
+//         };
 
-        // Escuchar el evento de cambio en OrbitControls
-        gl.domElement.addEventListener("pointermove", handleCameraChange);
+//         // Escuchar el evento de cambio en OrbitControls
+//         gl.domElement.addEventListener("pointermove", handleCameraChange);
 
-        return () => {
-            // Limpiar el evento al desmontar el componente
-            gl.domElement.removeEventListener("pointermove", handleCameraChange);
-        };
-    }, [camera, gl]);
+//         return () => {
+//             // Limpiar el evento al desmontar el componente
+//             gl.domElement.removeEventListener("pointermove", handleCameraChange);
+//         };
+//     }, [camera, gl]);
 
-    return null; // Este componente no renderiza nada
-};
+//     return null; // Este componente no renderiza nada
+// };
 
 
 
@@ -468,7 +468,7 @@ const App = () => {
                             <ambientLight intensity={1} />
                             <directionalLight color="white" position={[0, 2, 50]} />
                             <CameraViewManager cameraView={cameraView} />
-                            <CameraDebugger />
+                            {/* <CameraDebugger /> */}
                             {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
                             {/* {markers.map(marker => (
                                 <Marker
