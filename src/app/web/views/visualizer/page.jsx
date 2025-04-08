@@ -27,6 +27,8 @@ import SliderLoading from './components/sliderLoading/SliderLoading';
 import Whatsapp from '@/web/global_components/icons/Whatsapp';
 import { Image } from '@nextui-org/react';
 import Eye from '@/web/global_components/icons/Eye';
+import gsap from "gsap";
+import { Quaternion, Vector3 } from "three";
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
@@ -36,21 +38,7 @@ const ModelComponent = forwardRef(({ gltf }, ref) => {
 
 ModelComponent.displayName = 'ModelComponent';
 
-const CameraPositioner = () => {
-    const { camera } = useThree();
-    const [isCameraInitialized, setIsCameraInitialized] = useState(false);
 
-    useEffect(() => {
-        // Solo establece la cámara la primera vez que se carga el proyecto
-        if (!isCameraInitialized) {
-            camera.position.set(0, 200, 0); // Posición inicial
-            camera.lookAt(0, 0, 0); // Mira al origen
-            setIsCameraInitialized(true); // Marca que la cámara ya fue inicializada
-        }
-    }, [camera, isCameraInitialized]);
-
-    return null; // Este componente no renderiza nada, solo maneja la cámara
-};
 
 export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
     "📍 Ubicación – Vereda Barro Blanco, Concepción, Antioquia",
@@ -98,42 +86,40 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
 ]
 
 const CameraViewManager = ({ cameraView }) => {
-    const { camera, gl } = useThree();
+    const { camera } = useThree();
+    
 
     useEffect(() => {
-        switch (cameraView) {
-            case 0:
-                camera.position.set(0, 200, 0); // Vista superior
-                break;
-            case 1:
-                camera.position.set(4.69, 99.87, -94.092); // Vista lateral derecha
-                break;
-            case 2:
-                camera.position.set(475.40, 223.10, -84.77); // Vista frontal
-                break;
-            case 3:
-                camera.position.set(-91.45, 71.300, -28.779); // Vista lateral izquierda
-                break;
-            case 4:
-                camera.position.set(90.581, 32.404, 51.591); // Vista isométrica
-                break;
-            default:
-                break;
-        }
-        // Asegúrate de que la cámara siempre mire al origen
-        camera.lookAt(0, 0, 0);
+        const positions = [
+            { x: 0, y: 200, z: 0 }, // Vista superior
+            { x: -59.69, y: 103.87, z: -84.092 }, // Vista lateral derecha
+            { x: 475.40, y: 223.10, z: -84.77 }, // Vista frontal
+            { x: -91.45, y: 71.300, z: -28.779 }, // Vista lateral izquierda
+            { x: 90.581, y: 32.404, z: 51.591 }, // Vista isométrica
+        ];
 
-        // Restablece la distancia de la cámara (opcional, si usas zoom)
+    
+
+        const targetPosition = positions[cameraView];
+
+        // Usa gsap para animar la posición de la cámara
+        gsap.to(camera.position, {
+            x: targetPosition.x,
+            y: targetPosition.y,
+            z: targetPosition.z,
+            duration: 1.5,
+            ease: "power2.inOut",
+            onUpdate: () => {
+                camera.lookAt(0, 0, 0);
+            },
+        });
+
         camera.updateProjectionMatrix();
+    }, [cameraView, camera]);
 
-        // Actualiza los controles de la cámara para reflejar los cambios
-        if (gl && gl.controls) {
-            gl.controls.update();
-        }
-    }, [cameraView, camera, gl]);
-
-    return null; // Este componente no renderiza nada, solo maneja la cámara
+    return null;
 };
+
 
 // const CameraDebugger = () => {
 //     const { camera, gl } = useThree();
@@ -180,6 +166,7 @@ const App = () => {
     const [projectInfo, setProjectInfo] = useState(null)
     const [pjname, setPjname] = useState(null)
     const [cameraView, setCameraView] = useState(0);
+   
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
     //search Params to validate info
@@ -191,6 +178,7 @@ const App = () => {
     const handleCameraViewChange = () => {
         setCameraView((prevView) => (prevView + 1) % 5); // Cambia entre 0, 1, 2 y 3
     };
+
 
     const toggleTerrains = () => {
         setShowTerrains((prev) => !prev);
@@ -370,6 +358,7 @@ const App = () => {
             console.error("Estructura del modelo inválida o URL no definida", model);
         }
     };
+   
 
     const saveTerrainsToDB = async () => {
 
@@ -397,11 +386,12 @@ const App = () => {
         );
     };
 
+    
 
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
-            {  progress < 100 && !isModelLoaded && (
+            {  (!isModelLoaded || progress < 100) && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
@@ -412,7 +402,7 @@ const App = () => {
                     <div className='w-full text-center'>
                         <p>Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
                     </div>
-                    <div className="absolute bottom-4 right-4">
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
                             <a
                                 href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
                                 target="_blank"
@@ -426,7 +416,8 @@ const App = () => {
                 </div>
             )}
 
-
+            {/* Canvas */}
+            
             <div className="flex justify-between ... w-[100%] pt-[15px] px-[15px] bg-transparent z-[10] absolute items-center">
                 <div>
                     
@@ -477,6 +468,7 @@ const App = () => {
                 </div>
 
             </div>
+            {isModelLoaded && (
             <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'>
                     <Canvas dpr={1} ref={objectRef}>
@@ -485,8 +477,10 @@ const App = () => {
                             <axesHelper args={[100, 10, 10]} /> */}
                             <ambientLight intensity={1} />
                             <directionalLight color="white" position={[0, 2, 50]} />
+                            
                             <CameraViewManager cameraView={cameraView} />
                             {/* <CameraDebugger /> */}
+                            
                             {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
                             {/* {markers.map(marker => (
                                 <Marker
@@ -527,8 +521,8 @@ const App = () => {
 
 
                             {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
-                            <CameraPositioner />
-                            <CameraController terrain={selectedTerrain} />
+                            {/* <CameraPositioner /> */}
+                            {/* <CameraController terrain={selectedTerrain} /> */}
                             <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} />
                             <Environment preset={light} background blur backgroundBlurriness />
 
@@ -614,7 +608,7 @@ const App = () => {
                         </div>
                     </div>
                 </div> */}
-            </div>
+            </div>)}
         </div>
     );
 }
