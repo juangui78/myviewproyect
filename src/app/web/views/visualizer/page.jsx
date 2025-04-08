@@ -381,7 +381,7 @@ const App = () => {
 
 
     return (
-        <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
+        <div className="flex flex-col  items-center h-[100vh] overflow-visible relative">
             {/* div de carga inicial */}
             {  progress < 100 && !isModelLoaded && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
@@ -518,15 +518,15 @@ const App = () => {
                     </Canvas>
 
                     {isModelLoaded && 
-                        <div>
-                            <div className="absolute bottom-4 left-4 z-[9999]">
+                        <div className="z-[9999]">
+                            <div className="absolute bottom-4 left-4">
                                 <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
                                     <Eye></Eye>
                                     Cambiar Vista
                                 </Button>
                         </div>
 
-                        <div className="absolute bottom-4 right-4 z-[9999]">
+                        <div className="absolute bottom-4 right-4 ">
                             <a
                                 href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
                                 target="_blank"
