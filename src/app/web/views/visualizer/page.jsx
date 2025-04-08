@@ -519,14 +519,14 @@ const App = () => {
 
                     {isModelLoaded && 
                         <div>
-                            <div className="absolute bottom-4 left-4">
+                            <div className="absolute bottom-4 left-4 z-[9999]">
                                 <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
                                     <Eye></Eye>
                                     Cambiar Vista
                                 </Button>
                         </div>
 
-                        <div className="absolute bottom-4 right-4">
+                        <div className="absolute bottom-4 right-4 z-[9999]">
                             <a
                                 href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
                                 target="_blank"
