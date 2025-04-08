@@ -21,22 +21,40 @@ const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
   "🟢 🛣️ A 1h 10 de Rionegro y Marinilla",
   "🟢 🏙️ A 2h de Medellín",
   "🟢 🌄 A 40 min de Barbosa",
-  "📐 Área total del lote: 3.333 m²",
+
+  "📐 Área total del lote:",
+  "3.333 m²",
   "🔨 Incluye explanación de 400 m² lista para construir",
+
+  "🛣️ Accesos y vías:",
   "🚗 A solo 10 min de la vía pavimentada que conecta San Vicente con Concepción",
-  "Cuenta con 💡 Energía",
-  "Cuenta con 🚰 Acueducto",
-  "Cuenta con 📶 Internet",
-  "Uso posible para ✅ Turismo rural",
-  "Uso posible para ✅ Proyectos de vivienda",
-  "Uso posible para ✅ Proyectos productivos",
-  "Uso posible para ✅ Proyectos de Inversión natural",
-  "Atractivos del lote: 🌳 Bosque nativo",
-  "Atractivos del lote: 🐦 Avistamiento de aves",
-  "Atractivos del lote: 😌 Zona tranquila para descanso",
-  "Cuenta con ✔️ Escrituras al día en proindiviso",
-  "Cuenta con ✔️ Licencia de construcción viable según EOT municipal",
-  "Precio de venta: 133.000.000 COP",
+
+  "💧 Servicios de fácil conexión:",
+  "💡 Energía",
+  "🚿 Agua",
+  "🌐 Internet",
+
+  "🏡 Usos posibles según certificado de usos del suelo:",
+  "✅ Turismo rural",
+  "✅ Vivienda",
+  "✅ Agricultura",
+  "✅ Inversión natural",
+
+  "🌿 Atractivos del lote:",
+  "🌳 Bosque nativo",
+  "🐦 Avistamiento de aves",
+  "😌 Zona tranquila para descanso",
+
+  "📜 Estado legal:",
+  "✔️ Escrituras al día en proindiviso.",
+  "✔️ Licencia de construcción viable según usos del suelo y EOT municipal.",
+
+  "💰 Precio de venta:",
+  "$133.000.000 COP",
+
+  "📞 Contacto directo:",
+  "Esteban Gómez González",
+  "📲 319 206 7689"
 ]
 
 export const InformationCard = ({ info }) => {

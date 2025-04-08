@@ -61,22 +61,40 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
     "🟢 🛣️ A 1h 10 de Rionegro y Marinilla",
     "🟢 🏙️ A 2h de Medellín",
     "🟢 🌄 A 40 min de Barbosa",
-    "📐 Área total del lote: 3.333 m²",
+  
+    "📐 Área total del lote:",
+    "3.333 m²",
     "🔨 Incluye explanación de 400 m² lista para construir",
+  
+    "🛣️ Accesos y vías:",
     "🚗 A solo 10 min de la vía pavimentada que conecta San Vicente con Concepción",
-    "Cuenta con 💡 Energía",
-    "Cuenta con 🚰 Acueducto",
-    "Cuenta con 📶 Internet",
-    "Uso posible para ✅ Turismo rural",
-    "Uso posible para ✅ Proyectos de vivienda",
-    "Uso posible para ✅ Proyectos productivos",
-    "Uso posible para ✅ Proyectos de Inversión natural",
-    "Atractivos del lote: 🌳 Bosque nativo",
-    "Atractivos del lote: 🐦 Avistamiento de aves",
-    "Atractivos del lote: 😌 Zona tranquila para descanso",
-    "Cuenta con ✔️ Escrituras al día en proindiviso",
-    "Cuenta con ✔️ Licencia de construcción viable según EOT municipal",
-    "Precio de venta: 133.000.000 COP",
+  
+    "💧 Servicios de fácil conexión:",
+    "💡 Energía",
+    "🚿 Agua",
+    "🌐 Internet",
+  
+    "🏡 Usos posibles según certificado de usos del suelo:",
+    "✅ Turismo rural",
+    "✅ Vivienda",
+    "✅ Agricultura",
+    "✅ Inversión natural",
+  
+    "🌿 Atractivos del lote:",
+    "🌳 Bosque nativo",
+    "🐦 Avistamiento de aves",
+    "😌 Zona tranquila para descanso",
+  
+    "📜 Estado legal:",
+    "✔️ Escrituras al día en proindiviso.",
+    "✔️ Licencia de construcción viable según usos del suelo y EOT municipal.",
+  
+    "💰 Precio de venta:",
+    "$133.000.000 COP",
+  
+    "📞 Contacto directo:",
+    "Esteban Gómez González",
+    "📲 319 206 7689"
 ]
 
 const CameraViewManager = ({ cameraView }) => {
@@ -517,27 +535,29 @@ const App = () => {
                         </Suspense>
                     </Canvas>
 
-                    
-                        <div className="z-[9999]">
-                            <div className="absolute bottom-4 left-4">
-                                <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
-                                    <Eye></Eye>
-                                    Cambiar Vista
-                                </Button>
-                        </div>
-
-                        <div className="absolute bottom-4 right-4 ">
-                            <a
-                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center w-[40px] h-[40px] bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                            >
-                                <Whatsapp className="text-white text-3xl md:text-4xl " />
-                            </a>
-                        </div>
                         
-                    </div>
+                        <div className="z-[9999]">
+                            {isModelLoaded && 
+                                <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4">
+                                    <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
+                                        <Eye></Eye>
+                                        Cambiar Vista
+                                    </Button>
+                            </div>
+                            }
+
+                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                                <a
+                                    href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center w-[40px] h-[40px] bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                                >
+                                    <Whatsapp className="text-white text-3xl md:text-4xl " />
+                                </a>
+                            </div>
+                        
+                        </div>
                 </div>
 
                 {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
