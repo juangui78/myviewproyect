@@ -381,7 +381,7 @@ const App = () => {
 
 
     return (
-        <div className="flex flex-col  items-center h-[100vh] overflow-visible relative">
+        <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
             {  progress < 100 && !isModelLoaded && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
@@ -517,7 +517,7 @@ const App = () => {
                         </Suspense>
                     </Canvas>
 
-                    {isModelLoaded && 
+                    
                         <div className="z-[9999]">
                             <div className="absolute bottom-4 left-4">
                                 <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
@@ -537,7 +537,7 @@ const App = () => {
                             </a>
                         </div>
                         
-                    </div>}
+                    </div>
                 </div>
 
                 {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
