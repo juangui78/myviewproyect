@@ -30,6 +30,7 @@ import Eye from '@/web/global_components/icons/Eye';
 import gsap from "gsap";
 import { Quaternion, Vector3 } from "three";
 
+
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
         <primitive object={gltf.scene} ref={ref} scale={1} />
@@ -167,6 +168,7 @@ const App = () => {
     const [projectInfo, setProjectInfo] = useState(null)
     const [pjname, setPjname] = useState(null)
     const [cameraView, setCameraView] = useState(0);
+    
    
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -292,53 +294,37 @@ const App = () => {
 
     // useEffect para cargar el modelo inicial
     useEffect(() => {
+        // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
+            console.log('model: ', currentModel);
+
             if (modelLocation !== "") {
                 const loader = new GLTFLoader();
+
+                // Guarda el ID antes de iniciar la carga asíncrona
                 const projectId = currentModel._id;
-    
-                // Cargar primero el modelo de baja resolución
-                loader.load(
-                    modelLocation.lowres || modelLocation.url,
-                    (lowResModel) => {
-                        setGltf(lowResModel); // Actualiza el estado con el modelo de baja resolución
-                        setIsLowResLoaded(true);
-                        setIsModelLoaded(true); // Marca como cargado
-                        setCurrentModelUrl(modelLocation.url);
-                        setCurrentModelId(projectId);
-                        setPjname(currentModel.name);
-    
-                        // Si hay terrenos, actualízalos
-                        if (currentModel.terrains) {
-                            setTerrains((prevTerrains) => prevTerrains.length === 0 ? currentModel.terrains : prevTerrains);
-                            setAllTerrains((prevAllTerrains) => prevAllTerrains.length === 0 ? currentModel.terrains : prevAllTerrains);
-                        }
-    
-                        // Cargar el modelo de alta resolución en segundo plano
-                        loader.load(
-                            modelLocation.url,
-                            (highResModel) => {
-                                
-                                setGltf(highResModel); // Reemplaza con el modelo de alta resolución
-                                
-                            
-                            },
-                            undefined, // onProgress
-                            (error) => {
-                                console.error("Error loading high-res model:", error);
-                            }
-                        );
-                    },
-                    undefined, // onProgress
-                    (error) => {
-                        console.error("Error loading low-res model:", error);
+
+                loader.load(modelLocation.url, (gltfLoaded) => {
+                    setGltf(gltfLoaded);
+                    setIsModelLoaded(true);
+                    setCurrentModelUrl(modelLocation.url);
+                    setCurrentModelId(projectId); // Usa la variable local
+                    setPjname(currentModel.name) // Usa la variable local
+                    // console.log('ID CARGADA:', projectId); // Usa la variable local
+
+                    // Si necesitas hacer algo con los terrenos después de cargar
+                    if (currentModel.terrains) {
+                        setTerrains(currentModel.terrains);
+                        setAllTerrains(currentModel.terrains);
                     }
-                );
+                });
             } else {
                 alert("No existe modelo");
             }
         }
+
+        if (session !== null && session !== undefined) setIsPublish(false);
     }, [currentModel, isModelLoaded]);
 
     
