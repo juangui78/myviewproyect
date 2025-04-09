@@ -155,6 +155,7 @@ const App = () => {
     const [areaCalculated, setAreaCalculated] = useState(0);
     const [distanceCalculated, setDistanceCalculated] = useState(0)
     const [isModelLoaded, setIsModelLoaded] = useState(false);
+    const [isLowResLoaded, setIsLowResLoaded] = useState(false);
     const [terrains, setTerrains] = useState([]);
     const [currentTerrainMarkers, setCurrentTerrainMarkers] = useState([]);
     const [allTerrains, setAllTerrains] = useState([]);
@@ -291,38 +292,63 @@ const App = () => {
 
     // useEffect para cargar el modelo inicial
     useEffect(() => {
-        // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
-            console.log('model: ', currentModel);
-
             if (modelLocation !== "") {
                 const loader = new GLTFLoader();
-
-                // Guarda el ID antes de iniciar la carga asíncrona
                 const projectId = currentModel._id;
-
-                loader.load(modelLocation.url, (gltfLoaded) => {
-                    setGltf(gltfLoaded);
-                    setIsModelLoaded(true);
-                    setCurrentModelUrl(modelLocation.url);
-                    setCurrentModelId(projectId); // Usa la variable local
-                    setPjname(currentModel.name) // Usa la variable local
-                    // console.log('ID CARGADA:', projectId); // Usa la variable local
-
-                    // Si necesitas hacer algo con los terrenos después de cargar
-                    if (currentModel.terrains) {
-                        setTerrains(currentModel.terrains);
-                        setAllTerrains(currentModel.terrains);
+    
+                // Cargar primero el modelo de baja resolución
+                loader.load(
+                    modelLocation.lowres || modelLocation.url,
+                    (lowResModel) => {
+                        setGltf(lowResModel); // Actualiza el estado con el modelo de baja resolución
+                        setIsLowResLoaded(true);
+                        setIsModelLoaded(true); // Marca como cargado
+                        setCurrentModelUrl(modelLocation.url);
+                        setCurrentModelId(projectId);
+                        setPjname(currentModel.name);
+    
+                        // Si hay terrenos, actualízalos
+                        if (currentModel.terrains) {
+                            setTerrains((prevTerrains) => prevTerrains.length === 0 ? currentModel.terrains : prevTerrains);
+                            setAllTerrains((prevAllTerrains) => prevAllTerrains.length === 0 ? currentModel.terrains : prevAllTerrains);
+                        }
+    
+                        // Cargar el modelo de alta resolución en segundo plano
+                        loader.load(
+                            modelLocation.url,
+                            (highResModel) => {
+                                
+                                setGltf(highResModel); // Reemplaza con el modelo de alta resolución
+                                
+                            
+                            },
+                            undefined, // onProgress
+                            (error) => {
+                                console.error("Error loading high-res model:", error);
+                            }
+                        );
+                    },
+                    undefined, // onProgress
+                    (error) => {
+                        console.error("Error loading low-res model:", error);
                     }
-                });
+                );
             } else {
                 alert("No existe modelo");
             }
         }
-
-        if (session !== null && session !== undefined) setIsPublish(false);
     }, [currentModel, isModelLoaded]);
+
+    
+
+    // // Controla la visibilidad de AreaVisual
+    // useEffect(() => {
+    //     if (isModelLoaded) {
+    //         setIsAreaVisualVisible(true);
+    //     }
+    // }, [isModelLoaded]);
 
     // Función para cargar un modelo específico
     const loadModel = (model) => {
@@ -330,6 +356,7 @@ const App = () => {
         // Asegúrate de que model.model.url existe
         if (model && model.model && model.model.url) {
             const modelUrl = model.model.url;
+            const modelLowRes = model.model.lowres || model.model.url; // Usa lowResUrl si está disponible
 
             if (modelUrl === currentModelUrl) {
                 console.log("El modelo ya está cargado.");
@@ -391,7 +418,7 @@ const App = () => {
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
-            {  (!isModelLoaded || progress < 100) && (
+            {  (!isModelLoaded || !isLowResLoaded ) && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
@@ -490,7 +517,7 @@ const App = () => {
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
                             ))} */}
-                            {isModelLoaded && currentTerrainMarkers.map(marker => (
+                            {currentTerrainMarkers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
