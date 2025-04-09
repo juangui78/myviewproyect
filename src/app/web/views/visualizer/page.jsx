@@ -30,7 +30,6 @@ import Eye from '@/web/global_components/icons/Eye';
 import gsap from "gsap";
 import { Quaternion, Vector3 } from "three";
 
-
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
         <primitive object={gltf.scene} ref={ref} scale={1} />
@@ -156,7 +155,6 @@ const App = () => {
     const [areaCalculated, setAreaCalculated] = useState(0);
     const [distanceCalculated, setDistanceCalculated] = useState(0)
     const [isModelLoaded, setIsModelLoaded] = useState(false);
-    const [isLowResLoaded, setIsLowResLoaded] = useState(false);
     const [terrains, setTerrains] = useState([]);
     const [currentTerrainMarkers, setCurrentTerrainMarkers] = useState([]);
     const [allTerrains, setAllTerrains] = useState([]);
@@ -168,7 +166,6 @@ const App = () => {
     const [projectInfo, setProjectInfo] = useState(null)
     const [pjname, setPjname] = useState(null)
     const [cameraView, setCameraView] = useState(0);
-    
    
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -327,22 +324,12 @@ const App = () => {
         if (session !== null && session !== undefined) setIsPublish(false);
     }, [currentModel, isModelLoaded]);
 
-    
-
-    // // Controla la visibilidad de AreaVisual
-    // useEffect(() => {
-    //     if (isModelLoaded) {
-    //         setIsAreaVisualVisible(true);
-    //     }
-    // }, [isModelLoaded]);
-
     // Función para cargar un modelo específico
     const loadModel = (model) => {
 
         // Asegúrate de que model.model.url existe
         if (model && model.model && model.model.url) {
             const modelUrl = model.model.url;
-            const modelLowRes = model.model.lowres || model.model.url; // Usa lowResUrl si está disponible
 
             if (modelUrl === currentModelUrl) {
                 console.log("El modelo ya está cargado.");
@@ -404,7 +391,7 @@ const App = () => {
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
-            {  (!isModelLoaded || !isLowResLoaded ) && (
+            {  (!isModelLoaded || progress < 100) && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
@@ -503,7 +490,7 @@ const App = () => {
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
                             ))} */}
-                            {currentTerrainMarkers.map(marker => (
+                            {isModelLoaded && currentTerrainMarkers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
