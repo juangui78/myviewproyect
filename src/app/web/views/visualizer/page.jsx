@@ -30,6 +30,7 @@ import Eye from '@/web/global_components/icons/Eye';
 import gsap from "gsap";
 import { Quaternion, Vector3 } from "three";
 
+
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
         <primitive object={gltf.scene} ref={ref} scale={1} />
@@ -167,6 +168,7 @@ const App = () => {
     const [projectInfo, setProjectInfo] = useState(null)
     const [pjname, setPjname] = useState(null)
     const [cameraView, setCameraView] = useState(0);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
    
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -309,26 +311,19 @@ const App = () => {
                         setCurrentModelId(projectId);
                         setPjname(currentModel.name);
     
-                        // Si hay terrenos, actualízalos
-                        if (currentModel.terrains) {
-                            setTerrains((prevTerrains) => prevTerrains.length === 0 ? currentModel.terrains : prevTerrains);
-                            setAllTerrains((prevAllTerrains) => prevAllTerrains.length === 0 ? currentModel.terrains : prevAllTerrains);
+                        // Si no es un dispositivo móvil, cargar el modelo de alta resolución
+                        if (!isMobile) {
+                            loader.load(
+                                modelLocation.url,
+                                (highResModel) => {
+                                    setGltf(highResModel); // Reemplaza con el modelo de alta resolución
+                                },
+                                undefined, // onProgress
+                                (error) => {
+                                    console.error("Error loading high-res model:", error);
+                                }
+                            );
                         }
-    
-                        // Cargar el modelo de alta resolución en segundo plano
-                        loader.load(
-                            modelLocation.url,
-                            (highResModel) => {
-                                
-                                setGltf(highResModel); // Reemplaza con el modelo de alta resolución
-                                
-                            
-                            },
-                            undefined, // onProgress
-                            (error) => {
-                                console.error("Error loading high-res model:", error);
-                            }
-                        );
                     },
                     undefined, // onProgress
                     (error) => {
