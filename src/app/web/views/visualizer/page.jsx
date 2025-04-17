@@ -471,7 +471,7 @@ const App = () => {
             {isModelLoaded && (
             <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'>
-                    <Canvas dpr={1} ref={objectRef} gl={{version: 1}}>
+                    <Canvas dpr={1} ref={objectRef} >
                         <Suspense fallback={<div>Cargando modelo...</div>}>
                             {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
