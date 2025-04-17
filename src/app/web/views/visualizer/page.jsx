@@ -29,6 +29,7 @@ import { Image } from '@nextui-org/react';
 import Eye from '@/web/global_components/icons/Eye';
 import gsap from "gsap";
 import { Quaternion, Vector3 } from "three";
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
@@ -298,6 +299,7 @@ const App = () => {
 
             if (modelLocation !== "") {
                 const loader = new GLTFLoader();
+                loader.setMeshoptDecoder(MeshoptDecoder);
 
                 // Guarda el ID antes de iniciar la carga asíncrona
                 const projectId = currentModel._id;
