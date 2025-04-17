@@ -471,8 +471,8 @@ const App = () => {
             {isModelLoaded && (
             <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'>
-                    <Canvas dpr={1} ref={objectRef}>
-                        <Suspense fallback={null}>
+                    <Canvas dpr={1} ref={objectRef} gl={{version: 1}}>
+                        <Suspense fallback={<div>Cargando modelo...</div>}>
                             {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
                             <ambientLight intensity={1} />
@@ -615,7 +615,7 @@ const App = () => {
 
 export default function WrappedApp() {
     return (
-        <Suspense >
+        <Suspense>
             <App />
         </Suspense>
     )
