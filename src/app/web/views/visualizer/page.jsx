@@ -393,7 +393,7 @@ const App = () => {
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
-            {  (!isModelLoaded || progress < 100) && (
+            {  (!isModelLoaded) && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
