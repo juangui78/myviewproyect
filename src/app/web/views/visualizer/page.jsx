@@ -30,6 +30,7 @@ import Eye from '@/web/global_components/icons/Eye';
 import gsap from "gsap";
 import { Quaternion, Vector3 } from "three";
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import LoadingScreen from './components/loadingScreen/LoadingScreen.jsx';
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
@@ -167,6 +168,7 @@ const App = () => {
     const [projectInfo, setProjectInfo] = useState(null)
     const [pjname, setPjname] = useState(null)
     const [cameraView, setCameraView] = useState(0);
+    const [isLoadingScreenVisible, setIsLoadingScreenVisible] = useState(true);
    
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -307,6 +309,7 @@ const App = () => {
                 loader.load(modelLocation.url, (gltfLoaded) => {
                     setGltf(gltfLoaded);
                     setIsModelLoaded(true);
+                    setIsLoadingScreenVisible(false); // Oculta la pantalla de carga
                     setCurrentModelUrl(modelLocation.url);
                     setCurrentModelId(projectId); // Usa la variable local
                     setPjname(currentModel.name) // Usa la variable local
@@ -390,10 +393,12 @@ const App = () => {
 
     
 
+    
+
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
-            {  (!isModelLoaded) && (
+            {  (isLoadingScreenVisible) && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
@@ -473,8 +478,9 @@ const App = () => {
             {isModelLoaded && (
             <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'>
+                    <Suspense fallback={<LoadingScreen />}>
                     <Canvas dpr={1} ref={objectRef}>
-                        <Suspense fallback={null}>
+                        {/* <Suspense fallback={null}> */}
                             {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
                             <ambientLight intensity={1} />
@@ -528,8 +534,9 @@ const App = () => {
                             <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} />
                             <Environment preset={light} background blur backgroundBlurriness />
 
-                        </Suspense>
+                        {/* </Suspense> */}
                     </Canvas>
+                    </Suspense>
 
                         
                         <div className="z-[9999]">
@@ -617,7 +624,7 @@ const App = () => {
 
 export default function WrappedApp() {
     return (
-        <Suspense >
+        <Suspense fallback={<LoadingScreen />}>
             <App />
         </Suspense>
     )
