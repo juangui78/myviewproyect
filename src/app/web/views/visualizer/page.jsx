@@ -314,7 +314,7 @@ const App = () => {
 
     // useEffect para cargar el modelo inicial
     useEffect(() => {
-        if (isSafariMobile) return; // ← salir temprano en Safari iOS
+        if (isSafariMobile || isInstagramBrowser) return; // ← salir temprano en Safari iOS
         // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
