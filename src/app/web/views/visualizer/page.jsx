@@ -169,6 +169,7 @@ const App = () => {
     const [cameraView, setCameraView] = useState(0);
     const [isLoadingScreenVisible, setIsLoadingScreenVisible] = useState(true);
     const [isSafariMobile, setIsSafariMobile] = useState(false);
+    const [isInstagramBrowser, setIsInstagramBrowser] = useState(false);
    
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -257,16 +258,20 @@ const App = () => {
     const ua = navigator.userAgent;
     const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
     const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua) && !/CriOS/.test(ua);
+    const isInstagramBrowser = /Instagram/.test(ua);
     
-    return isIOS && isSafari;
+    return {
+        isSafariMobile: isIOS && isSafari,
+        isInstagramBrowser: isIOS && isInstagramBrowser,
+    };
   };
   
   useEffect(() => {
-    // Use the locally defined function
-    const safari = checkIsSafariOnIOS();
-    setIsSafariMobile(safari);
-    setIsLoadingScreenVisible(false)
-  }, []);
+    const { isSafariMobile, isInstagramBrowser } = checkIsSafariOnIOS();
+    setIsSafariMobile(isSafariMobile);
+    setIsInstagramBrowser(isInstagramBrowser);
+    setIsLoadingScreenVisible(false); // Oculta la pantalla de carga si es necesario
+}, []);
 
     useEffect(() => {
         const getModel = async () => {
@@ -639,7 +644,7 @@ const App = () => {
                 </div> */}
             </div>)}
             
-            {isSafariMobile && (
+            {isSafariMobile || isInstagramBrowser && (
                 
                     <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
                     
