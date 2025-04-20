@@ -28,7 +28,6 @@ import Whatsapp from '@/web/global_components/icons/Whatsapp';
 import { Image } from '@nextui-org/react';
 import Eye from '@/web/global_components/icons/Eye';
 import gsap from "gsap";
-import { Quaternion, Vector3 } from "three";
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import LoadingScreen from './components/loadingScreen/LoadingScreen.jsx';
 
@@ -169,6 +168,7 @@ const App = () => {
     const [pjname, setPjname] = useState(null)
     const [cameraView, setCameraView] = useState(0);
     const [isLoadingScreenVisible, setIsLoadingScreenVisible] = useState(true);
+    const [isSafariMobile, setIsSafariMobile] = useState(false);
    
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -250,10 +250,25 @@ const App = () => {
         setAreaCalculated(calculatedArea);
     };
 
-
+  // Se valida si el navegador es Safari en iOS para evitar problemas de carga
+  const checkIsSafariOnIOS = () => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+    
+    const ua = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua) && !/CriOS/.test(ua);
+    
+    return isIOS && isSafari;
+  };
+  
+  useEffect(() => {
+    // Use the locally defined function
+    const safari = checkIsSafariOnIOS();
+    setIsSafariMobile(safari);
+    setIsLoadingScreenVisible(false)
+  }, []);
 
     useEffect(() => {
-
         const getModel = async () => {
             try {
                 const response = await axios.get(`/api/controllers/visualizer/${idProyect}`)
@@ -294,6 +309,7 @@ const App = () => {
 
     // useEffect para cargar el modelo inicial
     useEffect(() => {
+        if (isSafariMobile) return; // ← salir temprano en Safari iOS
         // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
@@ -400,6 +416,7 @@ const App = () => {
             {/* div de carga inicial */}
             {  (isLoadingScreenVisible) && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+                    
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
                     </div>
@@ -475,7 +492,10 @@ const App = () => {
                 </div>
 
             </div>
-            {isModelLoaded && (
+
+            {/* Se condiciona el renderizado general no safari */}
+            
+            {!isSafariMobile && isModelLoaded && (
             <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'>
                     <Suspense fallback={<LoadingScreen />}>
@@ -618,6 +638,36 @@ const App = () => {
                     </div>
                 </div> */}
             </div>)}
+            
+            {isSafariMobile && (
+                
+                    <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+                    
+                    <div className='md:w-[90% sm:w-[98%] w-[98%]'>
+                        <SliderLoading data={DATARANDOM} />
+                    </div>
+                    <div>
+                        < BlocksShuffle3 className="text-6xl" />
+                    </div>
+                    <div className='w-full text-center'>
+                        <p>Estamos trabajando en tu experiencia.</p>
+                        <p>Por favor utiliza un navegador diferente.</p>
+                    </div>
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                            <a
+                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                            >
+                                <Whatsapp className="text-white text-1xl"/>
+                                
+                            </a>
+                    </div>
+                </div>
+         
+                
+            )}
         </div>
     );
 }

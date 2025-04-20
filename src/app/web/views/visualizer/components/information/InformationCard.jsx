@@ -93,7 +93,7 @@ export default function App({ info }) {
             Información
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="p-1 border-none bg-black z-[9999] ">
+        <PopoverContent className="p-1 border-none bg-black z-[999999999999] ">
           <InformationCard info={info} />
         </PopoverContent>
       </Popover>
