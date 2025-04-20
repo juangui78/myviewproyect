@@ -270,7 +270,10 @@ const App = () => {
     const { isSafariMobile, isInstagramBrowser } = checkIsSafariOnIOS();
     setIsSafariMobile(isSafariMobile);
     setIsInstagramBrowser(isInstagramBrowser);
-    setIsLoadingScreenVisible(false); // Oculta la pantalla de carga si es necesario
+    if (isSafariMobile || isInstagramBrowser) {
+        setIsLoadingScreenVisible(false); // Muestra la pantalla de carga si es Safari iOS o Instagram
+    }
+    
 }, []);
 
     useEffect(() => {
