@@ -27,6 +27,9 @@ import SliderLoading from './components/sliderLoading/SliderLoading';
 import Whatsapp from '@/web/global_components/icons/Whatsapp';
 import { Image } from '@nextui-org/react';
 import Eye from '@/web/global_components/icons/Eye';
+import gsap from "gsap";
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import LoadingScreen from './components/loadingScreen/LoadingScreen.jsx';
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
@@ -36,21 +39,7 @@ const ModelComponent = forwardRef(({ gltf }, ref) => {
 
 ModelComponent.displayName = 'ModelComponent';
 
-const CameraPositioner = () => {
-    const { camera } = useThree();
-    const [isCameraInitialized, setIsCameraInitialized] = useState(false);
 
-    useEffect(() => {
-        // Solo establece la cámara la primera vez que se carga el proyecto
-        if (!isCameraInitialized) {
-            camera.position.set(0, 200, 0); // Posición inicial
-            camera.lookAt(0, 0, 0); // Mira al origen
-            setIsCameraInitialized(true); // Marca que la cámara ya fue inicializada
-        }
-    }, [camera, isCameraInitialized]);
-
-    return null; // Este componente no renderiza nada, solo maneja la cámara
-};
 
 export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
     "📍 Ubicación – Vereda Barro Blanco, Concepción, Antioquia",
@@ -61,81 +50,97 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
     "🟢 🛣️ A 1h 10 de Rionegro y Marinilla",
     "🟢 🏙️ A 2h de Medellín",
     "🟢 🌄 A 40 min de Barbosa",
-    "📐 Área total del lote: 3.333 m²",
+
+    "📐 Área total del lote:",
+    "3.333 m²",
     "🔨 Incluye explanación de 400 m² lista para construir",
+
+    "🛣️ Accesos y vías:",
     "🚗 A solo 10 min de la vía pavimentada que conecta San Vicente con Concepción",
-    "Cuenta con 💡 Energía",
-    "Cuenta con 🚰 Acueducto",
-    "Cuenta con 📶 Internet",
-    "Uso posible para ✅ Turismo rural",
-    "Uso posible para ✅ Proyectos de vivienda",
-    "Uso posible para ✅ Proyectos productivos",
-    "Uso posible para ✅ Proyectos de Inversión natural",
-    "Atractivos del lote: 🌳 Bosque nativo",
-    "Atractivos del lote: 🐦 Avistamiento de aves",
-    "Atractivos del lote: 😌 Zona tranquila para descanso",
-    "Cuenta con ✔️ Escrituras al día en proindiviso",
-    "Cuenta con ✔️ Licencia de construcción viable según EOT municipal",
-    "Precio de venta: 133.000.000 COP",
+
+    "💧 Servicios de fácil conexión:",
+    "💡 Energía",
+    "🚿 Agua",
+    "🌐 Internet",
+
+    "🏡 Usos posibles según certificado de usos del suelo:",
+    "✅ Turismo rural",
+    "✅ Vivienda",
+    "✅ Agricultura",
+    "✅ Inversión natural",
+
+    "🌿 Atractivos del lote:",
+    "🌳 Bosque nativo",
+    "🐦 Avistamiento de aves",
+    "😌 Zona tranquila para descanso",
+
+    "📜 Estado legal:",
+    "✔️ Escrituras al día en proindiviso.",
+    "✔️ Licencia de construcción viable según usos del suelo y EOT municipal.",
+
+    "💰 Precio de venta:",
+    "$133.000.000 COP",
+
+    "📞 Contacto directo:",
+    "Esteban Gómez González",
+    "📲 319 206 7689"
 ]
 
 const CameraViewManager = ({ cameraView }) => {
-    const { camera, gl } = useThree();
+    const { camera } = useThree();
+
 
     useEffect(() => {
-        switch (cameraView) {
-            case 0:
-                camera.position.set(0, 200, 0); // Vista superior
-                break;
-            case 1:
-                camera.position.set(4.69, 99.87, -94.092); // Vista lateral derecha
-                break;
-            case 2:
-                camera.position.set(475.40, 223.10, -84.77); // Vista frontal
-                break;
-            case 3:
-                camera.position.set(-91.45, 71.300, -28.779); // Vista lateral izquierda
-                break;
-            case 4:
-                camera.position.set(90.581, 32.404, 51.591); // Vista isométrica
-                break;
-            default:
-                break;
-        }
-        // Asegúrate de que la cámara siempre mire al origen
-        camera.lookAt(0, 0, 0);
+        const positions = [
+            { x: 0, y: 200, z: 0 }, // Vista superior
+            { x: -59.69, y: 103.87, z: -84.092 }, // Vista lateral derecha
+            { x: 475.40, y: 223.10, z: -84.77 }, // Vista frontal
+            { x: -91.45, y: 71.300, z: -28.779 }, // Vista lateral izquierda
+            { x: 90.581, y: 32.404, z: 51.591 }, // Vista isométrica
+        ];
 
-        // Restablece la distancia de la cámara (opcional, si usas zoom)
+
+
+        const targetPosition = positions[cameraView];
+
+        // Usa gsap para animar la posición de la cámara
+        gsap.to(camera.position, {
+            x: targetPosition.x,
+            y: targetPosition.y,
+            z: targetPosition.z,
+            duration: 1.5,
+            ease: "power2.inOut",
+            onUpdate: () => {
+                camera.lookAt(0, 0, 0);
+            },
+        });
+
         camera.updateProjectionMatrix();
+    }, [cameraView, camera]);
 
-        // Actualiza los controles de la cámara para reflejar los cambios
-        if (gl && gl.controls) {
-            gl.controls.update();
-        }
-    }, [cameraView, camera, gl]);
-
-    return null; // Este componente no renderiza nada, solo maneja la cámara
+    return null;
 };
 
-const CameraDebugger = () => {
-    const { camera, gl } = useThree();
 
-    useEffect(() => {
-        const handleCameraChange = () => {
-            console.log(camera.position, "CAMERA POSITION");
-        };
+// const CameraDebugger = () => {
+//     const { camera, gl } = useThree();
 
-        // Escuchar el evento de cambio en OrbitControls
-        gl.domElement.addEventListener("pointermove", handleCameraChange);
+//     useEffect(() => {
+//         const handleCameraChange = () => {
+//             console.log(camera.position, "CAMERA POSITION");
+//         };
 
-        return () => {
-            // Limpiar el evento al desmontar el componente
-            gl.domElement.removeEventListener("pointermove", handleCameraChange);
-        };
-    }, [camera, gl]);
+//         // Escuchar el evento de cambio en OrbitControls
+//         gl.domElement.addEventListener("pointermove", handleCameraChange);
 
-    return null; // Este componente no renderiza nada
-};
+//         return () => {
+//             // Limpiar el evento al desmontar el componente
+//             gl.domElement.removeEventListener("pointermove", handleCameraChange);
+//         };
+//     }, [camera, gl]);
+
+//     return null; // Este componente no renderiza nada
+// };
 
 
 
@@ -162,6 +167,10 @@ const App = () => {
     const [projectInfo, setProjectInfo] = useState(null)
     const [pjname, setPjname] = useState(null)
     const [cameraView, setCameraView] = useState(0);
+    const [isLoadingScreenVisible, setIsLoadingScreenVisible] = useState(true);
+    const [isSafariMobile, setIsSafariMobile] = useState(false);
+    const [isInstagramBrowser, setIsInstagramBrowser] = useState(false);
+
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
     //search Params to validate info
@@ -173,6 +182,7 @@ const App = () => {
     const handleCameraViewChange = () => {
         setCameraView((prevView) => (prevView + 1) % 5); // Cambia entre 0, 1, 2 y 3
     };
+
 
     const toggleTerrains = () => {
         setShowTerrains((prev) => !prev);
@@ -241,10 +251,32 @@ const App = () => {
         setAreaCalculated(calculatedArea);
     };
 
+    // Se valida si el navegador es Safari en iOS para evitar problemas de carga
+    const checkIsSafariOnIOS = () => {
+        if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
 
+        const ua = navigator.userAgent;
+        const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua) && !/CriOS/.test(ua);
+        const isInstagramBrowser = /Instagram/.test(ua);
+
+        return {
+            isSafariMobile: isIOS && isSafari,
+            isInstagramBrowser: isIOS && isInstagramBrowser,
+        };
+    };
 
     useEffect(() => {
+        const { isSafariMobile, isInstagramBrowser } = checkIsSafariOnIOS();
+        setIsSafariMobile(isSafariMobile);
+        setIsInstagramBrowser(isInstagramBrowser);
+        if (isSafariMobile || isInstagramBrowser) {
+            setIsLoadingScreenVisible(false); // Muestra la pantalla de carga si es Safari iOS o Instagram
+        }
 
+    }, []);
+
+    useEffect(() => {
         const getModel = async () => {
             try {
                 const response = await axios.get(`/api/controllers/visualizer/${idProyect}`)
@@ -272,10 +304,10 @@ const App = () => {
                     idProyect: idProyect,
                 });
 
-                if (fecth.status != 200){
+                if (fecth.status != 200) {
                     console.error("Error al guardar la información de Analytics");
                 }
-            }catch (error) {
+            } catch (error) {
                 console.log("Error en el servidor");
             }
         }
@@ -287,13 +319,14 @@ const App = () => {
 
     // useEffect para cargar el modelo inicial
     useEffect(() => {
+        if (isSafariMobile || isInstagramBrowser) return; // ← salir temprano en Safari iOS
         // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
-            console.log('model: ', currentModel);
 
             if (modelLocation !== "") {
                 const loader = new GLTFLoader();
+                loader.setMeshoptDecoder(MeshoptDecoder);
 
                 // Guarda el ID antes de iniciar la carga asíncrona
                 const projectId = currentModel._id;
@@ -301,6 +334,7 @@ const App = () => {
                 loader.load(modelLocation.url, (gltfLoaded) => {
                     setGltf(gltfLoaded);
                     setIsModelLoaded(true);
+                    setIsLoadingScreenVisible(false); // Oculta la pantalla de carga
                     setCurrentModelUrl(modelLocation.url);
                     setCurrentModelId(projectId); // Usa la variable local
                     setPjname(currentModel.name) // Usa la variable local
@@ -355,6 +389,7 @@ const App = () => {
         }
     };
 
+
     const saveTerrainsToDB = async () => {
 
         const modelID = currentModelId || idProyect;
@@ -382,11 +417,15 @@ const App = () => {
     };
 
 
+
+
+
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
-            {  progress < 100 && !isModelLoaded && (
+            {(isLoadingScreenVisible) && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
                     </div>
@@ -396,43 +435,44 @@ const App = () => {
                     <div className='w-full text-center'>
                         <p>Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
                     </div>
-                    <div className="absolute bottom-4 right-4">
-                            <a
-                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                            >
-                                <Whatsapp className="text-white text-1xl"/>
-                                
-                            </a>
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                        <a
+                            href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                        >
+                            <Whatsapp className="text-white text-1xl" />
+
+                        </a>
                     </div>
                 </div>
             )}
 
+            {/* Canvas */}
 
             <div className="flex justify-between ... w-[100%] pt-[15px] px-[15px] bg-transparent z-[10] absolute items-center">
                 <div>
-                    
+
                     {!isPublish ?
                         <Link href='/web/views/user/feed' >
                             <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent  rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
                                 <span>Regresar</span>
                             </button>
-                        </Link> : 
+                        </Link> :
 
                         <div>
-                        <Image 
-                        src='/logos/isotipo-full-color.png' // Ruta de la imagen
-                        alt="My View Icon" 
-                        width={50} // Ancho de la imagen
-                        height={50} // Altura de la imagen
-                        className="rounded-full" // Clases adicionales de Tailwind CSS
-                    
-                        />
+                            <Image
+                                src='/logos/isotipo-full-color.png' // Ruta de la imagen
+                                alt="My View Icon"
+                                width={50} // Ancho de la imagen
+                                height={50} // Altura de la imagen
+                                className="rounded-full" // Clases adicionales de Tailwind CSS
+
+                            />
                         </div>
                     }
-                    
+
                 </div>
                 <div>
                     {isModelLoaded &&
@@ -461,18 +501,25 @@ const App = () => {
                 </div>
 
             </div>
-            <div className='flex w-full h-full flex-col sm:flex-row'>
-                <div className='flex w-full h-full'>
-                    <Canvas dpr={1} ref={objectRef}>
-                        <Suspense fallback={null}>
-                            {/* <gridHelper args={[500, 500, 'gray']}/>
+
+            {/* Se condiciona el renderizado general no safari */}
+
+            {!isSafariMobile && isModelLoaded && (
+                <div className='flex w-full h-full flex-col sm:flex-row'>
+                    <div className='flex w-full h-full'>
+                        <Suspense fallback={<LoadingScreen />}>
+                            <Canvas dpr={1} ref={objectRef}>
+                                {/* <Suspense fallback={null}> */}
+                                {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
-                            <ambientLight intensity={1} />
-                            <directionalLight color="white" position={[0, 2, 50]} />
-                            <CameraViewManager cameraView={cameraView} />
-                            <CameraDebugger />
-                            {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
-                            {/* {markers.map(marker => (
+                                <ambientLight intensity={1} />
+                                <directionalLight color="white" position={[0, 2, 50]} />
+
+                                <CameraViewManager cameraView={cameraView} />
+                                {/* <CameraDebugger /> */}
+
+                                {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
+                                {/* {markers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
@@ -480,130 +527,137 @@ const App = () => {
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
                             ))} */}
-                            {isModelLoaded && currentTerrainMarkers.map(marker => (
-                                <Marker
-                                    key={marker.id}
-                                    position={marker.position}
-                                    label={marker.label}
-                                    onClick={() => setSelectedMarker(marker.id)}
-                                />
-                            ))}
-                            {isModelLoaded && showTerrains && terrains.map((terrain) => (
-                                <React.Fragment key={terrain.id}>
-                                    {terrain.markers.map(marker => (
-                                        <Marker
-                                            key={marker.id}
-                                            position={marker.position}
-                                            label={marker.label}
-                                            onClick={() => setSelectedMarker(marker.id)}
-                                        />
-                                    ))}
-                                    {terrain.markers.length > 2 && (
-                                        <AreaVisual
-                                            pjname={pjname}
-                                            terrains={terrains}
-                                            markers={terrain.markers}
-                                            areaCalculated={handleAreaCalculated}
-                                        />
-                                    )}
-                                </React.Fragment>
-                            ))}
+                                {isModelLoaded && currentTerrainMarkers.map(marker => (
+                                    <Marker
+                                        key={marker.id}
+                                        position={marker.position}
+                                        label={marker.label}
+                                        onClick={() => setSelectedMarker(marker.id)}
+                                    />
+                                ))}
+                                {isModelLoaded && showTerrains && terrains.map((terrain) => (
+                                    <React.Fragment key={terrain.id}>
+                                        {terrain.markers.map(marker => (
+                                            <Marker
+                                                key={marker.id}
+                                                position={marker.position}
+                                                label={marker.label}
+                                                onClick={() => setSelectedMarker(marker.id)}
+                                            />
+                                        ))}
+                                        {terrain.markers.length > 2 && (
+                                            <AreaVisual
+                                                pjname={pjname}
+                                                terrains={terrains}
+                                                markers={terrain.markers}
+                                                areaCalculated={handleAreaCalculated}
+                                            />
+                                        )}
+                                    </React.Fragment>
+                                ))}
 
 
-                            {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
-                            <CameraPositioner />
-                            <CameraController terrain={selectedTerrain} />
-                            <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} />
-                            <Environment preset={light} background blur backgroundBlurriness />
+                                {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
+                                {/* <CameraPositioner /> */}
+                                {/* <CameraController terrain={selectedTerrain} /> */}
+                                <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} />
+                                <Environment preset={light} background blur backgroundBlurriness />
 
+                                {/* </Suspense> */}
+                            </Canvas>
                         </Suspense>
-                    </Canvas>
-
-                    {isModelLoaded && 
-                        <div>
-                            <div className="absolute bottom-4 left-4">
-                                <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
-                                    <Eye></Eye>
-                                    Cambiar Vista
-                                </Button>
-                        </div>
-
-                        <div className="absolute bottom-4 right-4">
-                            <a
-                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center w-[40px] h-[40px] bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                            >
-                                <Whatsapp className="text-white text-3xl md:text-4xl " />
-                            </a>
-                        </div>
-                        
-                    </div>}
-                </div>
-
-                {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
-
-                    <div className="py-4 w-[100%] px-4" >
-                        <p className="text-base text-white italic font-lg font-semibold tracking-wide">Terrenos</p>
-                        {currentTerrainMarkers.length > 2 && (
-                            <Button onClick={handleAddTerrain} color="primary">
-                                Añadir Terreno
-                            </Button>
-                        )}
-                        <Button onClick={handleSaveButtonClick} color="primary"
-                        >
-                            Guardar Terrenos
-                        </Button>
-
-                        <Terrains terrains={terrains} onSelectTerrain={setSelectedTerrain} />
-
-                        <p className="text-base italic text-white font-semibold tracking-wide">Información</p>
-                        <h3 className='text-xs break-words text-white '>
-                            {currentModel?.description ? currentModel.description : "Cargando..."}
-                            <p> Lorem ipsum dolor sit, amet consectetur adipisicing elit. Deleniti, ipsam ab harum aliquid, minus ducimus tempore ullam, hic nostrum molestiae impedit provident delectus repellendus? Maiores illum iure in asperiores nobis.</p>
-                        </h3>
-                        <br />
-                        <h3 className='italic text-xs text-white'>{currentModel?.creation_date ? formatDate(currentModel?.creation_date) : null} </h3>
-                        <h3 className='italic text-xs text-gray-500 border-b-1 border-l-red-950 pb-4'>Fecha de Subida: </h3>
 
 
-                        <div className='pt-4'>
+                        <div className="z-[9999]">
+                            {isModelLoaded &&
+                                <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4">
+                                    <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
+                                        <Eye></Eye>
+                                        Cambiar Vista
+                                    </Button>
+                                </div>
+                            }
 
-                            <div>
-                                <p className="text-xs font-black italic text-white">Area Delimitada</p>
-                                <h3 className='italic text-md text-gray-400  pb-4'>{areaCalculated.toFixed(2)} m²</h3>
-                                <p className="text-xs  font-black italic text-white">Distancia (A - B)</p>
-                                <h3 className='italic text-md text-gray-400 border-b-1 border-l-red-950 pb-4'>{distanceCalculated.toFixed(2)} mts</h3>
+                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                                <a
+                                    href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center w-[40px] h-[40px] bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                                >
+                                    <Whatsapp className="text-white text-3xl md:text-4xl " />
+                                </a>
                             </div>
-
-                            <p className="text-base font-semibold italic pt-4 text-white tracking-wide">Historial</p>
-                            <History idProyect={idProyect} onModelSelect={loadModel} />
-
-                            <Toaster richColors position='bottom-left'
-                                toastOptions={{
-                                    className: 'font-custom', // Aplica una clase personalizada
-                                    style: {
-                                        fontFamily: 'Work Sans, sans-serif', // Asegúrate de que esta fuente esté cargada en tu proyecto
-                                    },
-                                }} />
-                            <button className="btn text-white" onClick={() => toast.success('My first toast')}>
-                                Give me a toast
-                            </button>
-
-
 
                         </div>
                     </div>
-                </div> */}
-            </div>
+                </div>)}
+
+            {isSafariMobile && (
+
+                <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+
+                    <div className='md:w-[90% sm:w-[98%] w-[98%]'>
+                        <SliderLoading data={DATARANDOM} />
+                    </div>
+                    <div>
+                        < BlocksShuffle3 className="text-6xl" />
+                    </div>
+                    <div className='w-full text-center'>
+                        <p>Estamos trabajando en tu experiencia.</p>
+                        <p>Por favor utiliza un navegador diferente.</p>
+                    </div>
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                        <a
+                            href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                        >
+                            <Whatsapp className="text-white text-1xl" />
+
+                        </a>
+                    </div>
+                </div>
+                
+            )}
+
+            {isInstagramBrowser && (
+
+                <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+
+                    <div className='md:w-[90% sm:w-[98%] w-[98%]'>
+                        <SliderLoading data={DATARANDOM} />
+                    </div>
+                    <div>
+                        < BlocksShuffle3 className="text-6xl" />
+                    </div>
+                    <div className='w-full text-center'>
+                        <p>Estamos trabajando en tu experiencia.</p>
+                        <p>Por favor utiliza un navegador diferente.</p>
+                    </div>
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                        <a
+                            href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                        >
+                            <Whatsapp className="text-white text-1xl" />
+
+                        </a>
+                    </div>
+                </div>
+
+
+            )}
         </div>
     );
 }
 
 export default function WrappedApp() {
     return (
-        <Suspense >
+        <Suspense fallback={<LoadingScreen />}>
             <App />
         </Suspense>
     )
