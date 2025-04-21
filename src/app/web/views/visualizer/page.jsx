@@ -265,6 +265,8 @@ const App = () => {
 
         //save analytics from views
         const saveAnalyticsPerView = async () => {
+            if (window.location.hostname === "localhost") return;
+
             try {
                 const fecth = await axios.post(`/api/controllers/analytics`, {
                     idProyect: idProyect,
