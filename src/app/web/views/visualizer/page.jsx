@@ -50,37 +50,29 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
     "🟢 🛣️ A 1h 10 de Rionegro y Marinilla",
     "🟢 🏙️ A 2h de Medellín",
     "🟢 🌄 A 40 min de Barbosa",
-
     "📐 Área total del lote:",
     "3.333 m²",
     "🔨 Incluye explanación de 400 m² lista para construir",
-
     "🛣️ Accesos y vías:",
     "🚗 A solo 10 min de la vía pavimentada que conecta San Vicente con Concepción",
-
     "💧 Servicios de fácil conexión:",
     "💡 Energía",
     "🚿 Agua",
     "🌐 Internet",
-
     "🏡 Usos posibles según certificado de usos del suelo:",
     "✅ Turismo rural",
     "✅ Vivienda",
     "✅ Agricultura",
     "✅ Inversión natural",
-
     "🌿 Atractivos del lote:",
     "🌳 Bosque nativo",
     "🐦 Avistamiento de aves",
     "😌 Zona tranquila para descanso",
-
     "📜 Estado legal:",
     "✔️ Escrituras al día en proindiviso.",
     "✔️ Licencia de construcción viable según usos del suelo y EOT municipal.",
-
     "💰 Precio de venta:",
     "$133.000.000 COP",
-
     "📞 Contacto directo:",
     "Esteban Gómez González",
     "📲 319 206 7689"
@@ -88,7 +80,6 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
 
 const CameraViewManager = ({ cameraView }) => {
     const { camera } = useThree();
-
 
     useEffect(() => {
         const positions = [
@@ -98,7 +89,6 @@ const CameraViewManager = ({ cameraView }) => {
             { x: -91.45, y: 71.300, z: -28.779 }, // Vista lateral izquierda
             { x: 90.581, y: 32.404, z: 51.591 }, // Vista isométrica
         ];
-
 
 
         const targetPosition = positions[cameraView];
@@ -251,30 +241,30 @@ const App = () => {
         setAreaCalculated(calculatedArea);
     };
 
-    // Se valida si el navegador es Safari en iOS para evitar problemas de carga
-    const checkIsSafariOnIOS = () => {
-        if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
-
-        const ua = navigator.userAgent;
-        const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-        const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua) && !/CriOS/.test(ua);
-        const isInstagramBrowser = /Instagram/.test(ua);
-
-        return {
-            isSafariMobile: isIOS && isSafari,
-            isInstagramBrowser: isIOS && isInstagramBrowser,
-        };
+  // Se valida si el navegador es Safari en iOS para evitar problemas de carga
+  const checkIsSafariOnIOS = () => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+    
+    const ua = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua) && !/CriOS/.test(ua);
+    const isInstagramBrowser = /Instagram/.test(ua);
+    
+    return {
+        isSafariMobile: isIOS && isSafari,
+        isInstagramBrowser: isIOS && isInstagramBrowser,
     };
-
-    useEffect(() => {
-        const { isSafariMobile, isInstagramBrowser } = checkIsSafariOnIOS();
-        setIsSafariMobile(isSafariMobile);
-        setIsInstagramBrowser(isInstagramBrowser);
-        if (isSafariMobile || isInstagramBrowser) {
-            setIsLoadingScreenVisible(false); // Muestra la pantalla de carga si es Safari iOS o Instagram
-        }
-
-    }, []);
+  };
+  
+  useEffect(() => {
+    const { isSafariMobile, isInstagramBrowser } = checkIsSafariOnIOS();
+    setIsSafariMobile(isSafariMobile);
+    setIsInstagramBrowser(isInstagramBrowser);
+    if (isSafariMobile || isInstagramBrowser) {
+        setIsLoadingScreenVisible(false); // Muestra la pantalla de carga si es Safari iOS o Instagram
+    }
+    
+}, []);
 
     useEffect(() => {
         const getModel = async () => {
@@ -388,6 +378,7 @@ const App = () => {
             console.error("Estructura del modelo inválida o URL no definida", model);
         }
     };
+   
 
 
     const saveTerrainsToDB = async () => {
@@ -416,6 +407,9 @@ const App = () => {
         );
     };
 
+    
+
+    
 
 
 
@@ -423,9 +417,8 @@ const App = () => {
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
-            {(isLoadingScreenVisible) && (
+            {  (isLoadingScreenVisible) && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
-
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
                     </div>
@@ -436,21 +429,20 @@ const App = () => {
                         <p>Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
                     </div>
                     <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
-                        <a
-                            href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                        >
-                            <Whatsapp className="text-white text-1xl" />
-
-                        </a>
+                            <a
+                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                            >
+                                <Whatsapp className="text-white text-1xl"/>
+                                
+                            </a>
                     </div>
                 </div>
             )}
 
             {/* Canvas */}
-
             <div className="flex justify-between ... w-[100%] pt-[15px] px-[15px] bg-transparent z-[10] absolute items-center">
                 <div>
 
@@ -503,23 +495,23 @@ const App = () => {
             </div>
 
             {/* Se condiciona el renderizado general no safari */}
-
+            
             {!isSafariMobile && isModelLoaded && (
-                <div className='flex w-full h-full flex-col sm:flex-row'>
-                    <div className='flex w-full h-full'>
-                        <Suspense fallback={<LoadingScreen />}>
-                            <Canvas dpr={1} ref={objectRef}>
-                                {/* <Suspense fallback={null}> */}
-                                {/* <gridHelper args={[500, 500, 'gray']}/>
+            <div className='flex w-full h-full flex-col sm:flex-row'>
+                <div className='flex w-full h-full'>
+                    <Suspense fallback={<LoadingScreen />}>
+                    <Canvas dpr={1} ref={objectRef}>
+                        {/* <Suspense fallback={null}> */}
+                            {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
-                                <ambientLight intensity={1} />
-                                <directionalLight color="white" position={[0, 2, 50]} />
-
-                                <CameraViewManager cameraView={cameraView} />
-                                {/* <CameraDebugger /> */}
-
-                                {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
-                                {/* {markers.map(marker => (
+                            <ambientLight intensity={1} />
+                            <directionalLight color="white" position={[0, 2, 50]} />
+                            
+                            <CameraViewManager cameraView={cameraView} />
+                            {/* <CameraDebugger /> */}
+                            
+                            {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
+                            {/* {markers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
@@ -557,15 +549,65 @@ const App = () => {
                                 ))}
 
 
-                                {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
-                                {/* <CameraPositioner /> */}
-                                {/* <CameraController terrain={selectedTerrain} /> */}
-                                <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} />
-                                <Environment preset={light} background blur backgroundBlurriness />
+                            {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
+                            {/* <CameraPositioner /> */}
+                            {/* <CameraController terrain={selectedTerrain} /> */}
+                            <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} />
+                            <Environment preset={light} background blur backgroundBlurriness />
 
-                                {/* </Suspense> */}
-                            </Canvas>
-                        </Suspense>
+                        {/* </Suspense> */}
+                    </Canvas>
+                    </Suspense>
+
+                        
+                        <div className="z-[9999]">
+                            {isModelLoaded && 
+                                <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4">
+                                    <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
+                                        <Eye></Eye>
+                                        Cambiar Vista
+                                    </Button>
+                            </div>
+                            }
+
+                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                                <a
+                                    href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center w-[40px] h-[40px] bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                                >
+                                    <Whatsapp className="text-white text-3xl md:text-4xl " />
+                                </a>
+                            </div>
+                        
+                        </div>
+                </div>
+
+                {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
+
+                    <div className="py-4 w-[100%] px-4" >
+                        <p className="text-base text-white italic font-lg font-semibold tracking-wide">Terrenos</p>
+                        {currentTerrainMarkers.length > 2 && (
+                            <Button onClick={handleAddTerrain} color="primary">
+                                Añadir Terreno
+                            </Button>
+                        )}
+                        <Button onClick={handleSaveButtonClick} color="primary"
+                        >
+                            Guardar Terrenos
+                        </Button>
+
+                        <Terrains terrains={terrains} onSelectTerrain={setSelectedTerrain} />
+
+                        <p className="text-base italic text-white font-semibold tracking-wide">Información</p>
+                        <h3 className='text-xs break-words text-white '>
+                            {currentModel?.description ? currentModel.description : "Cargando..."}
+                            <p> Lorem ipsum dolor sit, amet consectetur adipisicing elit. Deleniti, ipsam ab harum aliquid, minus ducimus tempore ullam, hic nostrum molestiae impedit provident delectus repellendus? Maiores illum iure in asperiores nobis.</p>
+                        </h3>
+                        <br />
+                        <h3 className='italic text-xs text-white'>{currentModel?.creation_date ? formatDate(currentModel?.creation_date) : null} </h3>
+                        <h3 className='italic text-xs text-gray-500 border-b-1 border-l-red-950 pb-4'>Fecha de Subida: </h3>
 
 
                         <div className="z-[9999]">
@@ -591,12 +633,13 @@ const App = () => {
 
                         </div>
                     </div>
-                </div>)}
-
+                </div> */}
+            </div>)}
+            
             {isSafariMobile && (
-
-                <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
-
+                
+                    <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+    
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
                     </div>
@@ -608,49 +651,49 @@ const App = () => {
                         <p>Por favor utiliza un navegador diferente.</p>
                     </div>
                     <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
-                        <a
-                            href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                        >
-                            <Whatsapp className="text-white text-1xl" />
-
-                        </a>
+                            <a
+                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                            >
+                                <Whatsapp className="text-white text-1xl"/>
+                                
+                            </a>
                     </div>
                 </div>
                 
             )}
 
             {isInstagramBrowser && (
-
-                <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
-
-                    <div className='md:w-[90% sm:w-[98%] w-[98%]'>
-                        <SliderLoading data={DATARANDOM} />
-                    </div>
-                    <div>
-                        < BlocksShuffle3 className="text-6xl" />
-                    </div>
-                    <div className='w-full text-center'>
-                        <p>Estamos trabajando en tu experiencia.</p>
-                        <p>Por favor utiliza un navegador diferente.</p>
-                    </div>
-                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
-                        <a
-                            href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                        >
-                            <Whatsapp className="text-white text-1xl" />
-
-                        </a>
-                    </div>
-                </div>
-
-
-            )}
+                            
+                            <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+                            
+                            <div className='md:w-[90% sm:w-[98%] w-[98%]'>
+                                <SliderLoading data={DATARANDOM} />
+                            </div>
+                            <div>
+                                < BlocksShuffle3 className="text-6xl" />
+                            </div>
+                            <div className='w-full text-center'>
+                                <p>Estamos trabajando en tu experiencia.</p>
+                                <p>Por favor utiliza un navegador diferente.</p>
+                            </div>
+                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                                    <a
+                                        href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                                    >
+                                        <Whatsapp className="text-white text-1xl"/>
+                                        
+                                    </a>
+                            </div>
+                        </div>
+                
+                        
+                    )}
         </div>
     );
 }
