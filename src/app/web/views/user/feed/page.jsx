@@ -32,7 +32,7 @@ function FeedContent() {
   }, [search]);
 
   const changeStatusLoad = () => setLoading(false);
-
+ 
   return (
     <>
       {!isLoad && <Header />}
