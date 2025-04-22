@@ -1,64 +1,109 @@
-"use client"
-
-import React, { Suspense } from "react"
-import dynamic from "next/dynamic";
-
-const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
+"use client";
+import React, { Suspense, useEffect, useState, useMemo } from "react";
+import { getAnalyticsData } from "./actions/getAnalyticsData";
+import ChartBrowsers from "./components/ChartBrowsers";
+import ChartDeviceType from "./components/ChartDeviceType";
+import ChartOs from "./components/ChartOs";
 
 const Analytics = () => {
+  const [dataAnalytics, setDataAnalytics] = useState([]);
 
-    const z1 = [
-        [8.83, 8.89, 8.81, 8.87, 8.9, 8.87],
-        [8.89, 8.94, 8.85, 8.94, 8.96, 8.92],
-        [8.84, 8.9, 8.82, 8.92, 8.93, 8.91],
-        [8.79, 8.85, 8.79, 8.9, 8.94, 8.92],
-        [8.79, 8.88, 8.81, 8.9, 8.95, 8.92],
-        [8.8, 8.82, 8.78, 8.91, 8.94, 8.92],
-        [8.75, 8.78, 8.77, 8.91, 8.95, 8.92],
-        [8.8, 8.8, 8.77, 8.91, 8.95, 8.94],
-        [8.74, 8.81, 8.76, 8.93, 8.98, 8.99],
-        [8.89, 8.99, 8.92, 9.1, 9.13, 9.11],
-        [8.97, 8.97, 8.91, 9.09, 9.11, 9.11],
-        [9.04, 9.08, 9.05, 9.25, 9.28, 9.27],
-        [9, 9.01, 9, 9.2, 9.23, 9.2],
-        [8.99, 8.99, 8.98, 9.18, 9.2, 9.19],
-        [8.93, 8.97, 8.97, 9.18, 9.2, 9.18],
-      ];
-    
-      const z2 = z1.map(row => row.map(val => val + 1));
-      const z3 = z1.map(row => row.map(val => val - 1));
-    
-      const data = [
-        { z: z1, type: "surface", name: "z1" },
-        { z: z2, type: "surface", opacity: 0.9, showscale: false, name: "z2" },
-        { z: z3, type: "surface", opacity: 0.9, showscale: false, name: "z3" },
-      ];
+  useEffect(() => {
+    document.title = "MyView_ | Analíticas";
 
-    return (
-        <Plot
-        data={data}
-        layout={{
-          title: "Superficies 3D z1, z2, z3",
-          autosize: true,
-          scene: {
-            xaxis: { title: "X" },
-            yaxis: { title: "Y" },
-            zaxis: { title: "Z" },
-          },
-          margin: { l: 0, r: 0, b: 0, t: 50 },
-        }}
-        style={{ width: "100%", height: "100%" }}
-      />
-    )
-}
+    const getData = async () => {
+      try {
+        const response = await getAnalyticsData();
+        if (!response.status === 200) {
+          alert("error al traer los datos");
+          return;
+        }
 
+        setDataAnalytics(response.data);
+      } catch (err) {
+        console.error("Errror", err);
+      }
+    };
+
+    getData();
+  }, []);
+
+  const formatDataPerGraphic = useMemo(() => {
+    // get all the info formated
+    const info = {
+      browser: {
+        labels: [],
+        values: [],
+      },
+      deviceType: {
+        labels: [],
+        values: [],
+      },
+      os: {
+        labels: [],
+        values: [],
+      },
+    };
+
+    for (const i in dataAnalytics) {
+      const browser = dataAnalytics[i].browser;
+      const deviceType = dataAnalytics[i].deviceType;
+      const os = dataAnalytics[i].os;
+
+      const filterBrowser = info.browser.labels.findIndex(
+        (item) => item === browser,
+      );
+      const filterDeviceType = info.deviceType.labels.findIndex(
+        (item) => item === deviceType,
+      );
+      const filterOs = info.os.labels.findIndex((item) => item === os);
+
+      if (filterBrowser === -1) {
+        info.browser.labels.push(browser);
+        info.browser.values.push(1);
+      } else if (filterBrowser != 1) info.browser.values[filterBrowser]++;
+
+      if (filterDeviceType === -1) {
+        info.deviceType.labels.push(deviceType);
+        info.deviceType.values.push(1);
+      } else if (filterDeviceType != -1)
+        info.deviceType.values[filterDeviceType]++;
+
+      if (filterOs === -1) {
+        info.os.labels.push(os);
+        info.os.values.push(1);
+      } else if (os != -1) info.os.values[filterOs]++;
+    }
+
+    return info;
+  }, [dataAnalytics]);
+
+  return (
+    <section className="flex m-auto w-full justify-center">
+      <section className="w-[70%] mt-[30px] grid grid-cols-3 gap-4">
+        <div className="col-span-1 h-[48vh] bg-white rounded-lg ... flex flex-col items-center">
+          <p>Navegadores</p>
+          <ChartBrowsers data={formatDataPerGraphic} />
+        </div>
+        <div className="col-span-1 h-[48vh] bg-white rounded-lg ... flex flex-col items-center">
+          <p>Tipos de dispositivo</p>
+          <ChartDeviceType data={formatDataPerGraphic} />
+        </div>
+        <div className="col-span-1 h-[48vh] bg-white rounded-lg ... flex flex-col items-center">
+          <p>Sistemas operativos</p>
+          <ChartOs data={formatDataPerGraphic} />
+        </div>
+      </section>
+    </section>
+  );
+};
 
 const Page = () => {
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <Analytics />  
-        </Suspense>
-    )
-}
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Analytics />
+    </Suspense>
+  );
+};
 
-export default Page
+export default Page;
