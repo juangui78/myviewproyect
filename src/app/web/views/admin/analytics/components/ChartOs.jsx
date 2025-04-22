@@ -7,7 +7,7 @@ const ChartOs = ({ data }) => {
     labels: data.os.labels,
     datasets: [
       {
-        label: "# navegador",
+        label: "# so",
         data: data.os.values,
         backgroundColor: [
           "rgba(255, 99, 132, 0.2)",
