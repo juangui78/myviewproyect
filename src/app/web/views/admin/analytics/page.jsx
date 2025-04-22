@@ -50,29 +50,35 @@ const Analytics = () => {
       const deviceType = dataAnalytics[i].deviceType;
       const os = dataAnalytics[i].os;
 
-      const filterBrowser = info.browser.labels.findIndex(
-        (item) => item === browser,
-      );
-      const filterDeviceType = info.deviceType.labels.findIndex(
-        (item) => item === deviceType,
-      );
-      const filterOs = info.os.labels.findIndex((item) => item === os);
+      if (browser !== undefined) {
+        const filterBrowser = info.browser.labels.findIndex(
+          (item) => item === browser,
+        );
 
-      if (filterBrowser === -1) {
-        info.browser.labels.push(browser);
-        info.browser.values.push(1);
-      } else if (filterBrowser != 1) info.browser.values[filterBrowser]++;
+        if (filterBrowser === -1) {
+          info.browser.labels.push(browser);
+          info.browser.values.push(1);
+        } else if (filterBrowser != 1) info.browser.values[filterBrowser]++;
+      }
 
-      if (filterDeviceType === -1) {
-        info.deviceType.labels.push(deviceType);
-        info.deviceType.values.push(1);
-      } else if (filterDeviceType != -1)
-        info.deviceType.values[filterDeviceType]++;
+      if (deviceType !== undefined) {
+        const filterDeviceType = info.deviceType.labels.findIndex(
+          (item) => item === deviceType,
+        );
+        if (filterDeviceType === -1) {
+          info.deviceType.labels.push(deviceType);
+          info.deviceType.values.push(1);
+        } else if (filterDeviceType != -1)
+          info.deviceType.values[filterDeviceType]++;
+      }
 
-      if (filterOs === -1) {
-        info.os.labels.push(os);
-        info.os.values.push(1);
-      } else if (os != -1) info.os.values[filterOs]++;
+      if (os !== undefined) {
+        const filterOs = info.os.labels.findIndex((item) => item === os);
+        if (filterOs === -1) {
+          info.os.labels.push(os);
+          info.os.values.push(1);
+        } else if (os != -1) info.os.values[filterOs]++;
+      }
     }
 
     return info;
