@@ -1,9 +1,11 @@
 "use client";
 import React, { Suspense, useEffect, useState, useMemo } from "react";
 import { getAnalyticsData } from "./actions/getAnalyticsData";
+import moment from "moment";
 import ChartBrowsers from "./components/ChartBrowsers";
 import ChartDeviceType from "./components/ChartDeviceType";
 import ChartOs from "./components/ChartOs";
+import ChartQuantyPerDay from "./components/ChartQuantyPerDay";
 
 const Analytics = () => {
   const [dataAnalytics, setDataAnalytics] = useState([]);
@@ -84,6 +86,26 @@ const Analytics = () => {
     return info;
   }, [dataAnalytics]);
 
+  const formatDateToChart = useMemo(() => {
+    const info = {
+      labels: [],
+      values: [],
+    };
+
+    for (const i in dataAnalytics) {
+      const createdDate = dataAnalytics[i].createdAt;
+      const formatDate = moment(createdDate).format("DD/MM/YYYY");
+
+      const findIndex = info.labels.findIndex((item) => item === formatDate);
+      if (findIndex === -1) {
+        info.labels.push(formatDate);
+        info.values.push(1);
+      } else info.values[findIndex]++;
+    }
+
+    return info;
+  }, [dataAnalytics]);
+
   return (
     <section className="flex m-auto w-full justify-center">
       <section className="w-[70%] mt-[30px] grid grid-cols-3 gap-4">
@@ -98,6 +120,12 @@ const Analytics = () => {
         <div className="col-span-1 h-[48vh] bg-white rounded-lg ... flex flex-col items-center">
           <p>Sistemas operativos</p>
           <ChartOs data={formatDataPerGraphic} />
+        </div>
+        <div className="col-span-2 h-[38vh] bg-white backdrop-blur-md ... rounded-lg ... flex flex-col items-center">
+          <p>Número de entradas por dia</p>
+          <div className="w-[100%] h-[32vh] flex justify-center">
+            <ChartQuantyPerDay data={formatDateToChart} />
+          </div>
         </div>
       </section>
     </section>
