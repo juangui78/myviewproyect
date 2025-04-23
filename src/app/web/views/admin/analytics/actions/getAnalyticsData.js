@@ -12,7 +12,6 @@ export const getAnalyticsData = async () => {
       {
         __v: 0,
         _id: 0,
-        createdAt: 0,
         projectId: 0,
       },
     ).lean();
@@ -29,6 +28,7 @@ export const getAnalyticsData = async () => {
         osVersion: result.os.version,
         deviceType: result.device.type || "desktop",
         isMobile: row.secChUaMobile,
+        createdAt: row.createdAt,
       };
     });
 

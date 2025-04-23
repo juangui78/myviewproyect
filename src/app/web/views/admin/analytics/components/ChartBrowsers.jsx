@@ -30,8 +30,6 @@ const ChartBrowsers = ({ data }) => {
     ],
   };
 
-  console.log(data);
-
   return <PolarArea data={structDataForGraphic} />;
 };
 
