@@ -21,7 +21,7 @@ const AuthOptions ={
         if (!userFound) throw new Error("invalid credentials");
 
         const password = await bcrypt.compare(credentials?.password, userFound.password); //validate if the password math
-        if (!password) throw new Error("invalid credentials");
+        if (!password) throw new Error("invalid password");
 
         const planUser = await Company.findById(userFound.id_Company);
 
