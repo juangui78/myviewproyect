@@ -50,37 +50,29 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
     "🟢 🛣️ A 1h 10 de Rionegro y Marinilla",
     "🟢 🏙️ A 2h de Medellín",
     "🟢 🌄 A 40 min de Barbosa",
-  
     "📐 Área total del lote:",
     "3.333 m²",
     "🔨 Incluye explanación de 400 m² lista para construir",
-  
     "🛣️ Accesos y vías:",
     "🚗 A solo 10 min de la vía pavimentada que conecta San Vicente con Concepción",
-  
     "💧 Servicios de fácil conexión:",
     "💡 Energía",
     "🚿 Agua",
     "🌐 Internet",
-  
     "🏡 Usos posibles según certificado de usos del suelo:",
     "✅ Turismo rural",
     "✅ Vivienda",
     "✅ Agricultura",
     "✅ Inversión natural",
-  
     "🌿 Atractivos del lote:",
     "🌳 Bosque nativo",
     "🐦 Avistamiento de aves",
     "😌 Zona tranquila para descanso",
-  
     "📜 Estado legal:",
     "✔️ Escrituras al día en proindiviso.",
     "✔️ Licencia de construcción viable según usos del suelo y EOT municipal.",
-  
     "💰 Precio de venta:",
     "$133.000.000 COP",
-  
     "📞 Contacto directo:",
     "Esteban Gómez González",
     "📲 319 206 7689"
@@ -88,7 +80,6 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
 
 const CameraViewManager = ({ cameraView }) => {
     const { camera } = useThree();
-    
 
     useEffect(() => {
         const positions = [
@@ -99,7 +90,6 @@ const CameraViewManager = ({ cameraView }) => {
             { x: 90.581, y: 32.404, z: 51.591 }, // Vista isométrica
         ];
 
-    
 
         const targetPosition = positions[cameraView];
 
@@ -170,7 +160,7 @@ const App = () => {
     const [isLoadingScreenVisible, setIsLoadingScreenVisible] = useState(true);
     const [isSafariMobile, setIsSafariMobile] = useState(false);
     const [isInstagramBrowser, setIsInstagramBrowser] = useState(false);
-   
+
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
     //search Params to validate info
@@ -297,15 +287,17 @@ const App = () => {
 
         //save analytics from views
         const saveAnalyticsPerView = async () => {
+            if (window.location.hostname === "localhost") return;
+
             try {
                 const fecth = await axios.post(`/api/controllers/analytics`, {
                     idProyect: idProyect,
                 });
 
-                if (fecth.status != 200){
+                if (fecth.status != 200) {
                     console.error("Error al guardar la información de Analytics");
                 }
-            }catch (error) {
+            } catch (error) {
                 console.log("Error en el servidor");
             }
         }
@@ -321,7 +313,6 @@ const App = () => {
         // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
-            console.log('model: ', currentModel);
 
             if (modelLocation !== "") {
                 const loader = new GLTFLoader();
@@ -389,6 +380,7 @@ const App = () => {
     };
    
 
+
     const saveTerrainsToDB = async () => {
 
         const modelID = currentModelId || idProyect;
@@ -419,12 +411,14 @@ const App = () => {
 
     
 
+
+
+
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
             {  (isLoadingScreenVisible) && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
-                    
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
                     </div>
@@ -449,29 +443,28 @@ const App = () => {
             )}
 
             {/* Canvas */}
-            
             <div className="flex justify-between ... w-[100%] pt-[15px] px-[15px] bg-transparent z-[10] absolute items-center">
                 <div>
-                    
+
                     {!isPublish ?
                         <Link href='/web/views/user/feed' >
                             <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent  rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
                                 <span>Regresar</span>
                             </button>
-                        </Link> : 
+                        </Link> :
 
                         <div>
-                        <Image 
-                        src='/logos/isotipo-full-color.png' // Ruta de la imagen
-                        alt="My View Icon" 
-                        width={50} // Ancho de la imagen
-                        height={50} // Altura de la imagen
-                        className="rounded-full" // Clases adicionales de Tailwind CSS
-                    
-                        />
+                            <Image
+                                src='/logos/isotipo-full-color.png' // Ruta de la imagen
+                                alt="My View Icon"
+                                width={50} // Ancho de la imagen
+                                height={50} // Altura de la imagen
+                                className="rounded-full" // Clases adicionales de Tailwind CSS
+
+                            />
                         </div>
                     }
-                    
+
                 </div>
                 <div>
                     {isModelLoaded &&
@@ -526,34 +519,34 @@ const App = () => {
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
                             ))} */}
-                            {isModelLoaded && currentTerrainMarkers.map(marker => (
-                                <Marker
-                                    key={marker.id}
-                                    position={marker.position}
-                                    label={marker.label}
-                                    onClick={() => setSelectedMarker(marker.id)}
-                                />
-                            ))}
-                            {isModelLoaded && showTerrains && terrains.map((terrain) => (
-                                <React.Fragment key={terrain.id}>
-                                    {terrain.markers.map(marker => (
-                                        <Marker
-                                            key={marker.id}
-                                            position={marker.position}
-                                            label={marker.label}
-                                            onClick={() => setSelectedMarker(marker.id)}
-                                        />
-                                    ))}
-                                    {terrain.markers.length > 2 && (
-                                        <AreaVisual
-                                            pjname={pjname}
-                                            terrains={terrains}
-                                            markers={terrain.markers}
-                                            areaCalculated={handleAreaCalculated}
-                                        />
-                                    )}
-                                </React.Fragment>
-                            ))}
+                                {isModelLoaded && currentTerrainMarkers.map(marker => (
+                                    <Marker
+                                        key={marker.id}
+                                        position={marker.position}
+                                        label={marker.label}
+                                        onClick={() => setSelectedMarker(marker.id)}
+                                    />
+                                ))}
+                                {isModelLoaded && showTerrains && terrains.map((terrain) => (
+                                    <React.Fragment key={terrain.id}>
+                                        {terrain.markers.map(marker => (
+                                            <Marker
+                                                key={marker.id}
+                                                position={marker.position}
+                                                label={marker.label}
+                                                onClick={() => setSelectedMarker(marker.id)}
+                                            />
+                                        ))}
+                                        {terrain.markers.length > 2 && (
+                                            <AreaVisual
+                                                pjname={pjname}
+                                                terrains={terrains}
+                                                markers={terrain.markers}
+                                                areaCalculated={handleAreaCalculated}
+                                            />
+                                        )}
+                                    </React.Fragment>
+                                ))}
 
 
                             {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
@@ -617,30 +610,26 @@ const App = () => {
                         <h3 className='italic text-xs text-gray-500 border-b-1 border-l-red-950 pb-4'>Fecha de Subida: </h3>
 
 
-                        <div className='pt-4'>
+                        <div className="z-[9999]">
+                            {isModelLoaded &&
+                                <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4">
+                                    <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
+                                        <Eye></Eye>
+                                        Cambiar Vista
+                                    </Button>
+                                </div>
+                            }
 
-                            <div>
-                                <p className="text-xs font-black italic text-white">Area Delimitada</p>
-                                <h3 className='italic text-md text-gray-400  pb-4'>{areaCalculated.toFixed(2)} m²</h3>
-                                <p className="text-xs  font-black italic text-white">Distancia (A - B)</p>
-                                <h3 className='italic text-md text-gray-400 border-b-1 border-l-red-950 pb-4'>{distanceCalculated.toFixed(2)} mts</h3>
+                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                                <a
+                                    href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center w-[40px] h-[40px] bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                                >
+                                    <Whatsapp className="text-white text-3xl md:text-4xl " />
+                                </a>
                             </div>
-
-                            <p className="text-base font-semibold italic pt-4 text-white tracking-wide">Historial</p>
-                            <History idProyect={idProyect} onModelSelect={loadModel} />
-
-                            <Toaster richColors position='bottom-left'
-                                toastOptions={{
-                                    className: 'font-custom', // Aplica una clase personalizada
-                                    style: {
-                                        fontFamily: 'Work Sans, sans-serif', // Asegúrate de que esta fuente esté cargada en tu proyecto
-                                    },
-                                }} />
-                            <button className="btn text-white" onClick={() => toast.success('My first toast')}>
-                                Give me a toast
-                            </button>
-
-
 
                         </div>
                     </div>
@@ -650,7 +639,7 @@ const App = () => {
             {isSafariMobile && (
                 
                     <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
-                    
+    
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading data={DATARANDOM} />
                     </div>
@@ -673,7 +662,6 @@ const App = () => {
                             </a>
                     </div>
                 </div>
-         
                 
             )}
 

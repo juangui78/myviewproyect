@@ -49,6 +49,11 @@ export default function NavBar({children}) {
               Inmobiliarias
               </Link>
             </NavbarItem>
+            <NavbarItem>
+              <Link className="text-white" href="/web/views/admin/analytics">
+                Analiticas
+              </Link>
+            </NavbarItem>
           </>
         ) :
 

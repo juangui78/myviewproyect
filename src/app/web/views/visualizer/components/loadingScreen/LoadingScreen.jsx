@@ -45,6 +45,7 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
   
     "📞 Contacto directo:",
     "Esteban Gómez González",
+
     "📲 319 206 7689"
 ]
 
