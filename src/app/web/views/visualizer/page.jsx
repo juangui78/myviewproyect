@@ -488,7 +488,7 @@ const App = () => {
                             showTerrains={toggleTerrains}
                         />}
 
-                    {currentTerrainMarkers.length > 2 && (
+                    {/* {currentTerrainMarkers.length > 2 && (
                             <Button onClick={handleAddTerrain} color="primary">
                                 Añadir Terreno
                             </Button>
@@ -496,7 +496,7 @@ const App = () => {
                         <Button onClick={handleSaveButtonClick} color="primary"
                         >
                             Guardar Terrenos
-                        </Button>
+                        </Button> */}
                 </div>
                 <div>
                     <InformationCard info={projectInfo} />
