@@ -72,19 +72,17 @@ export const InformationCard = ({ info }) => {
         <p className="text-small pl-px pb-[5px]"><strong>Área:</strong> {info?.hectares} metros cuadrados</p>
         {/* <p className="text-small pl-px pb-[5px]"><strong>Descripción:</strong> {info?.description}</p> */}
       </CardBody>
-      <CardFooter className="gap-3 flex-col items-start justify-start text-left px-2 max-h-[30vh] overflow-y-auto">
+      <CardFooter className=" flex-col items-start justify-start text-left px-2 max-h-[30vh] overflow-y-auto">
         
-          <p className="text-small">
-            {info.description &&
-              info.description.split('\n').map((line, idx) =>
-                line.trim() === "" ? (
-                  <br key={idx} />
-                ) : (
-                  <p key={idx} className="text-small">{line}</p>
-                )
-              )
-            }
-          </p>
+      {info.description &&
+        info.description.split('\n').map((line, idx) =>
+          line.trim() === "" ? (
+            <br key={idx} />
+          ) : (
+            <p key={idx} className="text-small">{line}</p>
+          )
+        )
+      }
         
       </CardFooter>
     </Card>

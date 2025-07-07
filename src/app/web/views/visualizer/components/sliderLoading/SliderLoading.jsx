@@ -4,8 +4,18 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
+const SLIDER_MESSAGES = [
+    "⏳ Cargando información...",
+    "🌎 Tus terrenos en un solo lugar",
+    "⏳ Ahorra tiempo gestionando tus proyectos",
+    "🔔 No te pierdas ningún detalle",
+    "📤 Visualiza y comparte fácilmente",
+    "📄 Toda la información de tu lote al instante",
+    "💡 Descubre nuevas oportunidades de inversión",
+];
+
 const SliderLoading = ({ info }) => {
-    const desc = info?.description || "Cargando información...";
+    const desc = info?.description || SLIDER_MESSAGES.join('\n');
     const slides = typeof desc === "string"
         ? desc.split('\n').filter(line => line.trim() !== "")
         : Array.isArray(desc)
@@ -21,7 +31,7 @@ const SliderLoading = ({ info }) => {
         slidesToScroll: 1,
         fade: true,
         autoplay: true,
-        autoplaySpeed: 5000,
+        autoplaySpeed: 1200,
     };
 
     return (
