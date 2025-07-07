@@ -49,11 +49,12 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
     "📲 319 206 7689"
 ]
 
-const LoadingScreen = () => {
+const LoadingScreen = (info) => {
+    console.log('LoadingScreen props:', info);
     return (
         <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
             <div className='md:w-[90% sm:w-[98%] w-[98%]'>
-                <SliderLoading data={DATARANDOM} />
+                <SliderLoading info={info} />
             </div>
             <div>
                 <BlocksShuffle3 className="text-6xl" />

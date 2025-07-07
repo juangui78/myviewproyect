@@ -18,10 +18,15 @@ const AuthOptions ={
       async authorize(credentials, req) {
         
         const userFound = await User.findOne({email : credentials?.email});
-        if (!userFound) throw new Error("invalid credentials");
+        console.log("User found:", userFound);
+        
+        if (!userFound) throw new Error("user not found");
 
         const password = await bcrypt.compare(credentials?.password, userFound.password); //validate if the password math
-        if (!password) throw new Error("invalid credentials");
+        console.log("Password is : ", password);
+        if (!password) throw new Error("invalid password123");
+        
+        
 
         const planUser = await Company.findById(userFound.id_Company);
 

@@ -30,6 +30,7 @@ import Eye from '@/web/global_components/icons/Eye';
 import gsap from "gsap";
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import LoadingScreen from './components/loadingScreen/LoadingScreen.jsx';
+import { get, set } from 'mongoose';
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
@@ -266,6 +267,9 @@ const App = () => {
     
 }, []);
 
+    console.log('info:', projectInfo);
+    
+
     useEffect(() => {
         const getModel = async () => {
             try {
@@ -273,17 +277,22 @@ const App = () => {
 
                 if (response.data != undefined && response.data.model !== undefined) {
                     setcurrentModel(response.data.model)
+                    
                     if (response.data.terrains) {
                         setTerrains(response.data.terrains);
                         setAllTerrains(response.data.terrains);
                     }
 
                     setProjectInfo(response.data.proyect)
+                    
                 }
             } catch (error) {
                 console.log(error);
             }
         };
+
+        
+        
 
         //save analytics from views
         const saveAnalyticsPerView = async () => {
@@ -417,10 +426,11 @@ const App = () => {
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
+            
             {  (isLoadingScreenVisible) && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
-                        <SliderLoading data={DATARANDOM} />
+                        <SliderLoading info={projectInfo} />
                     </div>
                     <div>
                         < BlocksShuffle3 className="text-6xl" />
@@ -478,7 +488,7 @@ const App = () => {
                             showTerrains={toggleTerrains}
                         />}
 
-                    {/* {currentTerrainMarkers.length > 2 && (
+                    {currentTerrainMarkers.length > 2 && (
                             <Button onClick={handleAddTerrain} color="primary">
                                 Añadir Terreno
                             </Button>
@@ -486,7 +496,7 @@ const App = () => {
                         <Button onClick={handleSaveButtonClick} color="primary"
                         >
                             Guardar Terrenos
-                        </Button> */}
+                        </Button>
                 </div>
                 <div>
                     <InformationCard info={projectInfo} />
@@ -499,7 +509,7 @@ const App = () => {
             {!isSafariMobile && isModelLoaded && (
             <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'>
-                    <Suspense fallback={<LoadingScreen />}>
+                    <Suspense fallback={<LoadingScreen info={projectInfo}/>}>
                     <Canvas dpr={1} ref={objectRef}>
                         {/* <Suspense fallback={null}> */}
                             {/* <gridHelper args={[500, 500, 'gray']}/>
@@ -641,7 +651,7 @@ const App = () => {
                     <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
     
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
-                        <SliderLoading data={DATARANDOM} />
+                        <SliderLoading info={projectInfo} />
                     </div>
                     <div>
                         < BlocksShuffle3 className="text-6xl" />
@@ -670,7 +680,7 @@ const App = () => {
                             <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
                             
                             <div className='md:w-[90% sm:w-[98%] w-[98%]'>
-                                <SliderLoading data={DATARANDOM} />
+                                <SliderLoading info={projectInfo} />
                             </div>
                             <div>
                                 < BlocksShuffle3 className="text-6xl" />
@@ -694,13 +704,15 @@ const App = () => {
                 
                         
                     )}
+            
         </div>
     );
 }
 
 export default function WrappedApp() {
+    
     return (
-        <Suspense fallback={<LoadingScreen />}>
+        <Suspense fallback={<SliderLoading />}>
             <App />
         </Suspense>
     )
