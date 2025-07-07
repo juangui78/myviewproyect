@@ -710,35 +710,9 @@ const App = () => {
 }
 
 export default function WrappedApp() {
-    const [projectInfo, setProjectInfo] = useState(null);
-    const [projectDescription, setProjectDescription] = useState(null);
     
-    //search Params to validate info
-    const searchParams = useSearchParams();
-    const idProyect = decrypt(searchParams.get("id"));
-
-    useEffect(() => {
-        const getProjectInfo = async () => {
-            try {
-                const response = await axios.get(`/api/controllers/visualizer/${idProyect}`)
-
-                if (response.data != undefined ){
-                    setProjectInfo(response.data.proyect)
-                    setProjectDescription(response.data.proyect.description);
-                }
-            } catch (error) {
-                console.log(error);
-            }
-        }
-
-        getProjectInfo();
-        console.log('informacion precargada: ', projectInfo);
-        
-
-    }, []);
-
     return (
-        <Suspense fallback={<SliderLoading info={projectDescription} />}>
+        <Suspense fallback={<SliderLoading />}>
             <App />
         </Suspense>
     )
