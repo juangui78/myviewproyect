@@ -6,8 +6,6 @@ import {
   DropdownMenu,
   DropdownItem,
 } from "@heroui/react";
-import axios from "axios";
-import { Tooltip } from "@nextui-org/react";
 import Eye from "@/web/global_components/icons/Eye.jsx";
 import NoteText from "@/web/global_components/icons/NoteText";
 import Share from "@/web/global_components/icons/Share";
@@ -16,47 +14,21 @@ import DotsVertical from "@/web/global_components/icons/DotsVertical";
 import { Ban } from "@/web/global_components/icons/Ban";
 import { encrypt } from "@/api/libs/crypto";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useDisclosure } from "@nextui-org/react";
 import DrawerInfo from "./DrawerInfo";
 import ModalUsersInvited from "./ModalUsersInvited";
 import ModalQr from "./ModalQr";
 
-export default function Cards({ search, changeStatus }) {
+export default function Cards({ proyects }) {
   const { data: session, status } = useSession();
-  const [proyects, setProyects] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [_id, setId] = useState("");
   const [ID_USER, setID_USER] = useState(null);
 
   const { isOpen, onOpenChange } = useDisclosure(); // drawer unfo
-  const { isOpen: isOpenUsers, onOpenChange: onOpenChangeUsers } =
-    useDisclosure(); // modal users
+  const { isOpen: isOpenUsers, onOpenChange: onOpenChangeUsers } =useDisclosure(); // modal users
   const { isOpen: isOpenQr, onOpenChange: onOpenChangeQr } = useDisclosure(); // modal qr
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (status !== "authenticated") return;
-
-      try {
-        search = search == null ? "" : search;
-        const response = await axios.get(
-          `/api/controllers/proyects?id_company=${session?.user?.id_company}&search=${search}`,
-        );
-        setProyects(response.data);
-        setLoading(false);
-        // console.log(response.data)
-      } catch (error) {
-        console.log(error, "error con el fetch");
-      } finally {
-        setLoading(false);
-        changeStatus();
-      }
-    };
-
-    fetchData();
-  }, [session, status]);
 
   const handleOpen = (id) => {
     //open drawer info
@@ -80,9 +52,7 @@ export default function Cards({ search, changeStatus }) {
   return (
     <>
       <div className="grid  2xl:grid-cols-4 gap-[60px] w-[70%] m-auto mt-[40px]  lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
-        {loading ? (
-          <div></div>
-        ) : proyects.length > 0 ? (
+        {proyects.length > 0 ? (
           proyects.map((item) => {
             return (
               <Card
