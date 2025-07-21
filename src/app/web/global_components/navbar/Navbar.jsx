@@ -24,6 +24,7 @@ export default function NavBar({children}) {
   const idUser = session?.user._id;
   const rol = session?.user.rol;
 
+
   return (
     <Navbar disableAnimation isBordered className={style.NavBar}>
       <NavbarContent className="sm:hidden text-white" justify="start">

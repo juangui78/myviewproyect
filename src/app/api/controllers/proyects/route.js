@@ -71,7 +71,7 @@ export async function GET(request) { //get all proyects by id_company and search
     }, { status: 400 });
 
 
-    if (search && search !== 'null') {
+    if (search && search !== 'null' && search !== '' && search !== 'undefined') {
       proyects = await Proyect.find({
         idCompany,
         name: { $regex: search, $options: 'i' }
