@@ -1,8 +1,9 @@
-'use client'
 import { Navbar, NavbarBrand, NavbarMenu, NavbarContent, NavbarItem, NavbarMenuItem, NavbarMenuToggle, Button, Image } from "@nextui-org/react";
 import Link from "next/link";
 import axios from "axios";
 import style from './web/global_components/navbar/styles/navbar.module.css'
+
+import SectionOne from "./sectionOne.client";
 
 axios.defaults.baseURL = 'http://localhost:3000/';
 
@@ -41,7 +42,7 @@ export default function Home() {
                 href="/web/views/login"
                 className="text-white"
               >
-                
+
                 Iniciar Sesion
               </Button>
             </NavbarItem>
@@ -75,26 +76,8 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="w-[100%] h-[80vh] mx-auto flex justify-center bg-white ">
-          <div className="w-[70%] h-[100%] grid grid-cols-2 gap-2 pt-10">
-            <div className="h-[60vh] flex justify-center ">
-              <Image src="/images/explore.png" isBlurred height={700} />
-            </div>
-            <div className="bg-white">
-              <h1 className="font-bold text-3xl italic text-left">Escaneo 3D de Alta Precisión</h1>
-              <p className="pt-6 text-lg">
-                Captura cada detalle con precisión milimétrica gracias a nuestra tecnología
-                de <strong>fotogrametría aérea </strong> mediante drones de última generación. Obtén modelos 3D realistas y detallados de terrenos,
-                edificaciones, parcelaciones y entornos urbanos en tiempo récord.
-              </p>
-              <ul className="pt-6 list-disc list-inside">
-                <li>Mapeo rápido y eficiente sin necesidad de mediciones manuales.</li>
-                <li>Imágenes de alta resolución procesadas con algoritmos avanzados.</li>
-                <li>Modelos 3D precisos para planificación, diseño y análisis.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        {/* sección dos del landing con framer motion */}
+        <SectionOne />
 
         <div className="w-[100%] h-[60vh] mx-auto flex justify-center pt-20">
           <div className="w-[70%] h-[100%] grid grid-cols-2 gap-2 pt-10">
@@ -143,9 +126,9 @@ export default function Home() {
                 <li><strong>Colaboración en tiempo real</strong> con tu equipo de trabajo.</li>
                 <li><strong>Acceso desde cualquier lugar</strong> y dispositivo.</li>
               </ul>
-              </div>
-              </div>
-              </div>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>
