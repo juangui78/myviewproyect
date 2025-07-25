@@ -31,6 +31,7 @@ import gsap from "gsap";
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import LoadingScreen from '../components/loadingScreen/LoadingScreen.jsx';
 import { get, set } from 'mongoose';
+import Photo360Modal from '../components/viewer360/PhotoSphereModal';
 
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
@@ -163,6 +164,7 @@ const App = () => {
     const [isLoadingScreenVisible, setIsLoadingScreenVisible] = useState(true);
     const [isSafariMobile, setIsSafariMobile] = useState(false);
     const [isInstagramBrowser, setIsInstagramBrowser] = useState(false);
+    const [photo360Url, setPhoto360Url] = useState(null);
 
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -490,7 +492,7 @@ const App = () => {
                             showTerrains={toggleTerrains}
                         />}
 
-                    {/* {currentTerrainMarkers.length > 2 && (
+                     {currentTerrainMarkers.length > 2 && (
                             <Button onClick={handleAddTerrain} color="primary">
                                 Añadir Terreno
                             </Button>
@@ -498,7 +500,7 @@ const App = () => {
                         <Button onClick={handleSaveButtonClick} color="primary"
                         >
                             Guardar Terrenos
-                        </Button> */}
+                        </Button> 
                 </div>
                 <div>
                     <InformationCard info={projectInfo} />
@@ -546,7 +548,8 @@ const App = () => {
                                                 key={marker.id}
                                                 position={marker.position}
                                                 label={marker.label}
-                                                onClick={() => setSelectedMarker(marker.id)}
+                                                onClick={() => {setSelectedMarker(marker.id);
+                                                }}
                                             />
                                         ))}
                                         {terrain.markers.length > 2 && (
@@ -555,6 +558,7 @@ const App = () => {
                                                 terrains={terrains}
                                                 markers={terrain.markers}
                                                 areaCalculated={handleAreaCalculated}
+                                                onClick={() => setPhoto360Url("https://photo-sphere-viewer.js.org/assets/sphere.jpg")}
                                             />
                                         )}
                                     </React.Fragment>
@@ -595,6 +599,10 @@ const App = () => {
                         
                         </div>
                 </div>
+
+                {photo360Url && (
+                <Photo360Modal url="https://upload.wikimedia.org/wikipedia/commons/1/18/Rheingauer_Dom%2C_Geisenheim%2C_360_Panorama_%28Equirectangular_projection%29.jpg" onClose={() => setPhoto360Url(null)} />
+                )}
 
                 {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
 
