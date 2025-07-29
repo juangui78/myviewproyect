@@ -7,49 +7,26 @@ import CustomInput from "./CustomInput";
 import CustomDropdown from "./CustomDrowpdown";
 import { validationSchemaInmo } from "../js/validationSchemaInmo";
 import { saveCompany } from "../actions/saveCompany";
-
-export const OPTIONSGEOGRAPHICSCOPE = [
-    { key: 'local', value: 'local' },
-    { key: 'regional', value: 'regional' },
-    { key: 'nacional', value: 'nacional' },
-    { key: 'internacional', value: 'internacional' }
-]
-
-export const OPTIONSPROPERTYTYPE = [
-    { key: 'residenciales', value: 'residenciales' },
-    { key: 'comerciales', value: 'comerciales' },
-    { key: 'industriales', value: 'industriales' },
-    { key: 'rústicas o rurales', value: 'rústicas o rurales' },
-    { key: 'de lujo', value: 'de lujo' },
-    { key: 'otros', value: 'otros' }
-]
-
-export const OPTIONSMARKERTAPPROACH = [
-    { key: 'residencial', value: 'residencial' },
-    { key: 'comercial', value: 'comercial' },
-    { key: 'inversiones', value: 'inversiones' },
-    { key: 'gestion de patrimonio', value: 'gestion de patrimonio' },
-    { key: 'otros', value: 'otros' }
-]
+import { OPTIONSGEOGRAPHICSCOPE, OPTIONSPROPERTYTYPE, OPTIONSMARKERTAPPROACH, OPTIONSOFPLANS } from "../js/infoDropdowns";
 
 
 const ModalCreateCompany = ({ isOpenCompany, onOpenChangeCompany, addNewRecord }) => {
 
-
     return (
         <Modal
-            backdrop={"blur"}
+            backdrop={"opaque"}
             placement="center"
-            size="4xl"
+            size="xl"
             isDismissable={false}
             isOpen={isOpenCompany}
             onClose={onOpenChangeCompany}
-            className="bg-[#000000ab] shadow-white"
+            scrollBehavior="inside"
+      
         >
             <ModalContent>
                 {(onClose) => (
                     <>
-                        <ModalHeader className="flex flex-col gap-1 border-white text-white">
+                        <ModalHeader className="flex flex-col gap-1 border-white">
                             <h1 className="font-bold text-xl">Crear nueva inmobiliaria</h1>
                             <p className="text-sm italic"></p>
                         </ModalHeader>
@@ -65,10 +42,12 @@ const ModalCreateCompany = ({ isOpenCompany, onOpenChangeCompany, addNewRecord }
                                         email: '',
                                         geographicScope: '',
                                         propertyType: '',
-                                        marketApproach: ''
+                                        marketApproach: '',
+                                        plan: ''
                                     }}
                                     validationSchema={validationSchemaInmo}
                                     onSubmit={async (values) => {
+                                        
                                         const response = await saveCompany(values)
 
                                         if (!response.status) {
@@ -83,7 +62,7 @@ const ModalCreateCompany = ({ isOpenCompany, onOpenChangeCompany, addNewRecord }
                                 >
                                     {({ handleSubmit, isSubmitting }) => (
                                         <Form onSubmit={handleSubmit} className="w-full">
-                                            <div className="grid grid-cols-3 gap-4 mb-[15px]">
+                                            <div className="grid grid-cols-1 mb-[15px]">
                                                 <Field name="name" className="w-full">
                                                     {({ field, meta }) => (
                                                         <div>
@@ -142,7 +121,7 @@ const ModalCreateCompany = ({ isOpenCompany, onOpenChangeCompany, addNewRecord }
                                                     )}
                                                 </Field>
                                             </div>
-                                            <div className="grid grid-cols-3 gap-4 mb-[15px]">
+                                            <div className="grid  mb-[15px]">
                                                 <Field name="address">
                                                     {({ field, meta }) => (
                                                         <div>
@@ -201,7 +180,7 @@ const ModalCreateCompany = ({ isOpenCompany, onOpenChangeCompany, addNewRecord }
                                                     )}
                                                 </Field>
                                             </div>
-                                            <div className="grid grid-cols-3 gap-4 mb-[15px]">
+                                            <div className="grid  mb-[15px]">
                                                 <Field name="geographicScope">
                                                     {({ field, form, meta }) => (
                                                         <div>
@@ -240,6 +219,21 @@ const ModalCreateCompany = ({ isOpenCompany, onOpenChangeCompany, addNewRecord }
                                                                 form={form}
                                                                 options={OPTIONSMARKERTAPPROACH}
                                                                 label="Enfoque de mercado"
+                                                            />
+                                                            <div className="mb-[15px] mt-[5px]">
+                                                                <p className="h-[1rem] text-sm  text-[#FD6358]">{meta.error ? (meta.error + "*") : ""}</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </Field>
+                                                <Field name="plan">
+                                                    {({ field, form, meta }) => (
+                                                        <div>
+                                                            <CustomDropdown
+                                                                field={field}
+                                                                form={form}
+                                                                options={OPTIONSOFPLANS}
+                                                                label="Plan"
                                                             />
                                                             <div className="mb-[15px] mt-[5px]">
                                                                 <p className="h-[1rem] text-sm  text-[#FD6358]">{meta.error ? (meta.error + "*") : ""}</p>

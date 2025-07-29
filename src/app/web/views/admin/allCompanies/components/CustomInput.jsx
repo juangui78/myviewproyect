@@ -10,7 +10,7 @@ const CustomInput = (props) => {
                 root: "text-black",
                 inputWrapper: [
                     "shadow-xl",
-                    "bg-[#fff]",
+                    "bg-gray-200",
                     "backdrop-saturate-200",
                     "hover:bg-default-100/70",
                     "!cursor-text",

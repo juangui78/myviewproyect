@@ -10,7 +10,7 @@ const CustomDropdown = ({ field, form, label, options, ...props }) => {
 
     return (
         <div>
-            <label className="text-white text-sm ml-[5px]">{label}</label>
+            <label className="text-black text-sm ml-[5px]">{label}</label>
             <Dropdown className="bg-[#fff] ">
                 <DropdownTrigger>
                     <Button variant="bordered" className="w-full text-black bg-[#fff]">
