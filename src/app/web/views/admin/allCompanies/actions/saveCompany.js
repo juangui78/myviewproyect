@@ -1,5 +1,7 @@
 "use server"
 import Company from "@/api/models/company"
+import Plans from "@/api/models/plansM"
+import { getPlanJson } from "@/api/others/plans"
 import z from 'zod'
 
 export async function saveCompany(data) {
@@ -30,6 +32,8 @@ export async function saveCompany(data) {
                 .min(1, 'El tipo de propiedad es requerido'),
             marketApproach: z.string()
                 .min(1, 'El enfoque de mercado es requerido'),
+            plan: z.string()
+                .min(1, 'El plan es requerido'),
         })
 
         const resultSchemaRequest = schemaRequest.safeParse(data)
@@ -41,12 +45,37 @@ export async function saveCompany(data) {
             }
         }
 
+        //check if plan exists
+        //================================================================
+        const { plan } = resultSchemaRequest.data;
+        let idPlan;
+
+        const planExists = await Plans.findOne({ typeOfplan: plan });
+
+        if (!planExists) {
+            const jsonPlan = getPlanJson(plan); 
+            const savePLan = await Plans.create(jsonPlan);
+
+            if (!savePLan) {
+                return {
+                    message: "Error al crear el plan.",
+                    status: false
+                }
+            }
+
+            idPlan = savePLan._id;
+        }
+        else idPlan = planExists._id;
+
         //save data
         //================================================================
+
+        resultSchemaRequest.data.id_plan = idPlan;
         const saveCompany = await Company.create(resultSchemaRequest.data)
         const dataResponse = {
             ...saveCompany.toObject(),
-            _id: saveCompany._id.toString()
+            _id: saveCompany._id.toString(),
+            id_plan: saveCompany.id_plan.toString()
         }
         
         return {
@@ -57,7 +86,7 @@ export async function saveCompany(data) {
 
     } catch (error) {
         return {
-            message: "Error al guardar.",
+            message: "Error en el servidor.",
             status: false
         }
     }

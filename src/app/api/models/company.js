@@ -59,6 +59,11 @@ const company_schema = new Schema({
     default: Date.now,
     required: true
   },
+  id_plan: {
+    type: Schema.Types.ObjectId,
+    ref: 'Plans',
+    required: true
+  }
 });
 
 
@@ -70,5 +75,5 @@ company_schema.pre('save', function (next) {
 })
 
 
-const Company = mongoose.models.Company ?? mongoose.model('Company', company_schema);
+const Company = mongoose.models.Company || mongoose.model('Company', company_schema);
 export default Company;
