@@ -88,7 +88,6 @@ export async function GET(request) { //get all proyects by id_company and search
 
 
   } catch (error) {
-      console.error(error);
       return NextResponse.json({
         message: "Internal server error",
       }, { status: 500 });

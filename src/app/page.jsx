@@ -259,7 +259,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="p-4 h-[39%]R">
+              <div className="p-4 h-[39%]">
                 <ul className="text-sm">
                   <li className="flex gap-2 items-center"><Check /> 1 escaneo 3D </li>
                   <li className="flex gap-2 items-center"><Check /> Actualización cada 2 meses</li>
