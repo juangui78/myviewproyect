@@ -20,7 +20,7 @@ const plans_schema = new Schema({
         total: {
             type: Number,
             required: true,
-            min: [1, 'min value exceded']
+            min: [0, 'min value exceded']
         },
         perMonth: {
             type: Number,
