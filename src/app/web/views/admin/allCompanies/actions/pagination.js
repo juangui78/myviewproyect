@@ -27,6 +27,7 @@ export async function getPagination(page) {
         const serializedCompanies = companies.map(company => ({
             ...company,
             _id: company._id.toString(),
+            id_plan: company.id_plan.toString(),
           }));
         
         return {

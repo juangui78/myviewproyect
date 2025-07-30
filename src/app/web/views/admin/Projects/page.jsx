@@ -38,6 +38,7 @@ const ContentPage = () => {
                 const response = await getAllProjects(id);
                 if (response.success) {
                     setData(response.data);
+                    console.log(response.data)
                     return
                 }
 

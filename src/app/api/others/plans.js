@@ -182,10 +182,10 @@ const PLANS = [
         typeOfplan: "enterprise",
         visits: { 
             actual: 0,
-            total: -1,
-            perMonth: -1
+            total: 0,
+            perMonth: 0
         },
-        numberOfModels: -1,
+        numberOfModels: 0,
         documentation: {
             topographicalPlan: {
                 isValid: false,
@@ -210,17 +210,17 @@ const PLANS = [
         },
         digitalPaut: {
             isValid: true,
-            stimatedScope: -1,
-            modelViews: -1
+            stimatedScope: 0,
+            modelViews: 0
         },
-        quality: -1,
+        quality: 0,
         area: {
-            from: -1,
-            to: -1
+            from: 0,
+            to: 0
         },
-        months: -1,
+        months: 0,
         discount: 0,
-        totalPayed: -1
+        totalPayed: 0
     },
 ]
 

@@ -59,6 +59,11 @@ const company_schema = new Schema({
     default: Date.now,
     required: true
   },
+  additionalProyect: { //proyectos adicionales si se compra
+    type: Number,
+    required: false,
+    default: 0
+  },
   id_plan: {
     type: Schema.Types.ObjectId,
     ref: 'Plans',
