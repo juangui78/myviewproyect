@@ -70,14 +70,20 @@ export async function GET(request) { //get all proyects by id_company and search
       message: 'id_company is required'
     }, { status: 400 });
 
+    const searchParamas = {
+      _id: 1,
+      name: 1,
+      state: 1,
+      urlImage: 1,
+    }
 
     if (search && search !== 'null' && search !== '' && search !== 'undefined') {
       proyects = await Proyect.find({
         idCompany,
         name: { $regex: search, $options: 'i' }
-      }, 'name');
-    } else {
-      proyects = await Proyect.find({ idCompany }, 'name');
+      }, searchParamas);
+    } else { 
+      proyects = await Proyect.find({ idCompany }, searchParamas);
     }
 
     if (!proyects) return NextResponse.json({

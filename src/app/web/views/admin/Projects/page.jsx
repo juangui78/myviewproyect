@@ -101,25 +101,26 @@ const ContentPage = () => {
     return (
         <>
             <section className="w-full mt-[20px]">
-                <section className="w-[70%] m-auto">
+                <section className="w-[90%] m-auto">
                     <div className="flex w-full items-center justify-between ...">
                         <h2 className="text-3xl font-bold mt-5 text-white text-left ">{nameProject}</h2>
                         <Button startContent={<PlusIcon/>} onClick={() => onOpenChangeNewProject()}>Crear nuevo proyecto</Button>
                     </div>
+                    <p className="text-white text-sm mt-2">Aquí puedes ver todos los proyectos de la inmobiliaria.</p>
                     <div className="w-full mt-7">
                         {data.map((item) => (
-                            <div key={item._id} className="w-full border-b-1 p-5 flex justify-between items-center">
+                            <div key={item._id} className="w-full border-b-1 p-5 flex justify-between items-center bg-white rounded-lg mb-3 hover:bg-gray-100 transition-all duration-300">
                                 <div>
-                                    <h4 className="text-lg font-bold text-white">
+                                    <h4 className="text-lg font-bold text-black">
                                         <Chip size="sm" radius="full" color={item.state === "Actived" ? "success" : "error"}>
-                                            Estado
+                                            *
                                             {/* Falta implementar este estado cuando hayan datos pesistentes 
                                                 en al base de datos
                                             */}
                                         </Chip> 
                                         {item.name}
                                     </h4>
-                                    <p className="text-white italic text-sm">{item.description}</p>
+                                    <p className="text-black italic text-sm">{item.description}</p>
                                 </div>
                                 <div className="flex items-center gap-4">
                                 <Button 
@@ -162,7 +163,7 @@ const ContentPage = () => {
               }}
               />
             {isOpen && <ModalAddModel isOpen={isOpen} onOpenChange={onOpenChange} idProject={idProject}/>}
-            {isOpenNewProject && <ModalNewProject isOpenNewProject={isOpenNewProject} onOpenChangeNewProject={onOpenChangeNewProject}/>}
+            {isOpenNewProject && <ModalNewProject isOpenNewProject={isOpenNewProject} onOpenChangeNewProject={onOpenChangeNewProject} idCompany={id}/>}
             {IsOpenDrawerModels && <DrawerShowModels IsOpenDrawerModels={IsOpenDrawerModels} onOpenChangeDrawerModels={onOpenChangeDrawerModels} dataModels={dataModels}/>}
             {IsOpenDrawerInfoProject && <DrawerShowInfoProject IsOpenDrawerInfoProject={IsOpenDrawerInfoProject} onOpenChangeDrawerShowInfoProject={onOpenChangeDrawerShowInfoProject} dataProject={dataProject}/>}
         </>
