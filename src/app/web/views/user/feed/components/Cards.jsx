@@ -49,16 +49,20 @@ export default function Cards({ proyects }) {
     setId(id);
   };
 
+  console.log(proyects)
+
   return (
     <>
-      <div className="grid  2xl:grid-cols-4 gap-[60px] w-[70%] m-auto mt-[40px]  lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
+      <div className="grid 2xl:grid-cols-6 gap-[60px] w-[70%] m-auto mt-[40px] mb-[40px]  lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1">
         {proyects.length > 0 ? (
           proyects.map((item) => {
+
+            if (item.state !== "Actived") return null; // Skip projects that are not active
             return (
               <Card
                 isFooterBlurred
                 key={item._id}
-                className="relative flex flex-col col-span-1 ... backdrop-blur-[40px] ... border-1 border-solid ... border-white  h-[40vh] w-full rounded-lg ... max-[730px]:w-[65%] max-[730px]:m-auto max-[500px]:w-[100%] "
+                className="relative flex flex-col col-span-2 ... backdrop-blur-[40px] ... border-1 border-solid ... border-white  h-[50vh] w-full rounded-lg ... max-[730px]:w-[65%] max-[730px]:m-auto max-[500px]:w-[100%] "
               >
                 <CardHeader className="absolute z-10  flex-col items-start bg-white/30 backdrop-blur-sm ... rounded-sm ...">
                   <div className="w-full flex flex-row justify-between items-center">
@@ -137,7 +141,8 @@ export default function Cards({ proyects }) {
                   removeWrapper
                   alt={item.name}
                   className="z-0 w-full h-full scale-125 -translate-y-6 object-cover"
-                  src="/images/parcela.avif"
+                  // src="/images/parcela.avif"
+                  src={item.urlImage == '' ? '/images/parcela.avif' : item.urlImage}
                 />
                 <CardFooter className="absolute  bottom-0  border-zinc-100/50 z-10 justify-between rounded-sm ...">
                   <Link
