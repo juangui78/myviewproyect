@@ -17,7 +17,7 @@ export default async function CardsList({ searchParams }) {
     `${URL_PROJECT}api/controllers/proyects?id_company=${session?.user?.id_company}&search=${search}`,
   );
 
-  if (response && response.data) data.push(...response.data);
+  if (response && response.data) data.push(...response.data); 
   
   return (
     <>
