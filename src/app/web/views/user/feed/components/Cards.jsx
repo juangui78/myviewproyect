@@ -57,7 +57,6 @@ export default function Cards({ proyects }) {
         {proyects.length > 0 ? (
           proyects.map((item) => {
 
-            if (item.state !== "Actived") return null; // Skip projects that are not active
             return (
               <Card
                 isFooterBlurred
