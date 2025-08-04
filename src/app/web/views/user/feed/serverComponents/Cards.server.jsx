@@ -1,4 +1,3 @@
-"server"
 import axios from "axios";
 import { getServerSession } from "next-auth";
 import { AuthOptions } from "@/api/auth/[...nextauth]/route";

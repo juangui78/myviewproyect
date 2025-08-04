@@ -49,7 +49,7 @@ export default function Cards({ proyects }) {
     setId(id);
   };
 
-  console.log(proyects)
+  console.log("pryectos" ,proyects)
 
   return (
     <>
