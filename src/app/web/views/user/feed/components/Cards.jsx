@@ -141,9 +141,9 @@ export default function Cards({ proyects }) {
                   alt={item.name}
                   className="z-0 w-full h-full scale-125 -translate-y-6 object-cover"
                   // src="/images/parcela.avif"
-                  // src={item.urlImage == '' ? '/images/parcela.avif' : item.urlImage}
-                  src="https://d7qkkiy9wjm6s.cloudfront.net/671f1e57e733bf8d82df4d19/landscape/peñol.jpg"
+                  src={item.urlImage == '' ? '/images/parcela.avif' : item.urlImage}
                 />
+                {console.log(item.urlImage)}
                 <CardFooter className="absolute  bottom-0  border-zinc-100/50 z-10 justify-between rounded-sm ...">
                   <Link
                     href={{
