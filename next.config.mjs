@@ -2,7 +2,13 @@
 const nextConfig = {
     transpilePackages: ['three'],
     images: {
-        domains: ["d7qkkiy9wjm6s.cloudfront.net"]
+        remotePatterns: [
+            {
+                protocol: "https",
+                hostname: "d7qkkiy9wjm6s.cloudfront.net",
+                pathname: "/**"
+            }
+        ]
     }
 };
 
