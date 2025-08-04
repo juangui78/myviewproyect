@@ -1,14 +1,17 @@
 "use client"
 import React, { useEffect, useMemo, useState } from "react";
 import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@heroui/table";
-import { Pagination, Input, Button, useDisclosure, Chip, Tooltip } from "@nextui-org/react";
+import { Pagination, Input, Button, useDisclosure, Chip, Tooltip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { getPagination } from "./actions/pagination";
 import { Toaster, toast } from "sonner";
 import Link from 'next/link';
 import { SearchIcon } from "@/web/global_components/icons/SearchIcon";
 import { PlusIcon } from "@/web/global_components/icons/PlusIcon";
 import Eye from "@/web/global_components/icons/Eye";
+import EditIconV2 from "@/web/global_components/icons/EditIconV2";
+import DeleteOutline from "@/web/global_components/icons/DeleteIcon";
 import ModalCreateCompany from "./components/ModalCrateCompany";
+import ModalEditCompany from "./components/ModalEditCompany";
 import { encrypt } from "@/api/libs/crypto";
 
 const Page = () => {
@@ -16,7 +19,9 @@ const Page = () => {
   const [data, setData] = useState([])
   const [totalPages, setTotalPages] = useState(1)
   const [pageAlreadyLoaded, setPageAlreadyLoaded] = useState([])
+  const [idInmoToEdit, setIdInmoToEdit] = useState(null)
   const { isOpen: isOpenCompany, onOpenChange: onOpenChangeCompany } = useDisclosure()
+  const { isOpen: isOpenEditCompany, onOpenChange: onOpenChangeEditCompany } = useDisclosure()
 
   useEffect(() => {
     document.title = "MyView_ | Inmobiliarias"
@@ -61,7 +66,7 @@ const Page = () => {
             <Button
               color="primary"
               startContent={<PlusIcon />}
-              onClick={onOpenChangeCompany}
+              onPress={onOpenChangeCompany}
             >
               Añadir nueva inmobiliaria
             </Button>
@@ -90,29 +95,40 @@ const Page = () => {
     )
   }, [page, totalPages])
 
+
+  const handleModalChange = (key, _id) => {
+    if (key === "view") return;
+
+    if (key === "edit") {
+      setIdInmoToEdit(_id)
+      onOpenChangeEditCompany(true);
+      return;
+    }
+
+  }
+
+
+  const refreshRow = (row, _id) => {
+
+    const index = data.findIndex(item => item._id === _id);
+    const info = data[index];
+
+    if (!info) return;
+    row._id = info._id;
+
+    data[index] = row;
+    setData([...data]);
+
+  }
+
   return (
     <div className="flex justify-center h-screen w-full mt-[100px]">
-      <div className="w-[70%]">
+      <div className="w-[90%]">
         <Table
           bottomContent={PaginationComponent}
           aria-label="tabla de inmobiliarias"
           topContentPlacement="outside"
           topContent={topContent}
-          classNames={{
-            table: " border-solid border-white",
-            tableHeader: "bg-gray-100",
-            tableBody: "divide-y divide-gray-200 border-solid border-white",
-            tableRow: "hover:bg-gray-100 border-solid border-white",
-            tableCell: "py-4 px-6 border-solid border-white",
-            th: ["bg-transparent", "text-default-500", "border-b", "border-divider"],
-            td: [
-              "group-data-[first=true]/tr:first:before:rounded-none",
-              "group-data-[first=true]/tr:last:before:rounded-none",
-              "group-data-[middle=true]/tr:before:rounded-none",
-              "group-data-[last=true]/tr:first:before:rounded-none",
-              "group-data-[last=true]/tr:last:before:rounded-none",
-            ],
-          }}
         >
           <TableHeader>
             <TableColumn>Nombre</TableColumn>
@@ -127,6 +143,7 @@ const Page = () => {
             <TableColumn>Acciones</TableColumn>
           </TableHeader>
           <TableBody
+            emptyContent="No hay inmobiliarias registradas"
             items={data}
           >
             {(item) => (
@@ -150,16 +167,47 @@ const Page = () => {
                   </Chip>
                 </TableCell>
                 <TableCell>
-                  <Link 
-                    href={{ pathname: `/web/views/admin/Projects`, 
-                            query: { id: encrypt(item._id), name: item?.name } 
-                          }} 
-                    target="_blank"
-                  >
-                    <Tooltip content="Ver proyectos">
-                      <Eye />
-                    </Tooltip>
-                  </Link >
+
+                  <Dropdown backdrop="blur">
+                    <DropdownTrigger>
+                      <Button variant="bordered">Open Menu</Button>
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="Dropdown menu" variant="faded" onAction={(key) => {
+                      requestAnimationFrame(() => {
+                        handleModalChange(key, item._id)
+                      })
+                    }}>
+                      <DropdownItem
+                        key="view"
+                        startContent={<Eye />}
+                        textValue="Ver proyectos"
+                      >
+                        <Link
+                          href={{
+                            pathname: `/web/views/admin/Projects`,
+                            query: { id: encrypt(item._id), name: item?.name }
+                          }}
+                          target="_blank"
+                        >
+                          Ver proyectos
+                        </Link >
+                      </DropdownItem>
+                      <DropdownItem
+                        key="edit"
+                        startContent={<EditIconV2 />}
+                      >
+                        Editar inmobiliaria
+                      </DropdownItem>
+                      <DropdownItem
+                        key="delete"
+                        className="text-danger"
+                        color="danger"
+                        startContent={<DeleteOutline />}
+                      >
+                        Eliminar inmobiliaria
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
                 </TableCell>
               </TableRow>
             )}
@@ -168,6 +216,7 @@ const Page = () => {
       </div>
       <Toaster richColors position="top-right" />
       <ModalCreateCompany isOpenCompany={isOpenCompany} onOpenChangeCompany={onOpenChangeCompany} addNewRecord={addNewRecord} />
+      <ModalEditCompany isOpenEditCompany={isOpenEditCompany} onOpenChangeEditCompany={onOpenChangeEditCompany} _idInmo={idInmoToEdit} refreshRow={refreshRow} />
     </div>
   )
 }

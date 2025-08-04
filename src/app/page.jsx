@@ -1,8 +1,11 @@
-'use client'
 import { Navbar, NavbarBrand, NavbarMenu, NavbarContent, NavbarItem, NavbarMenuItem, NavbarMenuToggle, Button, Image } from "@nextui-org/react";
 import Link from "next/link";
 import axios from "axios";
 import style from './web/global_components/navbar/styles/navbar.module.css'
+import Check from "./web/global_components/icons/CheckIcon";
+import Whatsapp from "./web/global_components/icons/Whatsapp";
+
+import SectionOne from "./sectionOne.client";
 
 axios.defaults.baseURL = 'http://localhost:3000/';
 
@@ -41,7 +44,7 @@ export default function Home() {
                 href="/web/views/login"
                 className="text-white"
               >
-                
+
                 Iniciar Sesion
               </Button>
             </NavbarItem>
@@ -75,29 +78,11 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="w-[100%] h-[80vh] mx-auto flex justify-center bg-white ">
-          <div className="w-[70%] h-[100%] grid grid-cols-2 gap-2 pt-10">
-            <div className="h-[60vh] flex justify-center ">
-              <Image src="/images/explore.png" isBlurred height={700} />
-            </div>
-            <div className="bg-white">
-              <h1 className="font-bold text-3xl italic text-left">Escaneo 3D de Alta Precisión</h1>
-              <p className="pt-6 text-lg">
-                Captura cada detalle con precisión milimétrica gracias a nuestra tecnología
-                de <strong>fotogrametría aérea </strong> mediante drones de última generación. Obtén modelos 3D realistas y detallados de terrenos,
-                edificaciones, parcelaciones y entornos urbanos en tiempo récord.
-              </p>
-              <ul className="pt-6 list-disc list-inside">
-                <li>Mapeo rápido y eficiente sin necesidad de mediciones manuales.</li>
-                <li>Imágenes de alta resolución procesadas con algoritmos avanzados.</li>
-                <li>Modelos 3D precisos para planificación, diseño y análisis.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        {/* sección dos del landing con framer motion */}
+        <SectionOne />
 
-        <div className="w-[100%] h-[60vh] mx-auto flex justify-center pt-20">
-          <div className="w-[70%] h-[100%] grid grid-cols-2 gap-2 pt-10">
+        <div className="w-[100%] h-[75vh] mx-auto flex justify-center item-center">
+          <div className="w-[70%] grid grid-cols-2 gap-2">
             <div className="">
               <h1 className="font-bold text-3xl italic text-left text-white">Evolución en el Tiempo: Modelos 3D con Registro Histórico</h1>
               <p className="pt-6 text-lg text-white">
@@ -118,34 +103,187 @@ export default function Home() {
         </div>
 
         <div className="w-[100%] bg-white h-[20vh] mx-auto flex justify-center">
-          <div className="w-[70%]  pt-20 pb-20">
-            <h1 className="font-bold text-3xl italic text-left">Aprovechate del marketing 3D</h1>
-            <p className="pt-3 text-lg">
-              Comparte tus modelos
-              3D en redes sociales, páginas web y aplicaciones móviles para
-              mostrar tus proyectos de forma interactiva y atractiva.
-            </p>
+          <div className="w-[70%]  pt-20 pb-20 flex items-center">
+            <div>
+              <h1 className="font-bold text-3xl italic text-left">Aprovechate del marketing 3D</h1>
+              <p className="pt-3 text-lg">
+                Comparte tus modelos
+                3D en redes sociales, páginas web y aplicaciones móviles para
+                mostrar tus proyectos de forma interactiva y atractiva.
+              </p>
+            </div>
           </div>
         </div>
 
-        <div className="w-[100%] h-[60vh] mx-auto flex justify-center pt-20">
-          <div className="w-[70%] h-[100%] grid grid-cols-2 gap-2 pt-10">
-            <div className="">
-              <h1 className="font-bold text-3xl italic text-left text-white">Precios</h1>
-              <p className="pt-6 text-lg text-white">
-                Almacena, organiza y
-                comparte tus modelos 3D en la nube. Accede a tus proyectos desde
-                cualquier lugar y dispositivo, y colabora con tu equipo en tiempo
-                real.
-              </p>
-              <ul className="pt-6 list-disc list-inside text-white">
-                <li><strong>Almacenamiento seguro</strong> en servidores de alta disponibilidad.</li>
-                <li><strong>Colaboración en tiempo real</strong> con tu equipo de trabajo.</li>
-                <li><strong>Acceso desde cualquier lugar</strong> y dispositivo.</li>
-              </ul>
+        <div className="w-[100%] h-[100vh] flex flex-col justify-center">
+
+          <div className="w-[70%] mx-auto pt-[80px]">
+            <div className="w-full">
+              <h1 className="text-white text-5xl font-bold text-center">Planes</h1>
+            </div>
+            <div className="w-full p-3">
+              <p className="text-white text-center">Convierte tus espacios en modelos digitales detallados con nuestros planes.</p>
+              <p className="text-white text-center">Ahorra tiempo y dinero a la hora de vender.</p>
+              <p className="text-white text-center">Paga solo por lo que necesites.</p>
+            </div>
+          </div>
+
+          <div className="w-[70%] h-[60%] grid grid-cols-4 gap-x-8 mt-[80px] mb-[100px] mx-auto">
+            <div className="col-span-1 bg-white rounded-medium  h-[100%] ...">
+              <div className="flex justify-center p-2 flex-col items-center">
+                <h2 className="text-2xl font-medium">Static</h2>
+                <p className="text-sm">6 meses</p>
               </div>
+
+              <div className="mt-3 mb-3">
+                <div className="flex justify-center">
+                  <h2>$1.232.000 COP</h2>
+                </div>
+                <div className="flex justify-center">
+                  <p>$205.333 COP por mes</p>
+                </div>
               </div>
+
+              <div className="p-4 h-[39%]">
+                <ul className="text-sm">
+                  <li className="flex gap-2 items-center"><Check /> 1 escaneo 3D único</li>
+                  <li className="flex gap-2 items-center"><Check />Calidad: 250.000 vertices </li>
+                  <li className="flex gap-2 items-center"><Check />Área: 500m² - 50.000m² </li>
+                  <li className="flex gap-2 items-center text-white">----------------------------------</li>
+                </ul>
               </div>
+
+              <div className="h-[1px] bg-gray-300"></div>
+
+              <div className="w-full">
+                <p className="p-2 text-center font-medium">Empieza hoy y obtén un 20% de <strong className="text-[#0CDBFF] underline text-lg">descuento</strong></p>
+              </div>
+
+
+              <div className="flex flex-col justify-center pb-[25px] gap-5 items-center">
+                <Button className="w-[50%] mt-[25px]" color="primary" as={Link} href="/web/views/login">
+                  Contactar
+                </Button>
+              </div>
+            </div>
+
+            <div className="col-span-1 bg-white rounded-medium  h-[100%] ...">
+              <div className="flex justify-center p-2 flex-col items-center">
+                <h2 className="text-2xl font-medium">Basic</h2>
+                <p className="text-sm">6 meses</p>
+              </div>
+
+              <div className="mt-3 mb-3">
+                <div className="flex justify-center">
+                  <h2>$2.432.000 COP</h2>
+                </div>
+                <div className="flex justify-center">
+                  <p>$405.333 COP por mes</p>
+                </div>
+              </div>
+
+              <div className="p-4 h-[39%]">
+                <ul className="text-sm">
+                  <li className="flex gap-2 items-center"><Check /> 1 escaneo 3D </li>
+                  <li className="flex gap-2 items-center"><Check /> Actualización cada 2 meses</li>
+                  <li className="flex gap-2 items-center"><Check />Calidad: 250.000 vertices </li>
+                  <li className="flex gap-2 items-center"><Check />Área: 500m² - 50.000m² </li>
+                </ul>
+              </div>
+
+              <div className="h-[1px] bg-gray-300"></div>
+
+              <div className="w-full">
+                <p className="p-2 text-center font-medium">Empieza hoy y obtén un 20% de <strong className="text-[#0CDBFF] underline text-lg">descuento</strong></p>
+              </div>
+
+              <div className="flex flex-col justify-center pb-[25px] gap-5 items-center">
+                <Button className="w-[50%] mt-[25px]" color="primary" as={Link} href="/web/views/login">
+                  Contactar
+                </Button>
+              </div>
+            </div>
+
+            <div className="col-span-1 bg-white rounded-medium  h-[100%] ...">
+              <div className="flex justify-center p-2 flex-col items-center">
+                <h2 className="text-2xl font-medium">Plus</h2>
+                <p className="text-sm">6 meses</p>
+              </div>
+
+              <div className="mt-3 mb-3">
+                <div className="flex justify-center">
+                  <h2>$4.172.800 COP</h2>
+                </div>
+                <div className="flex justify-center">
+                  <p>$695.467 COP por mes</p>
+                </div>
+              </div>
+
+              <div className="p-4 h-[39%]">
+                <ul className="text-sm">
+                  <li className="flex gap-2 items-center"><Check /> 1 escaneo 3D </li>
+                  <li className="flex gap-2 items-center"><Check /> Actualización cada 2 meses</li>
+                  <li className="flex gap-2 items-center"><Check />Calidad: 500.000 vertices </li>
+                  <li className="flex gap-2 items-center"><Check />Área: 50.000m² - 100.000m² </li>
+                  <li className="flex gap-2 items-center"><Check />Alcance: 250.000 views </li>
+                  <li className="flex gap-2 items-center"><Check />Visitas al modelo: 9.500</li>
+                </ul>
+              </div>
+
+              <div className="h-[1px] bg-gray-300"></div>
+
+              <div className="w-full">
+                <p className="p-2 text-center font-medium">Empieza hoy y obtén un 20% de <strong className="text-[#0CDBFF] underline text-lg">descuento</strong></p>
+              </div>
+
+              <div className="flex flex-col justify-center pb-[25px] gap-5 items-center">
+                <Button className="w-[50%] mt-[25px]" color="primary" as={Link} href="/web/views/login">
+                  Contactar
+                </Button>
+              </div>
+            </div>
+
+
+            <div className="col-span-1 bg-white rounded-medium  h-[100%] ...">
+              <div className="flex justify-center p-2 flex-col items-center">
+                <h2 className="text-2xl font-medium">Pro</h2>
+                <p className="text-sm">6 meses</p>
+              </div>
+
+              <div className="mt-3 mb-3">
+                <div className="flex justify-center">
+                  <h2>$6.228.480 COP</h2>
+                </div>
+                <div className="flex justify-center">
+                  <p>$1.038.080 COP por mes</p>
+                </div>
+              </div>
+
+              <div className="p-4 h-[39%]">
+                <ul className="text-sm">
+                  <li className="flex gap-2 items-center"><Check /> 1 escaneo 3D </li>
+                  <li className="flex gap-2 items-center"><Check /> Actualización cada 2 meses</li>
+                  <li className="flex gap-2 items-center"><Check />Calidad: 750.000 vertices </li>
+                  <li className="flex gap-2 items-center"><Check />Área: 100.000m² - 200.000m² </li>
+                  <li className="flex gap-2 items-center"><Check />Alcance: 330.000 views </li>
+                  <li className="flex gap-2 items-center"><Check />Visitas al modelo: 12.000</li>
+                </ul>
+              </div>
+
+              <div className="h-[1px] bg-gray-300"></div>
+
+              <div className="w-full">
+                <p className="p-2 text-center font-medium">Empieza hoy y obtén un 20% de <strong className="text-[#0CDBFF] underline text-lg">descuento</strong></p>
+              </div>
+
+              <div className="flex flex-col justify-center pb-[25px] gap-5 items-center">
+                <Button className="w-[50%] mt-[25px]" color="primary" as={Link} href="/web/views/login">
+                  Contactar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>

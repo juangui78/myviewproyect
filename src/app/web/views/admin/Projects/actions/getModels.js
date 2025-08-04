@@ -1,7 +1,8 @@
 "use server"
 import z from 'zod'
 import Model from '@/api/models/models'
-
+import Proyect from '@/api/models/proyect'
+import Plan from '@/api/models/plansM'
 //get all models from a project by id
 
 export async function getModels(idProject) {
@@ -15,6 +16,15 @@ export async function getModels(idProject) {
         }
 
         //===========================================================
+        //search plan to know the max number of models
+
+        const getIdCompany = await Proyect.findById(idProject).populate('idCompany');
+        const idPlan = getIdCompany.idCompany.id_plan;
+        const additionalProyect = getIdCompany.idCompany.additionalProyect;
+
+        const getPlan = await Plan.findById(idPlan, 
+            { _id: 0, __v : 0}
+        ).lean();
 
         const models = await Model.find({ idProyect: idProject }, {
             terrains: 0,
@@ -38,7 +48,14 @@ export async function getModels(idProject) {
             }
         })
         
-        return { success: true, data: plainModels }
+        return { success: true, 
+            status: 200,
+            data: {
+                plainModels,
+                getPlan,
+                additionalProyect
+            }
+        }
 
     } catch (error) {
         return { success: false, message: "Error en el servidor." }

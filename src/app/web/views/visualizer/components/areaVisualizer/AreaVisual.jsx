@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
 
-const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5 }) => {
+const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5, onClick }) => {
   const lineRef = useRef();
   const geometry = useRef(new THREE.BufferGeometry());
   const material = useRef(new THREE.LineDashedMaterial({
@@ -77,7 +77,7 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5 })
             markers[markers.length - 1].position[1] + lineHeightOffset,
             markers[markers.length - 1].position[2],
           ]}
-          style={{ pointerEvents: 'none' }}
+          style={{ pointerEvents: 'auto' }}
           zIndexRange={[0, 5000]}
         >
           <div style={{
@@ -88,7 +88,11 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5 })
             display: 'flex',
             alignItems: 'center',
             whiteSpace: 'nowrap',
-          }}>
+            cursor: 'pointer',
+          }}
+          onClick={onClick}
+          >
+            
             <span>Área: {(pjname === "Concepcion" ? 3.333 : area).toFixed(3)} m²</span>
           </div>
         </Html>

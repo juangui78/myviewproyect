@@ -30,19 +30,35 @@ const proyectSchema = new Schema({
     max : [300, 'max length exceded'],
     required : true
   },
-  plan: {
-    type: Schema.Types.ObjectId,
-    ref: 'Plan',
-    required: true  
-  },
-  //temporal info
-  dateInit : {
+  //
+  dateInit : { //fecha en que se empieza el proyecto
     type : Date,
     required: false
   },
-  dateFinish : {
+  dateFinish : { // fecha en que se termina el proyecto (6 meses para tener los modelos necesarios)
     type: Date,
     required : false
+  },
+  //aditional info
+  notes: {
+    type: String,
+    max : [500, 'max length exceded'],
+    required: false
+  },
+  areaOfThisproyect: { // metros cuadrados que tiene este proyecto
+    type: Number,
+    required: true,
+    default: 0
+  },
+  urlImage: {
+    type: String,
+    required: true,
+    default: ''
+  },
+  linkWeb: {
+    type: String,
+    required: false,
+    default: ''
   },
   //data proyect inside
   creation_date: {

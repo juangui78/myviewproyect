@@ -33,10 +33,10 @@ export default function Header() {
         <section className="flex flex-row justify-between w-[70%] m-auto max-[780px]:flex-col max-[780px]:gap-[24px]">
           <div className="text-white w-[20%] max-[780px]:w-[50%] max-[1110px]:w-[60%] max-[427px]:w-[100%]">
               <div className="flex flex-row justify-between items-center">
-                <div className="text-sm">Hectareas</div>
-                <div className="text-sm">20h de 40h</div>
+                <div className="text-sm"></div>
+                <div className="text-sm"></div>
               </div>
-              <Progress
+              {/* <Progress
                 classNames={{
                   base: "max-w-md",
                   indicator: "bg-[#0CDBFF]",
@@ -47,7 +47,7 @@ export default function Header() {
                 label=""
                 value={20}
                 maxValue={40}
-              />
+              /> */}
           </div>
           <div className="flex flex-col md:flex-row justify-end items-start w-full md:w-[80%] gap-4 max-[780px]:w-[100%] max-[780px]:flex-row">
             <Input

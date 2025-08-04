@@ -1,7 +1,9 @@
-import React from "react"
+import React, { useEffect } from "react"
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody } from "@heroui/drawer"
 
 const DrawerShowModels = ({ IsOpenDrawerModels, onOpenChangeDrawerModels, dataModels }) => {
+
+    
 
     return (
         <Drawer
@@ -20,7 +22,7 @@ const DrawerShowModels = ({ IsOpenDrawerModels, onOpenChangeDrawerModels, dataMo
                         <DrawerBody>
                             <div>
                                 <p className="text-white italic">Total de modelos en este proyecto = 3</p>
-                                {dataModels.map((model) => (
+                                {dataModels.plainModels.map((model) => (
                                     <div key={model._id} className="w-full border-b-1 p-5 flex justify-between items-center">
                                         <div>
                                             <h4 className="text-lg font-bold text-white">{model.name}</h4>

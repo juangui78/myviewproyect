@@ -36,10 +36,15 @@ export async function dbConnected() {
 }
 
 // Escuchar eventos de conexión
-mongoose.connection.on("connected", () => {
-  console.log("MongoDB está conectado");
-});
+if (mongoose.connection.listeners("connected").length === 0) {
+  mongoose.connection.on("connected", () => {
+    console.log("MongoDB está conectado");
+  });
+}
 
-mongoose.connection.on("error", (err) => {
-  console.error("Error de conexión de MongoDB:", err);
-});
+if (mongoose.connection.listeners("error").length === 0) {
+  mongoose.connection.on("error", (err) => {
+    console.error("Error de conexión de MongoDB:", err);
+  });
+}
+

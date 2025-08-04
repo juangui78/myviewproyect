@@ -1,16 +1,57 @@
 "use client"
-import React from "react"
+import React, {  useEffect, useState } from "react"
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@nextui-org/react"
 import { Formik, Form, Field } from "formik";
 import { Toaster, toast } from "sonner"
 import CustomInput from "./CustomInput";
 import CustomDropdown from "./CustomDrowpdown";
 import { validationSchemaInmo } from "../js/validationSchemaInmo";
-import { saveCompany } from "../actions/saveCompany";
 import { OPTIONSGEOGRAPHICSCOPE, OPTIONSPROPERTYTYPE, OPTIONSMARKERTAPPROACH, OPTIONSOFPLANS } from "../js/infoDropdowns";
+import { getDataToEditInmo, updateCompany } from "../actions/InmoActions";
 
 
-const ModalCreateCompany = ({ isOpenCompany, onOpenChangeCompany, addNewRecord }) => {
+const ModalEditCompany = ({ isOpenEditCompany, onOpenChangeEditCompany,_idInmo, refreshRow}) => {
+
+    const [loading, setLoading] = useState(false)
+    const [info, setInfo] = useState({
+        name: '',
+        department: '',
+        city: '',
+        address: '',
+        cell: '',
+        email: '',
+        geographicScope: '',
+        propertyType: '',
+        marketApproach: '',
+        plan: ''
+    })
+
+    useEffect(() => {
+
+        const getData = async () => {
+            try {
+                const response = await getDataToEditInmo(_idInmo)
+
+                if (response.status !== 200) {
+                    toast.error(response.message)
+                    return
+                }
+
+                const { data } = response;
+                setInfo(data)
+                setLoading(true)
+
+            }catch (error) {
+                toast.error("Error al obtener los datos de la inmobiliaria")
+                console.log(error)
+            } finally{
+                setLoading(false)
+            }
+        }
+
+        if (isOpenEditCompany) getData();
+
+    }, [isOpenEditCompany, _idInmo])
 
     return (
         <Modal
@@ -18,8 +59,8 @@ const ModalCreateCompany = ({ isOpenCompany, onOpenChangeCompany, addNewRecord }
             placement="center"
             size="xl"
             isDismissable={false}
-            isOpen={isOpenCompany}
-            onClose={onOpenChangeCompany}
+            isOpen={isOpenEditCompany}
+            onClose={onOpenChangeEditCompany}
             scrollBehavior="inside"
       
         >
@@ -27,37 +68,47 @@ const ModalCreateCompany = ({ isOpenCompany, onOpenChangeCompany, addNewRecord }
                 {(onClose) => (
                     <>
                         <ModalHeader className="flex flex-col gap-1 border-white">
-                            <h1 className="font-bold text-xl">Crear nueva inmobiliaria</h1>
+                            <h1 className="font-bold text-xl">Editar inmobiliaria</h1>
                             <p className="text-sm italic"></p>
                         </ModalHeader>
                         <ModalBody className="text-white">
                             <div className="flex gap-3 w-full justify-items-start">
                                 <Formik
                                     initialValues={{
-                                        name: '',
-                                        department: '',
-                                        city: '',
-                                        address: '',
-                                        cell: '',
-                                        email: '',
-                                        geographicScope: '',
-                                        propertyType: '',
-                                        marketApproach: '',
-                                        plan: ''
+                                        name: info.name,
+                                        department: info.department,
+                                        city: info.city,
+                                        address: info.address,
+                                        cell: info.cell,
+                                        email: info.email,
+                                        geographicScope: info.geographicScope,
+                                        propertyType: info.propertyType,
+                                        marketApproach: info.marketApproach,
+                                        plan: info.typeOfPlan
                                     }}
                                     validationSchema={validationSchemaInmo}
+                                    enableReinitialize={true}
                                     onSubmit={async (values) => {
-                                        
-                                        const response = await saveCompany(values)
 
-                                        if (!response.status) {
-                                           toast.error(response.message)
-                                           return
+                                        try{
+                                            const response = await updateCompany(values, _idInmo)
+
+                                            if (response.status !== 200) {
+                                                toast.error(response.message)
+                                                return
+                                            }
+
+                                            toast.success("Inmobiliaria actualizada correctamente")
+                                            refreshRow(values, _idInmo)
+
+                                        }catch(error){
+                                            console.error(error)
+                                            toast.error("Error al actualizar la inmobiliaria")
+                                        } finally {
+                                            setTimeout(() => {
+                                                onClose();
+                                            }, 100)
                                         }
-
-                                        toast.success(response.message)
-                                        addNewRecord(response.data)
-                                        onClose()
                                     }}
                                 >
                                     {({ handleSubmit, isSubmitting }) => (
@@ -273,4 +324,4 @@ const ModalCreateCompany = ({ isOpenCompany, onOpenChangeCompany, addNewRecord }
     )
 }
 
-export default ModalCreateCompany
+export default ModalEditCompany;

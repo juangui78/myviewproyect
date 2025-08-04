@@ -30,6 +30,8 @@ export const validationSchemaInmo = Yup.object({
     propertyType: Yup.string()
     .required('El tipo de propiedad es requerido'),
     marketApproach: Yup.string()
-    .required('El enfoque de mercado es requerido')
+    .required('El enfoque de mercado es requerido'),
+    plan: Yup.string()
+    .required('El plan es requerido'),
 })
 

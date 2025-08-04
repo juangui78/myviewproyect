@@ -1,68 +1,24 @@
-"use client";
-import React, { Suspense, useState, useEffect } from "react";
+"use server"
 import Header from "./components/header";
-import style from "./styles/feed.module.css";
-import { useSearchParams } from "next/navigation";
+import CardsList from "./serverComponents/Cards.server";
 import { BlocksShuffle3 } from "@/web/global_components/icons/BlocksShuffle3";
-import dynamic from "next/dynamic";
+import { Suspense } from "react";
+import style from "./styles/feed.module.css";
 
-const Cards = dynamic(() => import("./components/Cards"), {
-  ssr: false,
-  loading: () => (
-    <section
-      className={`w-full bg-transparent ${style.section} h-auto min-h-screen`}
-    >
-      <div className="m-auto text-6xl">
-        <BlocksShuffle3 className="text-white" />
-      </div>
-    </section>
-  ),
-});
-
-function FeedContent() {
-  const [isLoad, setLoading] = useState(true);
-  const [key, setKey] = useState(Date.now());
-  const searchParams = useSearchParams();
-
-  const search = searchParams?.get("search");
-
-  useEffect(() => {
-    document.title = "MyView_ | Feed";
-  }, []);
-
-  useEffect(() => {
-    setKey(Date.now());
-  }, [search]);
-
-  const changeStatusLoad = () => setLoading(false);
+export default async function Page({  searchParams }) {
 
   return (
     <>
-      {!isLoad && <Header />}
-      <div className={`${style.fatherBoxes} min-h-[60vh]...`}>
-        <Cards key={key} search={search} changeStatus={changeStatusLoad} />
-      </div>
-    </>
-  );
-}
-
-export default function Page() {
-  return (
-    <section
-      className={`w-full bg-transparent ${style.section} h-auto min-h-screen`}
-    >
-      <Suspense
-        fallback={
+      <Suspense fallback={
+        <section className={`w-full bg-transparent ${style.section} h-auto min-h-screen`}>
           <div className="m-auto text-6xl">
             <BlocksShuffle3 className="text-white" />
           </div>
-        }
-      >
-        <FeedContent />
+        </section>
+      }>
+        <Header />
+        <CardsList searchParams={searchParams} />
       </Suspense>
-      <footer className="h-[20vh] bg-[#02121B] mt-[70px] bg-transparent">
-        <div className="text-white"></div>
-      </footer>
-    </section>
-  );
+    </>
+  )
 }

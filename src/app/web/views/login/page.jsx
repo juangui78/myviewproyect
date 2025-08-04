@@ -70,7 +70,7 @@ export default function Login() {
                   return
                 }
 
-                await router.push('/web/views/user/feed') // go to feed page
+                router.push('/web/views/user/feed') // go to feed page
               }}
             >
             {({ handleSubmit, isSubmitting}) => (
