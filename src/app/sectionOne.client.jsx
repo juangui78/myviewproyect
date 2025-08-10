@@ -7,13 +7,13 @@ const SectionOne = () => {
     return (
 
         <motion.div
-            className="w-[100%] h-[83%] bg-white flex flex-col items-center justify-center"
+            className="w-[100%] min-h-[70vh] max-h-[100vh]  bg-white flex flex-col items-center justify-center"
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: "easeOut" }}
         >
-            <div className="w-[70%] h-[100%] grid grid-cols-1 md:grid-cols-2 gap-4 pt-10 pb-10">
+            <div className="w-[70%] max-h[100vh] h-[89vh]  grid grid-cols-1 md:grid-cols-2 gap-4 pt-10 pb-10">
                 <motion.div
                     className="h-[100%] w-[85%] flex justify-center items-center relative "
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -29,7 +29,7 @@ const SectionOne = () => {
                     whileInView={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.6, delay: 0.5 }}
                 >
-                    <h1 className="font-bold text-3xl italic text-left text-gray-800">Escaneo 3D de Alta Precisión</h1>
+                    <h1 className="font-bold text-3xl  text-left text-gray-800">Escaneo 3D de Alta Precisión</h1>
                     <p className="pt-6 text-lg text-gray-700">
                         Captura cada detalle con precisión milimétrica gracias a nuestra tecnología
                         de <strong>fotogrametría aérea</strong> mediante drones de última generación. Obtén modelos 3D realistas y detallados de terrenos,
