@@ -3,7 +3,7 @@ import React from 'react';
 import * as THREE from 'three';
 import { useThree } from '@react-three/fiber';
 
-const ClickHandler = ({ onAddMarker }) => {
+const ClickHandler = ({ onAddMarker, onAddView360Marker, addView360Mode }) => {
     const { camera, scene, gl } = useThree(); // Obtenemos 'gl' para acceder al canvas
 
     const handleCanvasClick = (event) => {
@@ -28,9 +28,11 @@ const ClickHandler = ({ onAddMarker }) => {
         if (intersects.length > 0) {
             const intersectPoint = intersects[0].point; // Punto de intersección exacto
             console.log('Intersección en:', intersectPoint);
-            
-            // Agrega el marcador en el punto de intersección
-            onAddMarker([intersectPoint.x, intersectPoint.y, intersectPoint.z]);
+            if (addView360Mode) {
+                onAddView360Marker([intersectPoint.x, intersectPoint.y, intersectPoint.z]);
+            } else {
+                onAddMarker([intersectPoint.x, intersectPoint.y, intersectPoint.z]);
+            }
         }
     };
 

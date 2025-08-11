@@ -11,7 +11,7 @@ const Photo360Modal = ({ url, onClose }) => {
 
     const viewer = new Viewer({
       container: containerRef.current,
-      panorama: "https://upload.wikimedia.org/wikipedia/commons/1/18/Rheingauer_Dom%2C_Geisenheim%2C_360_Panorama_%28Equirectangular_projection%29.jpg",
+      panorama: "https://myview-bucketdemo.s3.us-east-1.amazonaws.com/test360/Explanaci%C3%B3n.jpg",
       loadingImg: "https://colombiarents.com/wp-content/uploads/2023/09/medellin-casas-vacaciones-8.jpg",
       navbar: ["zoom", "fullscreen"],
       touchmoveTwoFingers: true,

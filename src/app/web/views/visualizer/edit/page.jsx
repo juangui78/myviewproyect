@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import Marker from "../components/markers/Markers";
+import Marker360 from '../components/markers/Marker360';
 import ClickHandler from "../components/clickhandler/ClickHandler";
 import * as THREE from 'three';
 import AreaVisual from "../components/areaVisualizer/AreaVisual";
@@ -165,6 +166,9 @@ const App = () => {
     const [isSafariMobile, setIsSafariMobile] = useState(false);
     const [isInstagramBrowser, setIsInstagramBrowser] = useState(false);
     const [photo360Url, setPhoto360Url] = useState(null);
+    const [view360Markers, setView360Markers] = useState([]);
+    const [addView360Mode, setAddView360Mode] = useState(false);
+    const [isPhoto360ModalOpen, setIsPhoto360ModalOpen] = useState(false);
 
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -199,6 +203,20 @@ const App = () => {
             // Llamar a handleResetMarkers
             handleResetMarkers();
         }
+    };
+
+    const handleAddView360Marker = (position) => {
+    // Aquí podrías abrir un modal para seleccionar la foto 360
+    const photo360 = "/images/mi-foto-360.jpg"; // Cambia esto por la lógica que necesites
+
+    const newMarker = {
+        id: Date.now(),
+        position,
+        photo360,
+        label: "Vista 360",
+    };
+
+    setView360Markers((prev) => [...prev, newMarker]);
     };
 
     const handleEditMarkersMode = (event) => {
@@ -423,7 +441,10 @@ const App = () => {
     
 
     
-
+    console.log('view360Markers:', view360Markers);
+    console.log('current mode: ', addView360Mode);
+    
+    
 
 
 
@@ -501,6 +522,8 @@ const App = () => {
                         >
                             Guardar Terrenos
                         </Button> 
+                        <Button onClick={() => setAddView360Mode(true)}>Agregar Vista 360</Button>
+                        <Button onClick={() => setAddView360Mode(false)}>Agregar Trazado</Button>
                 </div>
                 <div>
                     <InformationCard info={projectInfo} />
@@ -524,7 +547,7 @@ const App = () => {
                             <CameraViewManager cameraView={cameraView} />
                             {/* <CameraDebugger /> */}
                             
-                            {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
+                            {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} onAddView360Marker={handleAddView360Marker} addView360Mode={addView360Mode}/>}
                             {/* {markers.map(marker => (
                                 <Marker
                                     key={marker.id}
@@ -541,6 +564,19 @@ const App = () => {
                                         onClick={() => setSelectedMarker(marker.id)}
                                     />
                                 ))}
+                                {view360Markers.map(marker => (
+                                    <Marker360
+                                        key={marker.id}
+                                        position={marker.position}
+                                        label={marker.label}
+                                        color="orange" // O usa un icono diferente
+                                        hidden={isPhoto360ModalOpen}
+                                        onClick={() => {
+                                            setPhoto360Url("https://photo-sphere-viewer.js.org/assets/sphere.jpg");
+                                            setIsPhoto360ModalOpen(true); // Abrir el modal
+                                        }}
+                                    />
+                                    ))}
                                 {isModelLoaded && showTerrains && terrains.map((terrain) => (
                                     <React.Fragment key={terrain.id}>
                                         {terrain.markers.map(marker => (
@@ -601,7 +637,10 @@ const App = () => {
                 </div>
 
                 {photo360Url && (
-                <Photo360Modal url="https://upload.wikimedia.org/wikipedia/commons/1/18/Rheingauer_Dom%2C_Geisenheim%2C_360_Panorama_%28Equirectangular_projection%29.jpg" onClose={() => setPhoto360Url(null)} />
+                <Photo360Modal url="https://myview-bucketdemo.s3.us-east-1.amazonaws.com/test360/Explanaci%C3%B3n.jpg" onClose={() => {
+                    setPhoto360Url(null);
+                    setIsPhoto360ModalOpen(false);
+                }} />
                 )}
 
                 {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
