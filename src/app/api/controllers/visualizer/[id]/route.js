@@ -36,9 +36,11 @@ export async function POST(request, { params }) {
     try {
         
         
-        const { terrains, modelID } = await request.json();
+        const { terrains, modelID, view360Markers } = await request.json();
         console.log('aqui llega el ID: ', modelID);
         console.log('Terrains received:', terrains);
+        console.log('aqui llegan los markers 360: ', view360Markers);
+        
 
         // Encuentra el proyecto y actualiza los terrenos
         const model = await Model.findById(modelID);
@@ -48,6 +50,7 @@ export async function POST(request, { params }) {
         }
 
         model.terrains = terrains;
+        model.markers = view360Markers; // Guarda los markers 360 en el campo markers del modelo
         await model.save();
 
         console.log('Terrains saved successfully');

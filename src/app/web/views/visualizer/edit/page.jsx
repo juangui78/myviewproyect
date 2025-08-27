@@ -365,6 +365,7 @@ const App = () => {
                     if (currentModel.terrains) {
                         setTerrains(currentModel.terrains);
                         setAllTerrains(currentModel.terrains);
+                        setView360Markers(currentModel.markers || []); // Carga los markers 360 si existen
                     }
                 });
             } else {
@@ -419,7 +420,8 @@ const App = () => {
         try {
             const response = await axios.post(`/api/controllers/visualizer/${idProyect}`, {
                 modelID: modelID,
-                terrains: allTerrains
+                terrains: allTerrains,
+                view360Markers: view360Markers,
             });
             console.log('Terrenos guardados:', response.data);
         } catch (error) {
@@ -594,7 +596,7 @@ const App = () => {
                                                 terrains={terrains}
                                                 markers={terrain.markers}
                                                 areaCalculated={handleAreaCalculated}
-                                                onClick={() => setPhoto360Url("https://photo-sphere-viewer.js.org/assets/sphere.jpg")}
+                                                onClick={() => setIsPhoto360ModalOpen(true)}
                                             />
                                         )}
                                     </React.Fragment>
@@ -636,12 +638,14 @@ const App = () => {
                         </div>
                 </div>
 
-                {photo360Url && (
-                <Photo360Modal url="https://myview-bucketdemo.s3.us-east-1.amazonaws.com/test360/Explanacion_lowres.jpg" onClose={() => {
+                <Photo360Modal
+                url={photo360Url}
+                isOpen={isPhoto360ModalOpen}
+                onClose={() => {
                     setPhoto360Url(null);
                     setIsPhoto360ModalOpen(false);
-                }} />
-                )}
+                }}
+                />
 
                 {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
 
