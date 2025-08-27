@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import Marker from "./components/markers/Markers";
+import Marker360 from './components/markers/Marker360';
 import ClickHandler from "./components/clickhandler/ClickHandler";
 import * as THREE from 'three';
 import AreaVisual from "./components/areaVisualizer/AreaVisual";
@@ -31,6 +32,7 @@ import gsap from "gsap";
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import LoadingScreen from './components/loadingScreen/LoadingScreen.jsx';
 import { get, set } from 'mongoose';
+import Photo360Modal from './components/viewer360/PhotoSphereModal';
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
@@ -161,6 +163,10 @@ const App = () => {
     const [isLoadingScreenVisible, setIsLoadingScreenVisible] = useState(true);
     const [isSafariMobile, setIsSafariMobile] = useState(false);
     const [isInstagramBrowser, setIsInstagramBrowser] = useState(false);
+     const [photo360Url, setPhoto360Url] = useState(null);
+    const [view360Markers, setView360Markers] = useState([]);
+    const [addView360Mode, setAddView360Mode] = useState(false);
+    const [isPhoto360ModalOpen, setIsPhoto360ModalOpen] = useState(false);
 
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -343,6 +349,7 @@ const App = () => {
                     if (currentModel.terrains) {
                         setTerrains(currentModel.terrains);
                         setAllTerrains(currentModel.terrains);
+                        setView360Markers(currentModel.markers || []); // Carga los markers 360 si existen
                     }
                 });
             } else {
@@ -397,7 +404,8 @@ const App = () => {
         try {
             const response = await axios.post(`/api/controllers/visualizer/${idProyect}`, {
                 modelID: modelID,
-                terrains: allTerrains
+                terrains: allTerrains,
+                view360Markers: view360Markers,
             });
             console.log('Terrenos guardados:', response.data);
         } catch (error) {
@@ -537,6 +545,19 @@ const App = () => {
                                         onClick={() => setSelectedMarker(marker.id)}
                                     />
                                 ))}
+                                {view360Markers.map(marker => (
+                                    <Marker360
+                                        key={marker.id}
+                                        position={marker.position}
+                                        label={marker.label}
+                                        color="orange" // O usa un icono diferente
+                                        hidden={isPhoto360ModalOpen}
+                                        onClick={() => {
+                                            setPhoto360Url("https://photo-sphere-viewer.js.org/assets/sphere.jpg");
+                                            setIsPhoto360ModalOpen(true); // Abrir el modal
+                                        }}
+                                    />
+                                    ))}
                                 {isModelLoaded && showTerrains && terrains.map((terrain) => (
                                     <React.Fragment key={terrain.id}>
                                         {terrain.markers.map(marker => (
@@ -553,6 +574,7 @@ const App = () => {
                                                 terrains={terrains}
                                                 markers={terrain.markers}
                                                 areaCalculated={handleAreaCalculated}
+                                                
                                             />
                                         )}
                                     </React.Fragment>
@@ -593,6 +615,15 @@ const App = () => {
                         
                         </div>
                 </div>
+
+                <Photo360Modal
+                url={photo360Url}
+                isOpen={isPhoto360ModalOpen}
+                onClose={() => {
+                    setPhoto360Url(null);
+                    setIsPhoto360ModalOpen(false);
+                }}
+                />
 
                 {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
 

@@ -34,7 +34,7 @@ const Toolbar = ({
         </Button>
       </Tooltip>
 
-      <Tooltip content="Tomar Medidas" placement='bottom'>
+      {/* <Tooltip content="Tomar Medidas" placement='bottom'>
         <Button
           isIconOnly
           variant="flat"
@@ -44,7 +44,7 @@ const Toolbar = ({
         >
           <MapMarkerDistance className="w-4 h-4" />
         </Button>
-      </Tooltip>
+      </Tooltip> */}
 
 
       {/* <Tooltip content="Reiniciar Marcadores" placement='bottom'>

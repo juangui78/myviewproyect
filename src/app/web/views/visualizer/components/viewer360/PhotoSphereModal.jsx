@@ -1,31 +1,36 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Viewer } from "@photo-sphere-viewer/core";
 import "@photo-sphere-viewer/core/index.css";
-// import "photo-sphere-viewer/dist/photo-sphere-viewer.css";
 
-const Photo360Modal = ({ url, onClose }) => {
+const Photo360Modal = ({ url, isOpen, onClose }) => {
   const containerRef = useRef(null);
+  const viewerRef = useRef(null);
 
   useEffect(() => {
-    // if (!url || !containerRef.current) return;
+    if (!containerRef.current || viewerRef.current) return;
 
-    const viewer = new Viewer({
+    // ⚡️ Crear el viewer SOLO UNA VEZ
+    viewerRef.current = new Viewer({
       container: containerRef.current,
-      panorama: "https://myview-bucketdemo.s3.us-east-1.amazonaws.com/test360/Explanacion_lowres.jpg",
-      loadingImg: "https://colombiarents.com/wp-content/uploads/2023/09/medellin-casas-vacaciones-8.jpg",
+      panorama:
+        "https://myview-bucketdemo.s3.us-east-1.amazonaws.com/test360/Explanacion_lowres.jpg",
+      loadingImg:
+        "https://colombiarents.com/wp-content/uploads/2023/09/medellin-casas-vacaciones-8.jpg",
       navbar: ["zoom", "fullscreen"],
-      touchmoveTwoFingers: true,
-      
-      // plugins: [] // Sin plugins
+      useXmpData: false,
+      webgl: {
+        context: "webgl",
+        preserveDrawingBuffer: false,
+      },
     });
-
-    return () => {
-      viewer.destroy();
-    };
-  }, [url]);
+  }, []);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[99999]">
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[99999] transition-opacity duration-300 ${
+        isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      }`}
+    >
       <div className="relative w-[90vw] h-[90vh] bg-black rounded-lg">
         <button
           onClick={onClose}
@@ -33,7 +38,7 @@ const Photo360Modal = ({ url, onClose }) => {
         >
           Cerrar
         </button>
-        <img src={url} alt="debug" style={{ maxWidth: 200, maxHeight: 200, position: "absolute", top: 10, left: 10, zIndex: 10000 }} />
+        {/* Este div SIEMPRE está en el DOM */}
         <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
       </div>
     </div>

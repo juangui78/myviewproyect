@@ -3,7 +3,7 @@ import { Html } from '@react-three/drei';
 
 function Marker360({ position, label, onClick, preview, hidden = false }) {
     // Opción 1: Elevar todo el marcador sumando altura a la posición Y
-    const adjustedPosition = [position[0], position[1] + 0.9, position[2]];
+    const adjustedPosition = [position[0], position[1] + 6, position[2]];
     
     // Imagen por defecto si no se pasa preview
     const imageSource = '/images/lowprev.jpg';
@@ -95,33 +95,7 @@ function Marker360({ position, label, onClick, preview, hidden = false }) {
                     >
                         {label}
                     </span>
-                    {/* Polígono 2D apuntando hacia abajo - arreglado */}
-                    <div
-                        style={{
-                            width: 0,
-                            height: 0,
-                            borderLeft: '7px solid transparent',
-                            borderRight: '7px solid transparent',
-                            borderTop: '14px solid #fff',
-                            marginTop: 3,
-                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))',
-                            position: 'relative',
-                        }}
-                    >
-                        {/* Borde interno para dar efecto 3D */}
-                        <div
-                            style={{
-                                position: 'absolute',
-                                top: '-12px',
-                                left: '-6px',
-                                width: 0,
-                                height: 0,
-                                borderLeft: '6px solid transparent',
-                                borderRight: '6px solid transparent',
-                                borderTop: '10px solid #f0f0f0',
-                            }}
-                        />
-                    </div>
+                    
                 </div>
             </Html>
         </group>

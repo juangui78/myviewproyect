@@ -36,6 +36,10 @@ const models_schema = new Schema({
     type : Array,
     required : false
   },
+  markers : {
+    type : Array,
+    required : false
+  },
   creation_date: {
     type: Date,
     default: Date.now
