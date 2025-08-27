@@ -11,7 +11,7 @@ const Photo360Modal = ({ url, onClose }) => {
 
     const viewer = new Viewer({
       container: containerRef.current,
-      panorama: "https://myview-bucketdemo.s3.us-east-1.amazonaws.com/test360/Explanaci%C3%B3n.jpg",
+      panorama: "https://myview-bucketdemo.s3.us-east-1.amazonaws.com/test360/Explanacion_lowres.jpg",
       loadingImg: "https://colombiarents.com/wp-content/uploads/2023/09/medellin-casas-vacaciones-8.jpg",
       navbar: ["zoom", "fullscreen"],
       touchmoveTwoFingers: true,
