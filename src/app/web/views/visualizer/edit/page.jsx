@@ -637,7 +637,7 @@ const App = () => {
                 </div>
 
                 {photo360Url && (
-                <Photo360Modal url="https://myview-bucketdemo.s3.us-east-1.amazonaws.com/test360/Explanaci%C3%B3n.jpg" onClose={() => {
+                <Photo360Modal url="https://myview-bucketdemo.s3.us-east-1.amazonaws.com/test360/Explanacion_lowres.jpg" onClose={() => {
                     setPhoto360Url(null);
                     setIsPhoto360ModalOpen(false);
                 }} />
