@@ -60,18 +60,18 @@ export default function Cards({ proyects }) {
               <Card
   isFooterBlurred
   key={item._id}
-  className="relative flex flex-col col-span-3 backdrop-blur-[40px] border-1 border-solid border-white h-[35vh] w-full rounded-lg max-[526px]:h-[45vh] max-[1535px]:col-span-3 max-[1218px]:grid-cols-1 max-[1218px]:w-[80%] max-[742px]:w-[95%] max-[624px]:w-[98%]"
+  className="relative flex flex-col col-span-3 md:h-[100%] backdrop-blur-[40px] border-1 border-solid border-white h-[35vh] w-full rounded-lg max-[526px]:h-[45vh] max-[1535px]:col-span-3 max-[1218px]:grid-cols-1 max-[1218px]:w-[80%] max-[742px]:w-[95%] max-[624px]:w-[98%]"
 >
-  <CardBody className="h-[100%] flex flex-col md:flex-row justify-center items-center">
+  <CardBody className="h-[100%] flex flex-col md:flex-row  justify-center items-center">
     {/* Imagen */}
-    <div className={`${styles.imagenCard} h-[70%] md:h-[100%] w-full md:w-[60%] pt-[2px] pb-[2px]`}>
+    <div className={`${styles.imagenCard} h-[100%] md:h-[100%] w-full md:w-[60%] pt-[2px] pb-[2px]`}>
       <Link 
       href={{
       pathname: `/web/views/visualizer`,
       query: { id: encrypt(item._id) },
       }}
       target="_blank"
-      className="w-full h-full">
+      className="w-full h-full flex justify-center items-center">
       <Image
         isZoomed
         alt={item.name}
