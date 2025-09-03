@@ -64,12 +64,13 @@ export default function Signup() { // PAGE TO CREATE USER WHEN THEY DONT HAVE A 
             email : e.target.elements.email.value,
             password: e.target.elements.password.value,
             validPassword : e.target.elements.validPassword.value,
-            plan : 'test 30 days',
-            type : 'Company'
+            plan : 'base',
+            type : 'Company',
+            request : false
           };
 
           setSending(true);
-          const response = await axios.post("/api/signup", data);
+          const response = await axios.post("/api/controllers/registeruser", data);
 
           if (response.status == 200){
             if (response.data.success){

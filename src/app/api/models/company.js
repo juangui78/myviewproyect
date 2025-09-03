@@ -16,19 +16,19 @@ const company_schema = new Schema({
   },
   department: {
     type: String,
-    required: true
+    required: false
   },
   city: {
     type: String,
-    required: true
+    required: false
   },
   address: {
     type: String,
-    required: true
+    required: false
   },
   cell: {
     type: String,
-    required: true
+    required: false
   },
   email: {
     type: String,
@@ -36,28 +36,28 @@ const company_schema = new Schema({
   },
   propertyType: {
     type : String,
-    required: true,
+    required: false,
     enum: ['residenciales', 'comerciales', 'industriales', 'rústicas o rurales', 'de lujo', 'otros']
   },
   geographicScope: {
     type: String,
-    required: true,
+    required: false,
     enum: ['local', 'regional', 'nacional', 'internacional']
   },
   marketApproach: {
     type: String,
-    required: true,
+    required: false,
     enum: ['residencial', 'comercial','inversiones', 'gestion de patrimonio', 'otros']
   },
   active: {
     type: Boolean,
     default: true,
-    required: true
+    required: false
   },
   creationDate: {
     type: Date,
     default: Date.now,
-    required: true
+    required: false
   },
   additionalProyect: { //proyectos adicionales si se compra
     type: Number,
@@ -67,7 +67,7 @@ const company_schema = new Schema({
   id_plan: {
     type: Schema.Types.ObjectId,
     ref: 'Plans',
-    required: true
+    required: false
   }
 });
 

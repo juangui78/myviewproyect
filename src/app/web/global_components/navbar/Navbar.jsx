@@ -110,7 +110,7 @@ export default function NavBar({children}) {
             </DropdownTrigger>
             <DropdownMenu aria-label="Profile Actions" variant="flat">
               <DropdownItem key="profile" className="h-14 gap-2">
-                <p className="font-semibold">Loguiado como </p>
+                <p className="font-semibold">Sesion Iniciada como </p>
                 <p className="font-semibold">{session?.user?.email}</p>
               </DropdownItem>
               <DropdownItem key="configurations">Configuración</DropdownItem>

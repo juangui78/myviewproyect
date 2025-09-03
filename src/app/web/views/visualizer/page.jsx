@@ -86,7 +86,7 @@ const CameraViewManager = ({ cameraView }) => {
 
     useEffect(() => {
         const positions = [
-            { x: 0, y: 200, z: 0 }, // Vista superior
+            { x: 0, y: 40, z: 0 }, // Vista superior
             { x: -59.69, y: 103.87, z: -84.092 }, // Vista lateral derecha
             { x: 475.40, y: 223.10, z: -84.77 }, // Vista frontal
             { x: -91.45, y: 71.300, z: -28.779 }, // Vista lateral izquierda
