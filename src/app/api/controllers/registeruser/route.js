@@ -1,16 +1,18 @@
 import { dbConnected } from "@/api/libs/mongoose";
 import { NextResponse } from "next/server";
-
+import { z } from "zod";
+import bcrypt from "bcryptjs";
 import User from "@/api/models/users";
 import Company from "@/api/models/company";
+import mongoose from "mongoose";
 
-import { z } from "zod";
-import bcrypt from "bcryptjs";;
+
+// AQUI SE CREA UNA CUENTA DESDE 0 y CON ASIGNACION DE COMPAÑIA si no tiene
 
 dbConnected();
+const { ObjectId } = mongoose.Types;
 
-// !!!!!! Aqui se estan creando las inmobiliarias desde una cuenta ya creada.
-
+// Esquema del USER
 const loginSchema = z
   .object({
     name: z.string(),
@@ -49,48 +51,45 @@ export async function POST(request) {
       );
     }
 
+    // Crear una nueva compañía automáticamente
+    const newCompany = new Company({
+      name: data.name, // Usa el nombre del usuario como nombre de la compañía
+      email: data.email,
+      createdAt: new Date(),
+    });
+    const savedCompany = await newCompany.save();
+
     const hashedPassword = await bcrypt.hash(pass, 12);
     data.password = hashedPassword;
-
-    //give the permissions
     data.permissions = {
       view : true,
       createEdit : true,
+      admin : false,
+    }
+    data.configurations = {
+        feed : 'cards'
     }
 
-    //create the company width the plan and dates
-    const dateNow = new Date();
-    const in30Days = new Date(dateNow.getTime() + 30 * 24 * 60 * 60 * 1000);
+    // Asignar el ID de la compañía al usuario
+    data.id_Company = savedCompany._id;
 
-    const companyData = {
-      plan : data.plan,
-      finalFree : in30Days
-    }
+    const newUser = new User(data);
+    await newUser.save();
 
-    const company = new Company(companyData);
-    const successCompany = await company.save(); //save company
-
-    if (successCompany){
-      const idCompany = successCompany?._id;
-      data.id_Company = idCompany;
-
-      const user = new User(data); //save user
-      user.save();
-
-      //send email
-      // sendEmail()
-
-      return NextResponse.json({
-        message: "user created",
+    return NextResponse.json(
+      {
+        message: "User and Company created",
         success: true,
-      });
+      },
+      { status: 200 }
+    );
+  }
 
-    }
-  } catch (error) {
-    console.log(error)
-    return NextResponse.json({
-      message: "somethin get wrong",
-      success: false
-    })
+    catch (error) {
+    console.error("Error in signup:", error);
+    return NextResponse.json(
+      { message: "Error creating user", success: false, error },
+      { status: 500 }
+    );
   }
 }

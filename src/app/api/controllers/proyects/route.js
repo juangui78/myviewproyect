@@ -59,43 +59,60 @@ export async function POST(request) {
 }
 
 export async function GET(request) { //get all proyects by id_company and search
-
+  
   try {
     const { searchParams } = new URL(request.url);
     const idCompany = searchParams.get('id_company');
     const search = searchParams.get('search');
     let proyects;
 
-    if (!idCompany) return NextResponse.json({
-      message: 'id_company is required'
-    }, { status: 400 });
+    console.log("idCompany:", idCompany);
+    console.log("search:", search);
+
+    if (!idCompany) {
+      return NextResponse.json(
+        { message: 'id_company is required' },
+        { status: 400 }
+      );
+    }
 
     const searchParamas = {
       _id: 1,
       name: 1,
       state: 1,
       urlImage: 1,
+    };
+
+    try {
+      if (search && search !== 'null' && search !== '' && search !== 'undefined') {
+        proyects = await Proyect.find(
+          { idCompany, name: { $regex: search, $options: 'i' } },
+          searchParamas
+        );
+      } else {
+        proyects = await Proyect.find({ idCompany }, searchParamas);
+      }
+    } catch (error) {
+      console.error("Error en la consulta a la base de datos:", error);
+      return NextResponse.json(
+        { message: "Error en la consulta a la base de datos", error: error.message },
+        { status: 500 }
+      );
     }
 
-    if (search && search !== 'null' && search !== '' && search !== 'undefined') {
-      proyects = await Proyect.find({
-        idCompany,
-        name: { $regex: search, $options: 'i' }
-      }, searchParamas);
-    } else { 
-      proyects = await Proyect.find({ idCompany }, searchParamas);
+    if (!proyects || proyects.length === 0) {
+      return NextResponse.json(
+        { message: 'proyects not found' },
+        { status: 404 }
+      );
     }
 
-    if (!proyects) return NextResponse.json({
-      message: 'proyects not found'
-    }, { status: 404 });
-
-    return NextResponse.json(proyects, { status: 200});
-
-
+    return NextResponse.json(proyects, { status: 200 });
   } catch (error) {
-      return NextResponse.json({
-        message: "Internal server error",
-      }, { status: 500 });
+    console.error("Error interno del servidor:", error);
+    return NextResponse.json(
+      { message: "Internal server error", error: error.message },
+      { status: 500 }
+    );
   }
 }
