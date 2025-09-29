@@ -11,21 +11,24 @@ export default async function CardsList({ searchParams }) {
 
   if (search === undefined) search = '';
 
-  const data = [];
-  const response = await axios.get(
-    `${URL_PROJECT}api/controllers/proyects?id_company=${session?.user?.id_company}&search=${search}`,
-  );
+  let data = [];
 
-  console.log(session.user);
-  
+  try {
+    const response = await axios.get(
+      `${URL_PROJECT}api/controllers/proyects?id_company=${session?.user?.id_company}&search=${search}`
+    );
 
-  if (response && response.data) data.push(...response.data); 
-  
+    if (response && response.data) {
+      data = Array.isArray(response.data) ? response.data : [];
+    }
+  } catch (err) {
+    console.error("Error cargando proyectos:", err.response?.data || err.message);
+    data = []; // fallback para que el render no rompa
+  }
+
   return (
-    <>
-      <div className={`${style.fatherBoxes} min-h-[60vh]...`}>
-        <Cards proyects={data} />
-      </div>
-    </>
+    <div className={`${style.fatherBoxes} min-h-[60vh]...`}>
+      <Cards proyects={data} />
+    </div>
   )
 }

@@ -83,59 +83,28 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
     "📲 319 206 7689"
 ]
 
-const CameraViewManager = ({ cameraView }) => {
-    const { camera } = useThree();
+
+
+
+const CameraDebugger = () => {
+    const { camera, gl } = useThree();
 
     useEffect(() => {
-        const positions = [
-            { x: 0, y: 50, z: 0 }, // Vista superior
-            { x: -59.69, y: 103.87, z: -84.092 }, // Vista lateral derecha
-            { x: 475.40, y: 223.10, z: -84.77 }, // Vista frontal
-            { x: -91.45, y: 71.300, z: -28.779 }, // Vista lateral izquierda
-            { x: 90.581, y: 32.404, z: 51.591 }, // Vista isométrica
-        ];
+        const handleCameraChange = () => {
+            console.log(camera.position, "CAMERA POSITION");
+        };
 
+        // Escuchar el evento de cambio en OrbitControls
+        gl.domElement.addEventListener("pointermove", handleCameraChange);
 
-        const targetPosition = positions[cameraView];
+        return () => {
+            // Limpiar el evento al desmontar el componente
+            gl.domElement.removeEventListener("pointermove", handleCameraChange);
+        };
+    }, [camera, gl]);
 
-        // Usa gsap para animar la posición de la cámara
-        gsap.to(camera.position, {
-            x: targetPosition.x,
-            y: targetPosition.y,
-            z: targetPosition.z,
-            duration: 1.5,
-            ease: "power2.inOut",
-            onUpdate: () => {
-                camera.lookAt(0, 0, 0);
-            },
-        });
-
-        camera.updateProjectionMatrix();
-    }, [cameraView, camera]);
-
-    return null;
+    return null; // Este componente no renderiza nada
 };
-
-
-// const CameraDebugger = () => {
-//     const { camera, gl } = useThree();
-
-//     useEffect(() => {
-//         const handleCameraChange = () => {
-//             console.log(camera.position, "CAMERA POSITION");
-//         };
-
-//         // Escuchar el evento de cambio en OrbitControls
-//         gl.domElement.addEventListener("pointermove", handleCameraChange);
-
-//         return () => {
-//             // Limpiar el evento al desmontar el componente
-//             gl.domElement.removeEventListener("pointermove", handleCameraChange);
-//         };
-//     }, [camera, gl]);
-
-//     return null; // Este componente no renderiza nada
-// };
 
 
 
@@ -151,6 +120,7 @@ const App = () => {
     const [areaCalculated, setAreaCalculated] = useState(0);
     const [distanceCalculated, setDistanceCalculated] = useState(0)
     const [isModelLoaded, setIsModelLoaded] = useState(false);
+    const [models, setModels] = useState([]); 
     const [terrains, setTerrains] = useState([]);
     const [currentTerrainMarkers, setCurrentTerrainMarkers] = useState([]);
     const [allTerrains, setAllTerrains] = useState([]);
@@ -169,7 +139,11 @@ const App = () => {
     const [view360Markers, setView360Markers] = useState([]);
     const [addView360Mode, setAddView360Mode] = useState(false);
     const [isPhoto360ModalOpen, setIsPhoto360ModalOpen] = useState(false);
-
+    const [currentIndexModel, setCurrentIndexModel] = useState(0); // Nuevo estado para el índice del modelo actual
+    const [cameraState, setCameraState] = useState(null);
+    const [isUserControlling, setIsUserControlling] = useState(false);
+    const [lastCameraView, setLastCameraView] = useState(0);
+    const orbitControlsRef = React.useRef();
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
     //search Params to validate info
@@ -180,6 +154,120 @@ const App = () => {
 
     const handleCameraViewChange = () => {
         setCameraView((prevView) => (prevView + 1) % 5); // Cambia entre 0, 1, 2 y 3
+        setIsUserControlling(false); 
+    };
+
+    const CameraViewManager = ({ cameraView, 
+    onUserControlChange, 
+    onLastCameraViewChange, 
+    orbitControlsRef 
+}) => {
+    const { camera } = useThree();
+
+    useEffect(() => {
+        const positions = [
+            { x: 0, y: 50, z: 0 },
+            { x: -59.69, y: 103.87, z: -84.092 },
+            { x: 475.40, y: 223.10, z: -84.77 },
+            { x: -91.45, y: 71.300, z: -28.779 },
+            { x: 90.581, y: 32.404, z: 51.591 },
+        ];
+
+        const targetPosition = positions[cameraView];
+
+        // Solo ejecutar si realmente cambió la vista (no en cada render)
+        if (onLastCameraViewChange && onUserControlChange) {
+            // Marcar que la cámara está siendo controlada por el sistema
+            onUserControlChange(false);
+            
+            // Deshabilitar controles temporalmente
+            if (orbitControlsRef && orbitControlsRef.current) {
+                orbitControlsRef.current.enabled = false;
+            }
+
+            // Usar gsap para animar la posición de la cámara
+            gsap.to(camera.position, {
+                x: targetPosition.x,
+                y: targetPosition.y,
+                z: targetPosition.z,
+                duration: 1.5,
+                ease: "power2.inOut",
+                onUpdate: () => {
+                    camera.lookAt(0, 0, 0);
+                    if (orbitControlsRef && orbitControlsRef.current) {
+                        orbitControlsRef.current.target.set(0, 0, 0);
+                        orbitControlsRef.current.update();
+                    }
+                },
+                onComplete: () => {
+                    onLastCameraViewChange(cameraView);
+                    // Re-habilitar controles después de la animación
+                    if (orbitControlsRef && orbitControlsRef.current) {
+                        orbitControlsRef.current.enabled = true;
+                    }
+                }
+            });
+
+            camera.updateProjectionMatrix();
+        }
+    }, [cameraView, camera, onUserControlChange, onLastCameraViewChange, orbitControlsRef]);
+
+    return null;
+};
+
+    // Función para capturar el estado actual de la cámara
+    const captureCurrentCameraState = () => {
+        if (orbitControlsRef.current) {
+            const controls = orbitControlsRef.current;
+            const camera = controls.object;
+            
+            const state = {
+                position: camera.position.clone(),
+                target: controls.target.clone(),
+                zoom: camera.zoom,
+                cameraView: lastCameraView,
+                isUserControlling: isUserControlling,
+                // Si usas perspectiva:
+                fov: camera.fov,
+                near: camera.near,
+                far: camera.far
+            };
+            
+            setCameraState(state);
+            return state;
+        }
+        return null;
+    };
+
+    const restoreCameraState = (state) => {
+        if (state && orbitControlsRef.current) {
+            const controls = orbitControlsRef.current;
+            const camera = controls.object;
+            
+            // Si el usuario estaba controlando la cámara, restaurar su posición
+            if (state.isUserControlling) {
+                // Restaurar posición manual del usuario
+                camera.position.copy(state.position);
+                controls.target.copy(state.target);
+                
+                if (state.zoom) camera.zoom = state.zoom;
+                if (state.fov && camera.isPerspectiveCamera) {
+                    camera.fov = state.fov;
+                    camera.near = state.near;
+                    camera.far = state.far;
+                }
+                
+                camera.updateProjectionMatrix();
+                controls.update();
+                
+                // Mantener el estado de control del usuario
+                setIsUserControlling(true);
+            } else {
+                // Si estaba en una vista predefinida, restaurar esa vista
+                setCameraView(state.cameraView);
+                setIsUserControlling(false);
+            }
+        }
     };
 
 
@@ -290,8 +378,57 @@ const App = () => {
 }, []);
 
     console.log('info:', projectInfo);
+
+    // traer todos los modelos del proyecto
+    useEffect(() => {
+        const fetchModels = async () => {
+            try {
+                const response = await axios.get(`/api/controllers/models_/${idProyect}/allmodels`);
+                console.log("Fetched models:", response.data);
+                
+                if (response.data && response.data.length > 0) {
+                    setModels(response.data);
+                    setCurrentIndexModel(0); // Empieza con el modelo más reciente
+                    setcurrentModel(response.data[0]); // Modelo más reciente
+                    
+                    
+                }
+            } catch (error) {
+                console.error("Error fetching models:", error);
+            }
+        };
+
+        fetchModels();
+    }, [idProyect]);
+
+    console.log('Current Model:', currentModel);
     
 
+    const handleNextModel = (event) => {
+        event.preventDefault();
+        if (currentIndexModel < models.length - 1) {
+            const nextIndex = currentIndexModel + 1;
+            setCurrentIndexModel(nextIndex);
+            setcurrentModel(models[nextIndex]);
+            loadModel(models[nextIndex])
+            console.log('current modellll:', currentModel);
+            
+        }
+    };
+
+    const handlePreviousModel = (event) => {
+        event.preventDefault();
+        if (currentIndexModel > 0) {
+            const prevIndex = currentIndexModel - 1;
+            setCurrentIndexModel(prevIndex);
+            setcurrentModel(models[prevIndex]);
+            loadModel(models[prevIndex]);
+            
+            console.log('current modelllll:', currentModel);
+        }
+    };
+    
+    // useEffect para obtener el proyecto y modelo
     useEffect(() => {
         const getModel = async () => {
             try {
@@ -299,6 +436,8 @@ const App = () => {
 
                 if (response.data != undefined && response.data.model !== undefined) {
                     setcurrentModel(response.data.model)
+                    console.log('aqui hay: ', response.data.model);
+                    
                     
                     if (response.data.terrains) {
                         setTerrains(response.data.terrains);
@@ -338,7 +477,7 @@ const App = () => {
 
     }, [])
 
-    // useEffect para cargar el modelo inicial
+    // useEffect para cargar el modelo inicial con proyecto actual
     useEffect(() => {
         if (isSafariMobile || isInstagramBrowser) return; // ← salir temprano en Safari iOS
         // Si hay un proyecto actual y el modelo aún no está cargado
@@ -378,8 +517,9 @@ const App = () => {
 
     // Función para cargar un modelo específico
     const loadModel = (model) => {
-
-        // Asegúrate de que model.model.url existe
+    // Capturar estado actual ANTES de cambiar el modelo
+        const currentCameraState = captureCurrentCameraState();
+        
         if (model && model.model && model.model.url) {
             const modelUrl = model.model.url;
 
@@ -388,8 +528,8 @@ const App = () => {
                 return;
             }
 
-            setTerrains([]); // Limpiar terrenos
-            setAllTerrains([]); // Limpiar todos los terrenos
+            setTerrains([]);
+            setAllTerrains([]);
 
             const loader = new GLTFLoader();
             loader.load(modelUrl, (gltfLoaded) => {
@@ -398,17 +538,102 @@ const App = () => {
                 setCurrentModelUrl(modelUrl);
                 setCurrentModelId(model.key);
 
-                // Actualizar terrenos y delimitaciones
                 if (model.model.terrains.length > 0) {
                     setTerrains(model.model.terrains);
                     setAllTerrains(model.model.terrains);
                 }
+
+                // Restaurar el estado de la cámara después del render
+                setTimeout(() => {
+                    if (currentCameraState) {
+                        restoreCameraState(currentCameraState);
+                    }
+                }, 150); // Un poco más de tiempo para asegurar el render completo
 
                 console.log('Modelo cargado correctamente. ID:', model.key);
             });
         } else {
             console.error("Estructura del modelo inválida o URL no definida", model);
         }
+    };
+
+    useEffect(() => {
+    if (orbitControlsRef.current) {
+        const controls = orbitControlsRef.current;
+        
+        let userInteractionTimeout;
+        
+        const handleStart = () => {
+            if (userInteractionTimeout) {
+                clearTimeout(userInteractionTimeout);
+            }
+            setIsUserControlling(true);
+        };
+        
+        const handleChange = () => {
+            setIsUserControlling(true);
+            
+            if (userInteractionTimeout) {
+                clearTimeout(userInteractionTimeout);
+            }
+            
+            userInteractionTimeout = setTimeout(() => {
+                // No cambiar isUserControlling aquí
+            }, 2000);
+        };
+        
+        controls.addEventListener('start', handleStart);
+        controls.addEventListener('change', handleChange);
+        
+        return () => {
+            controls.removeEventListener('start', handleStart);
+            controls.removeEventListener('change', handleChange);
+            if (userInteractionTimeout) {
+                clearTimeout(userInteractionTimeout);
+            }
+        };
+    }
+}, []);
+
+    // OrbitControls mejorado con detección de interacción del usuario
+    const OrbitControlsWithDetection = () => {
+        const { camera, gl } = useThree();
+        
+        useEffect(() => {
+            if (orbitControlsRef.current) {
+                const controls = orbitControlsRef.current;
+                
+                // Detectar cuando el usuario comienza a interactuar
+                const handleStart = () => {
+                    setIsUserControlling(true);
+                };
+                
+                // Detectar cuando el usuario termina de interactuar
+                const handleEnd = () => {
+                    // El usuario sigue controlando hasta que se use una vista predefinida
+                    setIsUserControlling(true);
+                };
+                
+                controls.addEventListener('start', handleStart);
+                controls.addEventListener('end', handleEnd);
+                
+                return () => {
+                    controls.removeEventListener('start', handleStart);
+                    controls.removeEventListener('end', handleEnd);
+                };
+            }
+        }, []);
+
+        return (
+            <OrbitControls 
+                ref={orbitControlsRef}
+                minDistance={0} 
+                minPolarAngle={0} 
+                maxPolarAngle={Math.PI / 2}
+                enableDamping={true}
+                dampingFactor={0.05}
+            />
+        );
     };
    
 
@@ -515,6 +740,28 @@ const App = () => {
                             showTerrains={toggleTerrains}
                         />}
 
+                        <div className="navigation-controls flex justify-between items-center mb-4">
+                            <button
+                                onClick={handlePreviousModel}
+                                disabled={currentIndexModel === 0}
+                                className="p-2 bg-gray-300 rounded disabled:opacity-50"
+                            >
+                                ← Anterior
+                            </button>
+                            <span className="text-center">
+                                {currentModel?.creation_date
+                                    ? new Date(currentModel.creation_date).toLocaleDateString()
+                                    : "Sin fecha"}
+                            </span>
+                            <button
+                                onClick={handleNextModel}
+                                disabled={currentIndexModel === models.length - 1}
+                                className="p-2 bg-gray-300 rounded disabled:opacity-50"
+                            >
+                                Siguiente →
+                            </button>
+                        </div>
+
                      {currentTerrainMarkers.length > 2 && (
                             <Button onClick={handleAddTerrain} color="primary">
                                 Añadir Terreno
@@ -539,13 +786,17 @@ const App = () => {
             <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'>
                     <Suspense fallback={<LoadingScreen info={projectInfo}/>}>
-                    <Canvas dpr={1} ref={objectRef}>
+                    <Canvas dpr={1} ref={objectRef} gl={(gl) => {
+    gl.toneMapping = THREE.LinearToneMapping
+    gl.physicallyCorrectLights = true
+    gl.toneMappingExposure = 1.25 // súbele o bájale según lo oscuro/claro
+  }}>
                         {/* <Suspense fallback={null}> */}
                             {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
                             <ambientLight intensity={1} />
                             <directionalLight color="white" position={[0, 2, 50]} />
-                            
+                        
                             <CameraViewManager cameraView={cameraView} />
                             {/* <CameraDebugger /> */}
                             
@@ -606,8 +857,18 @@ const App = () => {
                             {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
                             {/* <CameraPositioner /> */}
                             {/* <CameraController terrain={selectedTerrain} /> */}
-                            <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} />
+                            {/* <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} /> */}
+                            {/* <OrbitControlsWithDetection /> */}
+                            <OrbitControls 
+                                ref={orbitControlsRef}
+                                minDistance={0} 
+                                minPolarAngle={0} 
+                                maxPolarAngle={Math.PI / 2}
+                                enableDamping={true}
+                                dampingFactor={0.05}
+                            />
                             <Environment preset={light} background blur backgroundBlurriness />
+
 
                         {/* </Suspense> */}
                     </Canvas>
