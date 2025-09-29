@@ -4,9 +4,12 @@ import Company from "@/api/models/company"
 import z from "zod"
 
 dbConnected()
+console.log("Conexión a la base de datos establecida correctamente.");
+const companies = await Company.find()
+console.log("Empresas encontradas:", companies);
 
 export async function getPagination(page) {
-
+    
     try {
         const schemaInt = z.number()
         const resultSchemaInt = schemaInt.safeParse(page)
@@ -37,7 +40,7 @@ export async function getPagination(page) {
         }
     } catch (error) {
         return {
-            message: "Error en el servidor.",
+            message: "Error en el servidor pagination.",
             success: false
         }
     }
