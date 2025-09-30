@@ -13,7 +13,7 @@ const Photo360Modal = ({ url, isOpen, onClose }) => {
     viewerRef.current = new Viewer({
       container: containerRef.current,
       panorama:
-        "https://myview-bucketdemo.s3.us-east-1.amazonaws.com/test360/Explanacion_lowres.jpg",
+        "https://d7qkkiy9wjm6s.cloudfront.net/68db220877c521c53ede5d49/68db226977c521c53ede5d4e/3D/imagen360v2.jpg",
       loadingImg:
         "https://colombiarents.com/wp-content/uploads/2023/09/medellin-casas-vacaciones-8.jpg",
       navbar: ["zoom", "fullscreen"],
@@ -22,6 +22,7 @@ const Photo360Modal = ({ url, isOpen, onClose }) => {
         context: "webgl",
         preserveDrawingBuffer: false,
       },
+      defaultZoomLvl: 0,
     });
   }, []);
 
