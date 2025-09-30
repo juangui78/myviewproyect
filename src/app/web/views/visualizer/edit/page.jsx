@@ -33,6 +33,7 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import LoadingScreen from '../components/loadingScreen/LoadingScreen.jsx';
 import { get, set } from 'mongoose';
 import Photo360Modal from '../components/viewer360/PhotoSphereModal';
+import Background360 from '../components/background360/Background360';
 
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
@@ -867,7 +868,8 @@ const App = () => {
                                 enableDamping={true}
                                 dampingFactor={0.05}
                             />
-                            <Environment preset={light} background blur backgroundBlurriness />
+                            <Environment preset={light}  />
+                            <Background360 url={"https://d7qkkiy9wjm6s.cloudfront.net/68db220877c521c53ede5d49/68db226977c521c53ede5d4e/3D/360aldana2.jpg"}/>
 
 
                         {/* </Suspense> */}

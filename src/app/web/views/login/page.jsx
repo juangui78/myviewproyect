@@ -158,8 +158,8 @@ export default function Login() {
         </CardFooter> */}
       </Card>
       <div className="flex absolute right-5 bottom-0">
-        <Link href="/web/views/register" className="text-center text-[#030D1C] mr-[5px] text-white"> Ayuda </Link>
-        <Link href="/web/views/register" className="text-center text-[#030D1C] text-white"> | Terminos y condiciones</Link>
+        <Link href="/web/views/signup" className="text-center text-[#030D1C] mr-[5px] text-white"> Ayuda </Link>
+        <Link href="/web/views/signup" className="text-center text-[#030D1C] text-white"> | Terminos y condiciones</Link>
       </div>
     </section>
     </section>  
