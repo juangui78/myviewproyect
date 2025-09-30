@@ -33,6 +33,7 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import LoadingScreen from '../components/loadingScreen/LoadingScreen.jsx';
 import { get, set } from 'mongoose';
 import Photo360Modal from '../components/viewer360/PhotoSphereModal';
+import Background360 from '../components/background360/Background360';
 
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
@@ -740,29 +741,9 @@ const App = () => {
                             showTerrains={toggleTerrains}
                         />}
 
-                        <div className="navigation-controls flex justify-between items-center mb-4">
-                            <button
-                                onClick={handlePreviousModel}
-                                disabled={currentIndexModel === 0}
-                                className="p-2 bg-gray-300 rounded disabled:opacity-50"
-                            >
-                                ← Anterior
-                            </button>
-                            <span className="text-center">
-                                {currentModel?.creation_date
-                                    ? new Date(currentModel.creation_date).toLocaleDateString()
-                                    : "Sin fecha"}
-                            </span>
-                            <button
-                                onClick={handleNextModel}
-                                disabled={currentIndexModel === models.length - 1}
-                                className="p-2 bg-gray-300 rounded disabled:opacity-50"
-                            >
-                                Siguiente →
-                            </button>
-                        </div>
+                        
 
-                     {currentTerrainMarkers.length > 2 && (
+                     {/* {currentTerrainMarkers.length > 2 && (
                             <Button onClick={handleAddTerrain} color="primary">
                                 Añadir Terreno
                             </Button>
@@ -772,7 +753,7 @@ const App = () => {
                             Guardar Terrenos
                         </Button> 
                         <Button onClick={() => setAddView360Mode(true)}>Agregar Vista 360</Button>
-                        <Button onClick={() => setAddView360Mode(false)}>Agregar Trazado</Button>
+                        <Button onClick={() => setAddView360Mode(false)}>Agregar Trazado</Button> */}
                 </div>
                 <div>
                     <InformationCard info={projectInfo} />
@@ -867,7 +848,8 @@ const App = () => {
                                 enableDamping={true}
                                 dampingFactor={0.05}
                             />
-                            <Environment preset={light} background blur backgroundBlurriness />
+                            <Environment preset={light}  />
+                            <Background360 url={"https://d7qkkiy9wjm6s.cloudfront.net/68db220877c521c53ede5d49/68db226977c521c53ede5d4e/3D/360aldana2.jpg"}/>
 
 
                         {/* </Suspense> */}
@@ -878,6 +860,32 @@ const App = () => {
                         <div className="z-[9999]">
                             {isModelLoaded && 
                                 <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4">
+                                    <div className="navigation-controls flex flex-col items-center mb-4">
+                                        {/* Fecha arriba */}
+                                        <span className="text-center mb-2  text-white bg-black bg-opacity-50 px-2 py-1 rounded-xl">
+                                            {currentModel?.creation_date
+                                                ? new Date(currentModel.creation_date).toLocaleDateString()
+                                                : "Sin fecha"}
+                                        </span>
+
+                                        {/* Botones abajo */}
+                                        <div className="flex justify-between w-full gap-2">
+                                            <Button
+                                                onClick={handlePreviousModel}
+                                                disabled={currentIndexModel === 0}
+                                                className="p-2 border-none disabled:opacity-50 text-sm md:text-sm h-8 bg-black text-white"
+                                            >
+                                                ← Ant
+                                            </Button>
+                                            <Button
+                                                onClick={handleNextModel}
+                                                disabled={currentIndexModel === models.length - 1}
+                                                className="p-2 border-none disabled:opacity-50 text-sm md:text-sm h-8 bg-black  text-white"
+                                            >
+                                                Sig →
+                                            </Button>
+                                        </div>
+                                    </div>
                                     <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
                                         <Eye></Eye>
                                         Cambiar Vista
