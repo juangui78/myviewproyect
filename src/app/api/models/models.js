@@ -40,6 +40,10 @@ const models_schema = new Schema({
     type : Array,
     required : false
   },
+  background360 : {
+    type : String,
+    required : false
+  },
   creation_date: {
     type: Date,
     default: Date.now

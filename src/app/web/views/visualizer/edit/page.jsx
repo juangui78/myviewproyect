@@ -145,6 +145,7 @@ const App = () => {
     const [isUserControlling, setIsUserControlling] = useState(false);
     const [lastCameraView, setLastCameraView] = useState(0);
     const orbitControlsRef = React.useRef();
+    const [background360, setBackground360] = useState(null);
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
     //search Params to validate info
@@ -391,6 +392,11 @@ const App = () => {
                     setModels(response.data);
                     setCurrentIndexModel(0); // Empieza con el modelo más reciente
                     setcurrentModel(response.data[0]); // Modelo más reciente
+
+                    // Inicializa photo360Url con la URL del primer marcador 360 si existe
+                if (response.data[0]?.markers?.length > 0) {
+                    setView360Markers(response.data[0].markers);
+                }
                     
                     
                 }
@@ -444,6 +450,7 @@ const App = () => {
                         setTerrains(response.data.terrains);
                         setAllTerrains(response.data.terrains);
                     }
+
 
                     setProjectInfo(response.data.proyect)
                     
@@ -499,6 +506,7 @@ const App = () => {
                     setCurrentModelUrl(modelLocation.url);
                     setCurrentModelId(projectId); // Usa la variable local
                     setPjname(currentModel.name) // Usa la variable local
+                    setBackground360(currentModel.background360 || null);
                     // console.log('ID CARGADA:', projectId); // Usa la variable local
 
                     // Si necesitas hacer algo con los terrenos después de cargar
@@ -557,6 +565,18 @@ const App = () => {
             console.error("Estructura del modelo inválida o URL no definida", model);
         }
     };
+
+    // Pre-cargar imágenes 360 cuando se cargan los markers
+    useEffect(() => {
+        if (view360Markers.length > 0) {
+            view360Markers.forEach(marker => {
+                if (marker.photo360) {
+                    const img = new window.Image();
+                    img.src = marker.photo360;
+                }
+            });
+        }
+    }, [view360Markers]);
 
     useEffect(() => {
     if (orbitControlsRef.current) {
@@ -672,6 +692,9 @@ const App = () => {
     console.log('view360Markers:', view360Markers);
     console.log('current mode: ', addView360Mode);
     
+    useEffect(() => {
+    console.log("Photo360 URL updated:", photo360Url);
+}, [photo360Url]);
     
 
 
@@ -743,7 +766,7 @@ const App = () => {
 
                         
 
-                     {/* {currentTerrainMarkers.length > 2 && (
+                     {currentTerrainMarkers.length > 2 && (
                             <Button onClick={handleAddTerrain} color="primary">
                                 Añadir Terreno
                             </Button>
@@ -753,7 +776,7 @@ const App = () => {
                             Guardar Terrenos
                         </Button> 
                         <Button onClick={() => setAddView360Mode(true)}>Agregar Vista 360</Button>
-                        <Button onClick={() => setAddView360Mode(false)}>Agregar Trazado</Button> */}
+                        <Button onClick={() => setAddView360Mode(false)}>Agregar Trazado</Button>
                 </div>
                 <div>
                     <InformationCard info={projectInfo} />
@@ -771,7 +794,9 @@ const App = () => {
     gl.toneMapping = THREE.LinearToneMapping
     gl.physicallyCorrectLights = true
     gl.toneMappingExposure = 1.25 // súbele o bájale según lo oscuro/claro
-  }}>
+    }}
+    camera={{ position: [0, 160, 0], fov: 75 }}
+    >
                         {/* <Suspense fallback={null}> */}
                             {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
@@ -805,8 +830,11 @@ const App = () => {
                                         label={marker.label}
                                         color="orange" // O usa un icono diferente
                                         hidden={isPhoto360ModalOpen}
+                                        picture={marker.lowpic}
                                         onClick={() => {
-                                            setPhoto360Url("https://photo-sphere-viewer.js.org/assets/sphere.jpg");
+                                            console.log('Marker 360 clicked:', marker.photo360);
+                                            
+                                            setPhoto360Url(marker.photo360);
                                             setIsPhoto360ModalOpen(true); // Abrir el modal
                                         }}
                                     />
@@ -848,8 +876,15 @@ const App = () => {
                                 enableDamping={true}
                                 dampingFactor={0.05}
                             />
-                            <Environment preset={light}  />
-                            <Background360 url={"https://d7qkkiy9wjm6s.cloudfront.net/68db220877c521c53ede5d49/68db226977c521c53ede5d4e/3D/360aldana2.jpg"}/>
+
+                            {background360 ? (
+                                <>
+                                    <Background360 url={background360} />
+                                    <Environment preset={light} />
+                                </>
+                                ) : (
+                                <Environment preset={light} background blur backgroundBlurriness />
+                            )}
 
 
                         {/* </Suspense> */}

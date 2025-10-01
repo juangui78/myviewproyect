@@ -1,13 +1,33 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Html } from '@react-three/drei';
+import { useFrame, useThree } from '@react-three/fiber';
 
-function Marker360({ position, label, onClick, preview, hidden = false }) {
+function Marker360({ position, label, onClick, preview, hidden = false, picture }) {
+    const groupRef = useRef();
+    const { camera } = useThree();
+    
     // Opción 1: Elevar todo el marcador sumando altura a la posición Y
     const adjustedPosition = [position[0], position[1] + 6, position[2]];
     
-    // Imagen por defecto si no se pasa preview
-    const imageSource = '/images/lowprev.jpg';
-    const finalImage = preview || imageSource;
+    const finalImage = picture || '/images/lowprev.jpg';
+    
+    // Calcular escala basada en distancia - ANTES del return condicional
+    useFrame(() => {
+        if (groupRef.current && !hidden) {
+            const distance = camera.position.distanceTo(groupRef.current.position);
+            
+            // Ajusta estos valores según necesites:
+            const baseScale = 0.5;
+            const scaleFactor = 0.01;
+            const minScale = 0.3;
+            const maxScale = 1.0;
+            
+            let scale = baseScale + distance * scaleFactor;
+            scale = Math.max(minScale, Math.min(maxScale, scale));
+            
+            groupRef.current.scale.setScalar(scale);
+        }
+    });
     
     const handleClick = (e) => {
         e.stopPropagation();
@@ -16,26 +36,30 @@ function Marker360({ position, label, onClick, preview, hidden = false }) {
         }
     };
     
-    // Si está oculto, no renderizar nada
+    // Si está oculto, no renderizar nada - DESPUÉS de los hooks
     if (hidden) {
         return null;
     }
     
     return (
-        <group position={adjustedPosition}>
-            <Html center style={{ 
-                pointerEvents: 'auto',
-                zIndex: hidden ? -1 : 'auto' // Controla el z-index
-            }}>
+        <group ref={groupRef} position={adjustedPosition}>
+            <Html 
+                center 
+                style={{ 
+                    pointerEvents: 'auto',
+                    zIndex: 'auto'
+                }}
+                distanceFactor={97}
+            >
                 <style>
                     {`
                     .marker360-group:hover .marker360-preview {
-                        transform: scale(2);
+                        transform: scale(1.4);
                         z-index: 2;
                         box-shadow: 0 0 12px #0008;
                     }
                     .marker360-group:hover .marker360-label {
-                        transform: scale(1.3);
+                        transform: scale(1.2);
                         z-index: 2;
                     }
                     `}
@@ -95,7 +119,6 @@ function Marker360({ position, label, onClick, preview, hidden = false }) {
                     >
                         {label}
                     </span>
-                    
                 </div>
             </Html>
         </group>
