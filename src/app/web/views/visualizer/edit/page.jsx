@@ -766,7 +766,7 @@ const App = () => {
 
                         
 
-                     {currentTerrainMarkers.length > 2 && (
+                     {/* {currentTerrainMarkers.length > 2 && (
                             <Button onClick={handleAddTerrain} color="primary">
                                 Añadir Terreno
                             </Button>
@@ -776,7 +776,7 @@ const App = () => {
                             Guardar Terrenos
                         </Button> 
                         <Button onClick={() => setAddView360Mode(true)}>Agregar Vista 360</Button>
-                        <Button onClick={() => setAddView360Mode(false)}>Agregar Trazado</Button>
+                        <Button onClick={() => setAddView360Mode(false)}>Agregar Trazado</Button> */}
                 </div>
                 <div>
                     <InformationCard info={projectInfo} />

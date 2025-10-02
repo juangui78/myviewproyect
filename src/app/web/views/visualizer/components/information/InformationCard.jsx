@@ -69,7 +69,7 @@ export const InformationCard = ({ info }) => {
       </CardHeader>
       <CardBody className="px-3 py-0 max-h-[50vh] overflow-y-auto">
         <p className="text-small pl-px pb-[5px]"><strong>Ubicación:</strong> {info?.department}, {info?.city}, {info?.address}</p>
-        <p className="text-small pl-px pb-[5px]"><strong>Área:</strong> {info?.hectares} metros cuadrados</p>
+        <p className="text-small pl-px pb-[5px]"><strong>Área:</strong> {info?.areaOfThisproyect} metros cuadrados</p>
         {/* <p className="text-small pl-px pb-[5px]"><strong>Descripción:</strong> {info?.description}</p> */}
       </CardBody>
       <CardFooter className=" flex-col items-start justify-start text-left px-2 max-h-[30vh] overflow-y-auto">

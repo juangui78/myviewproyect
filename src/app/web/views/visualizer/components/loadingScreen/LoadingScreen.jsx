@@ -64,7 +64,7 @@ const LoadingScreen = (info) => {
             </div>
             <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
                 <a
-                    href="https://wa.me/+573192067689"
+                    href="https://wa.me/+573019027822"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
