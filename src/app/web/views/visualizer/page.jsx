@@ -33,6 +33,7 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import LoadingScreen from './components/loadingScreen/LoadingScreen.jsx';
 import { get, set } from 'mongoose';
 import Photo360Modal from './components/viewer360/PhotoSphereModal';
+import Background360 from './components/background360/Background360';
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
@@ -81,39 +82,6 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
     "📲 319 206 7689"
 ]
 
-const CameraViewManager = ({ cameraView }) => {
-    const { camera } = useThree();
-
-    useEffect(() => {
-        const positions = [
-            { x: 0, y: 40, z: 0 }, // Vista superior
-            { x: -59.69, y: 103.87, z: -84.092 }, // Vista lateral derecha
-            { x: 475.40, y: 223.10, z: -84.77 }, // Vista frontal
-            { x: -91.45, y: 71.300, z: -28.779 }, // Vista lateral izquierda
-            { x: 90.581, y: 32.404, z: 51.591 }, // Vista isométrica
-        ];
-
-
-        const targetPosition = positions[cameraView];
-
-        // Usa gsap para animar la posición de la cámara
-        gsap.to(camera.position, {
-            x: targetPosition.x,
-            y: targetPosition.y,
-            z: targetPosition.z,
-            duration: 1.5,
-            ease: "power2.inOut",
-            onUpdate: () => {
-                camera.lookAt(0, 0, 0);
-            },
-        });
-
-        camera.updateProjectionMatrix();
-    }, [cameraView, camera]);
-
-    return null;
-};
-
 
 // const CameraDebugger = () => {
 //     const { camera, gl } = useThree();
@@ -149,6 +117,7 @@ const App = () => {
     const [areaCalculated, setAreaCalculated] = useState(0);
     const [distanceCalculated, setDistanceCalculated] = useState(0)
     const [isModelLoaded, setIsModelLoaded] = useState(false);
+    const [models, setModels] = useState([]); 
     const [terrains, setTerrains] = useState([]);
     const [currentTerrainMarkers, setCurrentTerrainMarkers] = useState([]);
     const [allTerrains, setAllTerrains] = useState([]);
@@ -163,10 +132,16 @@ const App = () => {
     const [isLoadingScreenVisible, setIsLoadingScreenVisible] = useState(true);
     const [isSafariMobile, setIsSafariMobile] = useState(false);
     const [isInstagramBrowser, setIsInstagramBrowser] = useState(false);
-     const [photo360Url, setPhoto360Url] = useState(null);
+    const [photo360Url, setPhoto360Url] = useState(null);
     const [view360Markers, setView360Markers] = useState([]);
     const [addView360Mode, setAddView360Mode] = useState(false);
     const [isPhoto360ModalOpen, setIsPhoto360ModalOpen] = useState(false);
+    const [currentIndexModel, setCurrentIndexModel] = useState(0);
+    const [cameraState, setCameraState] = useState(null);
+    const [isUserControlling, setIsUserControlling] = useState(false);
+    const [lastCameraView, setLastCameraView] = useState(0);
+    const orbitControlsRef = React.useRef();
+    const [background360, setBackground360] = useState(null);
 
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -178,6 +153,120 @@ const App = () => {
 
     const handleCameraViewChange = () => {
         setCameraView((prevView) => (prevView + 1) % 5); // Cambia entre 0, 1, 2 y 3
+        setIsUserControlling(false); 
+    };
+
+    const CameraViewManager = ({ cameraView, 
+        onUserControlChange, 
+        onLastCameraViewChange, 
+        orbitControlsRef 
+    }) => {
+        const { camera } = useThree();
+
+        useEffect(() => {
+            const positions = [
+                { x: 0, y: 50, z: 0 },
+                { x: -59.69, y: 103.87, z: -84.092 },
+                { x: 475.40, y: 223.10, z: -84.77 },
+                { x: -91.45, y: 71.300, z: -28.779 },
+                { x: 90.581, y: 32.404, z: 51.591 },
+            ];
+
+            const targetPosition = positions[cameraView];
+
+            // Solo ejecutar si realmente cambió la vista (no en cada render)
+            if (onLastCameraViewChange && onUserControlChange) {
+                // Marcar que la cámara está siendo controlada por el sistema
+                onUserControlChange(false);
+                
+                // Deshabilitar controles temporalmente
+                if (orbitControlsRef && orbitControlsRef.current) {
+                    orbitControlsRef.current.enabled = false;
+                }
+
+                // Usar gsap para animar la posición de la cámara
+                gsap.to(camera.position, {
+                    x: targetPosition.x,
+                    y: targetPosition.y,
+                    z: targetPosition.z,
+                    duration: 1.5,
+                    ease: "power2.inOut",
+                    onUpdate: () => {
+                        camera.lookAt(0, 0, 0);
+                        if (orbitControlsRef && orbitControlsRef.current) {
+                            orbitControlsRef.current.target.set(0, 0, 0);
+                            orbitControlsRef.current.update();
+                        }
+                    },
+                    onComplete: () => {
+                        onLastCameraViewChange(cameraView);
+                        // Re-habilitar controles después de la animación
+                        if (orbitControlsRef && orbitControlsRef.current) {
+                            orbitControlsRef.current.enabled = true;
+                        }
+                    }
+                });
+
+                camera.updateProjectionMatrix();
+            }
+        }, [cameraView, camera, onUserControlChange, onLastCameraViewChange, orbitControlsRef]);
+
+        return null;
+    };
+
+    // Función para capturar el estado actual de la cámara
+    const captureCurrentCameraState = () => {
+        if (orbitControlsRef.current) {
+            const controls = orbitControlsRef.current;
+            const camera = controls.object;
+            
+            const state = {
+                position: camera.position.clone(),
+                target: controls.target.clone(),
+                zoom: camera.zoom,
+                cameraView: lastCameraView,
+                isUserControlling: isUserControlling,
+                // Si usas perspectiva:
+                fov: camera.fov,
+                near: camera.near,
+                far: camera.far
+            };
+            
+            setCameraState(state);
+            return state;
+        }
+        return null;
+    };
+
+    const restoreCameraState = (state) => {
+        if (state && orbitControlsRef.current) {
+            const controls = orbitControlsRef.current;
+            const camera = controls.object;
+            
+            // Si el usuario estaba controlando la cámara, restaurar su posición
+            if (state.isUserControlling) {
+                // Restaurar posición manual del usuario
+                camera.position.copy(state.position);
+                controls.target.copy(state.target);
+                
+                if (state.zoom) camera.zoom = state.zoom;
+                if (state.fov && camera.isPerspectiveCamera) {
+                    camera.fov = state.fov;
+                    camera.near = state.near;
+                    camera.far = state.far;
+                }
+                
+                camera.updateProjectionMatrix();
+                controls.update();
+                
+                // Mantener el estado de control del usuario
+                setIsUserControlling(true);
+            } else {
+                // Si estaba en una vista predefinida, restaurar esa vista
+                setCameraView(state.cameraView);
+                setIsUserControlling(false);
+            }
+        }
     };
 
 
@@ -260,8 +349,8 @@ const App = () => {
     return {
         isSafariMobile: isIOS && isSafari,
         isInstagramBrowser: isIOS && isInstagramBrowser,
+        };
     };
-  };
   
   useEffect(() => {
     const { isSafariMobile, isInstagramBrowser } = checkIsSafariOnIOS();
@@ -271,11 +360,63 @@ const App = () => {
         setIsLoadingScreenVisible(false); // Muestra la pantalla de carga si es Safari iOS o Instagram
     }
     
-}, []);
+    }, []);
 
-    console.log('info:', projectInfo);
+    // console.log('info:', projectInfo);
+
+    // traer todos los modelos del proyecto
+    useEffect(() => {
+        const fetchModels = async () => {
+            try {
+                const response = await axios.get(`/api/controllers/models_/${idProyect}/allmodels`);
+                console.log("Fetched models:", response.data);
+                
+                if (response.data && response.data.length > 0) {
+                    setModels(response.data);
+                    setCurrentIndexModel(0); // Empieza con el modelo más reciente
+                    setcurrentModel(response.data[0]); // Modelo más reciente
+
+                    // Inicializa photo360Url con la URL del primer marcador 360 si existe
+                if (response.data[0]?.markers?.length > 0) {
+                    setView360Markers(response.data[0].markers);
+                }
+                    
+                    
+                }
+            } catch (error) {
+                console.error("Error fetching models:", error);
+            }
+        };
+
+        fetchModels();
+    }, [idProyect]);
+
+    const handleNextModel = (event) => {
+        event.preventDefault();
+        if (currentIndexModel < models.length - 1) {
+            const nextIndex = currentIndexModel + 1;
+            setCurrentIndexModel(nextIndex);
+            setcurrentModel(models[nextIndex]);
+            loadModel(models[nextIndex])
+            
+            
+        }
+    };
+
+    const handlePreviousModel = (event) => {
+        event.preventDefault();
+        if (currentIndexModel > 0) {
+            const prevIndex = currentIndexModel - 1;
+            setCurrentIndexModel(prevIndex);
+            setcurrentModel(models[prevIndex]);
+            loadModel(models[prevIndex]);
+            
+            
+        }
+    };
     
 
+    // useEffect para obtener el proyecto y modelo
     useEffect(() => {
         const getModel = async () => {
             try {
@@ -283,11 +424,14 @@ const App = () => {
 
                 if (response.data != undefined && response.data.model !== undefined) {
                     setcurrentModel(response.data.model)
+                    console.log('aqui hay: ', response.data.model);
+                    
                     
                     if (response.data.terrains) {
                         setTerrains(response.data.terrains);
                         setAllTerrains(response.data.terrains);
                     }
+
 
                     setProjectInfo(response.data.proyect)
                     
@@ -322,79 +466,137 @@ const App = () => {
 
     }, [])
 
-    // useEffect para cargar el modelo inicial
-    useEffect(() => {
-        if (isSafariMobile || isInstagramBrowser) return; // ← salir temprano en Safari iOS
-        // Si hay un proyecto actual y el modelo aún no está cargado
-        if (currentModel && !isModelLoaded) {
-            const modelLocation = currentModel?.model;
-
-            if (modelLocation !== "") {
-                const loader = new GLTFLoader();
-                loader.setMeshoptDecoder(MeshoptDecoder);
-
-                // Guarda el ID antes de iniciar la carga asíncrona
-                const projectId = currentModel._id;
-
-                loader.load(modelLocation.url, (gltfLoaded) => {
-                    setGltf(gltfLoaded);
-                    setIsModelLoaded(true);
-                    setIsLoadingScreenVisible(false); // Oculta la pantalla de carga
-                    setCurrentModelUrl(modelLocation.url);
-                    setCurrentModelId(projectId); // Usa la variable local
-                    setPjname(currentModel.name) // Usa la variable local
-                    // console.log('ID CARGADA:', projectId); // Usa la variable local
-
-                    // Si necesitas hacer algo con los terrenos después de cargar
-                    if (currentModel.terrains) {
-                        setTerrains(currentModel.terrains);
-                        setAllTerrains(currentModel.terrains);
-                        setView360Markers(currentModel.markers || []); // Carga los markers 360 si existen
-                    }
-                });
-            } else {
-                alert("No existe modelo");
+    // useEffect para cargar el modelo inicial con proyecto actual
+        useEffect(() => {
+            if (isSafariMobile || isInstagramBrowser) return; // ← salir temprano en Safari iOS
+            // Si hay un proyecto actual y el modelo aún no está cargado
+            if (currentModel && !isModelLoaded) {
+                const modelLocation = currentModel?.model;
+    
+                if (modelLocation !== "") {
+                    const loader = new GLTFLoader();
+                    loader.setMeshoptDecoder(MeshoptDecoder);
+    
+                    // Guarda el ID antes de iniciar la carga asíncrona
+                    const projectId = currentModel._id;
+    
+                    loader.load(modelLocation.url, (gltfLoaded) => {
+                        setGltf(gltfLoaded);
+                        setIsModelLoaded(true);
+                        setIsLoadingScreenVisible(false); // Oculta la pantalla de carga
+                        setCurrentModelUrl(modelLocation.url);
+                        setCurrentModelId(projectId); // Usa la variable local
+                        setPjname(currentModel.name) // Usa la variable local
+                        setBackground360(currentModel.background360 || null);
+                        // console.log('ID CARGADA:', projectId); // Usa la variable local
+    
+                        // Si necesitas hacer algo con los terrenos después de cargar
+                        if (currentModel.terrains) {
+                            setTerrains(currentModel.terrains);
+                            setAllTerrains(currentModel.terrains);
+                            setView360Markers(currentModel.markers || []); // Carga los markers 360 si existen
+                        }
+                    });
+                } else {
+                    alert("No existe modelo");
+                }
             }
-        }
-
-        if (session !== null && session !== undefined) setIsPublish(false);
-    }, [currentModel, isModelLoaded]);
+    
+            if (session !== null && session !== undefined) setIsPublish(false);
+        }, [currentModel, isModelLoaded]);
 
     // Función para cargar un modelo específico
-    const loadModel = (model) => {
-
-        // Asegúrate de que model.model.url existe
-        if (model && model.model && model.model.url) {
-            const modelUrl = model.model.url;
-
-            if (modelUrl === currentModelUrl) {
-                console.log("El modelo ya está cargado.");
-                return;
-            }
-
-            setTerrains([]); // Limpiar terrenos
-            setAllTerrains([]); // Limpiar todos los terrenos
-
-            const loader = new GLTFLoader();
-            loader.load(modelUrl, (gltfLoaded) => {
-                setGltf(gltfLoaded);
-                setIsModelLoaded(true);
-                setCurrentModelUrl(modelUrl);
-                setCurrentModelId(model.key);
-
-                // Actualizar terrenos y delimitaciones
-                if (model.model.terrains.length > 0) {
-                    setTerrains(model.model.terrains);
-                    setAllTerrains(model.model.terrains);
+        const loadModel = (model) => {
+        // Capturar estado actual ANTES de cambiar el modelo
+            const currentCameraState = captureCurrentCameraState();
+            
+            if (model && model.model && model.model.url) {
+                const modelUrl = model.model.url;
+    
+                if (modelUrl === currentModelUrl) {
+                    console.log("El modelo ya está cargado.");
+                    return;
                 }
+    
+                setTerrains([]);
+                setAllTerrains([]);
+    
+                const loader = new GLTFLoader();
+                loader.load(modelUrl, (gltfLoaded) => {
+                    setGltf(gltfLoaded);
+                    setIsModelLoaded(true);
+                    setCurrentModelUrl(modelUrl);
+                    setCurrentModelId(model.key);
+    
+                    if (model.model.terrains.length > 0) {
+                        setTerrains(model.model.terrains);
+                        setAllTerrains(model.model.terrains);
+                    }
+    
+                    // Restaurar el estado de la cámara después del render
+                    setTimeout(() => {
+                        if (currentCameraState) {
+                            restoreCameraState(currentCameraState);
+                        }
+                    }, 150); // Un poco más de tiempo para asegurar el render completo
+    
+                    console.log('Modelo cargado correctamente. ID:', model.key);
+                });
+            } else {
+                console.error("Estructura del modelo inválida o URL no definida", model);
+            }
+        };
+    
+    // Pre-cargar imágenes 360 cuando se cargan los markers
+        useEffect(() => {
+            if (view360Markers.length > 0) {
+                view360Markers.forEach(marker => {
+                    if (marker.photo360) {
+                        const img = new window.Image();
+                        img.src = marker.photo360;
+                    }
+                });
+            }
+        }, [view360Markers]);
 
-                console.log('Modelo cargado correctamente. ID:', model.key);
-            });
-        } else {
-            console.error("Estructura del modelo inválida o URL no definida", model);
+
+    useEffect(() => {
+        if (orbitControlsRef.current) {
+            const controls = orbitControlsRef.current;
+            
+            let userInteractionTimeout;
+            
+            const handleStart = () => {
+                if (userInteractionTimeout) {
+                    clearTimeout(userInteractionTimeout);
+                }
+                setIsUserControlling(true);
+            };
+            
+            const handleChange = () => {
+                setIsUserControlling(true);
+                
+                if (userInteractionTimeout) {
+                    clearTimeout(userInteractionTimeout);
+                }
+                
+                userInteractionTimeout = setTimeout(() => {
+                    // No cambiar isUserControlling aquí
+                }, 2000);
+            };
+            
+            controls.addEventListener('start', handleStart);
+            controls.addEventListener('change', handleChange);
+            
+            return () => {
+                controls.removeEventListener('start', handleStart);
+                controls.removeEventListener('change', handleChange);
+                if (userInteractionTimeout) {
+                    clearTimeout(userInteractionTimeout);
+                }
+            };
         }
-    };
-   
+    }, []);
 
 
     const saveTerrainsToDB = async () => {
@@ -448,7 +650,7 @@ const App = () => {
                     </div>
                     <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
                             <a
-                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
@@ -518,7 +720,11 @@ const App = () => {
             <div className='flex w-full h-full flex-col sm:flex-row'>
                 <div className='flex w-full h-full'>
                     <Suspense fallback={<LoadingScreen info={projectInfo}/>}>
-                    <Canvas dpr={1} ref={objectRef}>
+                    <Canvas dpr={1} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={(gl) => {
+                        gl.toneMapping = THREE.LinearToneMapping
+                        gl.physicallyCorrectLights = true
+                        gl.toneMappingExposure = 1.25 // súbele o bájale según lo oscuro/claro
+                        }}>
                         {/* <Suspense fallback={null}> */}
                             {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
@@ -545,15 +751,16 @@ const App = () => {
                                         onClick={() => setSelectedMarker(marker.id)}
                                     />
                                 ))}
-                                {view360Markers.map(marker => (
+                                {showTerrains && view360Markers.map(marker => (
                                     <Marker360
                                         key={marker.id}
                                         position={marker.position}
                                         label={marker.label}
                                         color="orange" // O usa un icono diferente
                                         hidden={isPhoto360ModalOpen}
+                                        picture={marker.lowpic}
                                         onClick={() => {
-                                            setPhoto360Url("https://photo-sphere-viewer.js.org/assets/sphere.jpg");
+                                            setPhoto360Url(marker.photo360);
                                             setIsPhoto360ModalOpen(true); // Abrir el modal
                                         }}
                                     />
@@ -584,8 +791,22 @@ const App = () => {
                             {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
                             {/* <CameraPositioner /> */}
                             {/* <CameraController terrain={selectedTerrain} /> */}
-                            <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} />
-                            <Environment preset={light} background blur backgroundBlurriness />
+                            <OrbitControls 
+                                ref={orbitControlsRef}
+                                minDistance={0} 
+                                minPolarAngle={0} 
+                                maxPolarAngle={Math.PI / 2}
+                                enableDamping={true}
+                                dampingFactor={0.05}
+                            />
+                            {background360 ? (
+                                <>
+                                    <Background360 url={background360} />
+                                    <Environment preset={light} />
+                                </>
+                                ) : (
+                                <Environment preset={light} background blur backgroundBlurriness />
+                            )}
 
                         {/* </Suspense> */}
                     </Canvas>
@@ -595,16 +816,42 @@ const App = () => {
                         <div className="z-[9999]">
                             {isModelLoaded && 
                                 <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4">
-                                    <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
+                                    <div className="navigation-controls flex flex-col items-center mb-4">
+                                        <span className="text-center mb-2  text-white bg-black bg-opacity-50 px-2 py-1 rounded-xl">
+                                            {currentModel?.creation_date
+                                                ? new Date(currentModel.creation_date).toLocaleDateString()
+                                                : "Sin fecha"}
+                                        </span>
+                                        {/* Botones abajo */}
+                                        {models.length > 1 && (
+                                        <div className="flex justify-between w-full gap-2">
+                                            <Button
+                                                onClick={handlePreviousModel}
+                                                disabled={currentIndexModel === 0}
+                                                className="p-2 border-none disabled:opacity-50 text-sm md:text-sm h-8 bg-black text-white"
+                                            >
+                                                ← Ant
+                                            </Button>
+                                            <Button
+                                                onClick={handleNextModel}
+                                                disabled={currentIndexModel === models.length - 1}
+                                                className="p-2 border-none disabled:opacity-50 text-sm md:text-sm h-8 bg-black  text-white"
+                                            >
+                                                Sig →
+                                            </Button>
+                                        </div>
+                                        )}
+                                    </div>
+                                    {/* <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
                                         <Eye></Eye>
                                         Cambiar Vista
-                                    </Button>
+                                    </Button> */}
                             </div>
                             }
 
                             <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
                                 <a
-                                    href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                    href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center justify-center w-[40px] h-[40px] bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
@@ -693,7 +940,7 @@ const App = () => {
                     </div>
                     <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
                             <a
-                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
@@ -722,7 +969,7 @@ const App = () => {
                             </div>
                             <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
                                     <a
-                                        href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                                        href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
