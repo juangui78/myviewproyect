@@ -483,6 +483,33 @@ const App = () => {
                 const projectId = currentModel._id;
 
                 loader.load(modelLocation.url, (gltfLoaded) => {
+
+                    // Optimización agresiva para texturas en Safari/iOS
+                    if (isSafariMobile || isInstagramBrowser) {
+                        gltfLoaded.scene.traverse((node) => {
+                            if (node.isMesh) {
+                                node.frustumCulled = true;
+                                node.castShadow = false;
+                                node.receiveShadow = false;
+
+                                if (node.material) {
+                                    const optimizeTexture = (tex) => {
+                                        if (tex) {
+                                            tex.anisotropy = 1;
+                                            tex.minFilter = THREE.LinearFilter;
+                                            tex.generateMipmaps = false; // Ahorra mucha memoria
+                                        }
+                                    };
+                                    optimizeTexture(node.material.map);
+                                    optimizeTexture(node.material.emissiveMap);
+                                    optimizeTexture(node.material.normalMap);
+                                    optimizeTexture(node.material.roughnessMap);
+                                    optimizeTexture(node.material.metalnessMap);
+                                }
+                            }
+                        });
+                    }
+
                     setGltf(gltfLoaded);
                     setIsModelLoaded(true);
                     setIsLoadingScreenVisible(false); // Oculta la pantalla de carga
@@ -939,8 +966,9 @@ const App = () => {
 
             {isSafariMobile && isModelLoaded && (
                 <div className='fixed inset-0 z-[100000000] bg-white w-full h-full'>
+                    <TopVisualizer info={projectInfo} />
                     <Suspense fallback={<LoadingScreen info={projectInfo} />}>
-                        <Canvas dpr={1} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
+                        <Canvas dpr={0.7} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
                             antialias: false,
                             stencil: false,
                             depth: true,
@@ -955,18 +983,18 @@ const App = () => {
 
                             <CameraViewManager cameraView={cameraView} />
 
-                            {/* {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />} */}
+                            {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
 
-                            {/* {isModelLoaded && currentTerrainMarkers.map(marker => (
+                            {isModelLoaded && currentTerrainMarkers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
                                     label={marker.label}
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
-                            ))} */}
+                            ))}
 
-                            {/* <ModelComponent gltf={gltf} ref={objectRef} /> */}
+                            {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
 
                             <OrbitControls
                                 ref={orbitControlsRef}
@@ -992,35 +1020,52 @@ const App = () => {
                                 </span>
                             </div>
                         </div>
+
+                        <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[100000001] md:bottom-4 md:right-4">
+                            <a
+                                href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                            >
+                                <Whatsapp className="text-white text-1xl" />
+
+                            </a>
+                        </div>
                     </Suspense>
                 </div>
             )}
 
             {isInstagramBrowser && isModelLoaded && (
                 <div className='fixed inset-0 z-[100000000] bg-white w-full h-full'>
+                    <TopVisualizer info={projectInfo} />
                     <Suspense fallback={<LoadingScreen info={projectInfo} />}>
-                        <Canvas dpr={1} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={(gl) => {
-                            gl.toneMapping = THREE.LinearToneMapping
-                            gl.physicallyCorrectLights = true
-                            gl.toneMappingExposure = 1.25
+                        <Canvas dpr={0.7} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
+                            antialias: false,
+                            stencil: false,
+                            depth: true,
+                            powerPreference: "high-performance",
+                            toneMapping: THREE.LinearToneMapping,
+                            physicallyCorrectLights: true,
+                            toneMappingExposure: 1.25
                         }}>
                             <ambientLight intensity={1} />
                             <directionalLight color="white" position={[0, 2, 50]} />
 
                             <CameraViewManager cameraView={cameraView} />
 
-                            {/* {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />} */}
+                            {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
 
-                            {/* {isModelLoaded && currentTerrainMarkers.map(marker => (
+                            {isModelLoaded && currentTerrainMarkers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
                                     label={marker.label}
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
-                            ))} */}
+                            ))}
 
-                            {/* <ModelComponent gltf={gltf} ref={objectRef} /> */}
+                            {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
 
                             <OrbitControls
                                 ref={orbitControlsRef}
@@ -1045,6 +1090,18 @@ const App = () => {
                                         : "Sin fecha"}
                                 </span>
                             </div>
+                        </div>
+
+                        <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[100000001] md:bottom-4 md:right-4">
+                            <a
+                                href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                            >
+                                <Whatsapp className="text-white text-1xl" />
+
+                            </a>
                         </div>
                     </Suspense>
                 </div>
