@@ -469,7 +469,7 @@ const App = () => {
     // useEffect para cargar el modelo inicial con proyecto actual
 
     useEffect(() => {
-        // if (isSafariMobile || isInstagramBrowser) return; // ← salir temprano en Safari iOS
+        if (isSafariMobile || isInstagramBrowser) return; // ← salir temprano en Safari iOS
 
         // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
@@ -964,195 +964,48 @@ const App = () => {
                 </div> */}
                 </div>)}
 
-            {isSafariMobile && isModelLoaded && (
-                <div className='fixed inset-0 z-[100000000] bg-black w-full h-full flex items-center justify-center'>
-                    {/* Top Bar for Safari */}
-                    <div className="absolute top-4 left-4 right-4 z-[100000002] flex justify-between items-start pointer-events-none">
-                        {/* Botón regresar */}
-                        {searchParams.get('id') ?
-                            <Link href={`/?project=${searchParams.get('id')}`}>
-                                <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent  rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
-                                    <span>Regresar</span>
-                                </button>
-                            </Link> :
-                            <div>
-                                <Image
-                                    src='/logos/isotipo-full-color.png'
-                                    alt="My View Icon"
-                                    width={50}
-                                    height={50}
-                                    className="rounded-full"
-                                />
-                            </div>
-                        }
-                        <div className="pointer-events-auto">
-                            <InformationCard info={projectInfo} />
-                        </div>
+            {isSafariMobile && (
+                <div className='bg-white text-black w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+                    <div>
+                        <BlocksShuffle3 className="text-6xl text-black" />
                     </div>
+                    <div className='w-full text-center text-black px-4'>
+                        <p>Estamos trabajando para que disfrutes de la experiencia en este dispositivo.</p>
+                        <p className="text-sm text-gray-500 mt-2">Por favor intenta en Chrome o desde un ordenador.</p>
+                    </div>
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                        <a
+                            href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                        >
+                            <Whatsapp className="text-white text-1xl" />
 
-                    <div style={{ width: '480px', height: '480px', maxWidth: '100vw', maxHeight: '100vh' }} className="relative bg-white overflow-hidden shrink-0 shadow-2xl rounded-lg">
-                        <Suspense fallback={<LoadingScreen info={projectInfo} />}>
-                            <Canvas frameloop="demand" dpr={0.7} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
-                                antialias: false,
-                                stencil: false,
-                                depth: true,
-                                powerPreference: "high-performance",
-                                toneMapping: THREE.LinearToneMapping,
-                                physicallyCorrectLights: true,
-                                toneMappingExposure: 1.25
-                            }}>
-                                <color attach="background" args={['#ffffff']} />
-                                <ambientLight intensity={2} />
-                                <directionalLight color="white" position={[0, 2, 50]} />
-
-                                <CameraViewManager cameraView={cameraView} />
-
-                                {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
-
-                                {isModelLoaded && currentTerrainMarkers.map(marker => (
-                                    <Marker
-                                        key={marker.id}
-                                        position={marker.position}
-                                        label={marker.label}
-                                        onClick={() => setSelectedMarker(marker.id)}
-                                    />
-                                ))}
-
-                                {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
-
-                                <OrbitControls
-                                    ref={orbitControlsRef}
-                                    minDistance={0}
-                                    minPolarAngle={0}
-                                    maxPolarAngle={Math.PI / 2}
-                                    enableDamping={true}
-                                    dampingFactor={0.05}
-                                />
-                                <Environment preset={light} background />
-
-                            </Canvas>
-                            {/* Controls Overlay for Safari */}
-                            <div className="absolute bottom-4 left-4 z-[100000001]">
-                                <div className="flex flex-col items-center mb-1">
-                                    <span className="text-[10px] uppercase tracking-tighter text-black/50 font-bold mb-1">
-                                        Fecha de toma
-                                    </span>
-                                    <span className="text-center text-xs md:text-sm font-medium text-black bg-white/80 backdrop-blur-md border border-black/10 px-4 py-1.5 rounded-full shadow-lg">
-                                        {currentModel?.creation_date
-                                            ? new Date(currentModel.creation_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
-                                            : "Sin fecha"}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[100000001] md:bottom-4 md:right-4">
-                                <a
-                                    href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                                >
-                                    <Whatsapp className="text-white text-1xl" />
-
-                                </a>
-                            </div>
-                        </Suspense>
+                        </a>
                     </div>
                 </div>
             )}
 
-            {isInstagramBrowser && isModelLoaded && (
-                <div className='fixed inset-0 z-[100000000] bg-black w-full h-full flex items-center justify-center'>
-                    {/* Top Bar for Instagram */}
-                    <div className="absolute top-4 left-4 right-4 z-[100000001] flex justify-between items-start pointer-events-none">
-                        {/* Botón regresar */}
-                        {searchParams.get('id') ?
-                            <Link href={`/?project=${searchParams.get('id')}`}>
-                                <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent  rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
-                                    <span>Regresar</span>
-                                </button>
-                            </Link> :
-                            <div>
-                                <Image
-                                    src='/logos/isotipo-full-color.png'
-                                    alt="My View Icon"
-                                    width={50}
-                                    height={50}
-                                    className="rounded-full"
-                                />
-                            </div>
-                        }
-                        <div className="pointer-events-auto">
-                            <InformationCard info={projectInfo} />
-                        </div>
+            {isInstagramBrowser && (
+                <div className='bg-white text-black w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+                    <div>
+                        <BlocksShuffle3 className="text-6xl text-black" />
                     </div>
+                    <div className='w-full text-center text-black px-4'>
+                        <p>Estamos trabajando para que disfrutes de la experiencia en este dispositivo.</p>
+                        <p className="text-sm text-gray-500 mt-2">Por favor intenta en Chrome o desde un ordenador.</p>
+                    </div>
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                        <a
+                            href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                        >
+                            <Whatsapp className="text-white text-1xl" />
 
-                    <div style={{ width: '480px', height: '480px', maxWidth: '100vw', maxHeight: '100vh' }} className="relative bg-white overflow-hidden shrink-0 shadow-2xl rounded-lg">
-                        <Suspense fallback={<LoadingScreen info={projectInfo} />}>
-                            <Canvas frameloop="demand" dpr={0.7} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
-                                antialias: false,
-                                stencil: false,
-                                depth: true,
-                                powerPreference: "high-performance",
-                                toneMapping: THREE.LinearToneMapping,
-                                physicallyCorrectLights: true,
-                                toneMappingExposure: 1.25
-                            }}>
-                                <ambientLight intensity={1} />
-                                <directionalLight color="white" position={[0, 2, 50]} />
-
-                                <CameraViewManager cameraView={cameraView} />
-
-                                {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
-
-                                {isModelLoaded && currentTerrainMarkers.map(marker => (
-                                    <Marker
-                                        key={marker.id}
-                                        position={marker.position}
-                                        label={marker.label}
-                                        onClick={() => setSelectedMarker(marker.id)}
-                                    />
-                                ))}
-
-                                {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
-
-                                <OrbitControls
-                                    ref={orbitControlsRef}
-                                    minDistance={0}
-                                    minPolarAngle={0}
-                                    maxPolarAngle={Math.PI / 2}
-                                    enableDamping={true}
-                                    dampingFactor={0.05}
-                                />
-                                <Environment preset={light} background />
-
-                            </Canvas>
-                            {/* Controls Overlay for Instagram */}
-                            <div className="absolute bottom-4 left-4 z-[100000001]">
-                                <div className="flex flex-col items-center mb-1">
-                                    <span className="text-[10px] uppercase tracking-tighter text-black/50 font-bold mb-1">
-                                        Fecha de toma
-                                    </span>
-                                    <span className="text-center text-xs md:text-sm font-medium text-black bg-white/80 backdrop-blur-md border border-black/10 px-4 py-1.5 rounded-full shadow-lg">
-                                        {currentModel?.creation_date
-                                            ? new Date(currentModel.creation_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
-                                            : "Sin fecha"}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[100000001] md:bottom-4 md:right-4">
-                                <a
-                                    href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                                >
-                                    <Whatsapp className="text-white text-1xl" />
-
-                                </a>
-                            </div>
-                        </Suspense>
+                        </a>
                     </div>
                 </div>
             )}
