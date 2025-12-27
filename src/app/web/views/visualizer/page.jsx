@@ -940,10 +940,14 @@ const App = () => {
             {isSafariMobile && isModelLoaded && (
                 <div className='fixed inset-0 z-[100000000] bg-white w-full h-full'>
                     <Suspense fallback={<LoadingScreen info={projectInfo} />}>
-                        <Canvas dpr={1} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={(gl) => {
-                            gl.toneMapping = THREE.LinearToneMapping
-                            gl.physicallyCorrectLights = true
-                            gl.toneMappingExposure = 1.25
+                        <Canvas dpr={1} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
+                            antialias: false,
+                            stencil: false,
+                            depth: true,
+                            powerPreference: "high-performance",
+                            toneMapping: THREE.LinearToneMapping,
+                            physicallyCorrectLights: true,
+                            toneMappingExposure: 1.25
                         }}>
                             <color attach="background" args={['#ffffff']} />
                             <ambientLight intensity={2} />
