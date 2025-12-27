@@ -966,7 +966,30 @@ const App = () => {
 
             {isSafariMobile && isModelLoaded && (
                 <div className='fixed inset-0 z-[100000000] bg-white w-full h-full'>
-                    <TopVisualizer info={projectInfo} />
+                    {/* Top Bar for Safari */}
+                    <div className="absolute top-4 left-4 right-4 z-[100000001] flex justify-between items-start pointer-events-none">
+                        {/* Botón regresar */}
+                        {searchParams.get('id') ?
+                            <Link href={`/?project=${searchParams.get('id')}`}>
+                                <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent  rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
+                                    <span>Regresar</span>
+                                </button>
+                            </Link> :
+                            <div>
+                                <Image
+                                    src='/logos/isotipo-full-color.png'
+                                    alt="My View Icon"
+                                    width={50}
+                                    height={50}
+                                    className="rounded-full"
+                                />
+                            </div>
+                        }
+                        <div className="pointer-events-auto">
+                            <InformationCard info={projectInfo} />
+                        </div>
+                    </div>
+
                     <Suspense fallback={<LoadingScreen info={projectInfo} />}>
                         <Canvas dpr={0.7} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
                             antialias: false,
@@ -1038,7 +1061,30 @@ const App = () => {
 
             {isInstagramBrowser && isModelLoaded && (
                 <div className='fixed inset-0 z-[100000000] bg-white w-full h-full'>
-                    <TopVisualizer info={projectInfo} />
+                    {/* Top Bar for Instagram */}
+                    <div className="absolute top-4 left-4 right-4 z-[100000001] flex justify-between items-start pointer-events-none">
+                        {/* Botón regresar */}
+                        {searchParams.get('id') ?
+                            <Link href={`/?project=${searchParams.get('id')}`}>
+                                <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent  rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
+                                    <span>Regresar</span>
+                                </button>
+                            </Link> :
+                            <div>
+                                <Image
+                                    src='/logos/isotipo-full-color.png'
+                                    alt="My View Icon"
+                                    width={50}
+                                    height={50}
+                                    className="rounded-full"
+                                />
+                            </div>
+                        }
+                        <div className="pointer-events-auto">
+                            <InformationCard info={projectInfo} />
+                        </div>
+                    </div>
+
                     <Suspense fallback={<LoadingScreen info={projectInfo} />}>
                         <Canvas dpr={0.7} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
                             antialias: false,
