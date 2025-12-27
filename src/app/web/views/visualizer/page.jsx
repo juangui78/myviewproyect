@@ -467,7 +467,9 @@ const App = () => {
     }, [])
 
     // useEffect para cargar el modelo inicial con proyecto actual
+
     useEffect(() => {
+        // if (isSafariMobile || isInstagramBrowser) return; // ← salir temprano en Safari iOS
 
         // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
@@ -715,6 +717,8 @@ const App = () => {
             </div>
 
 
+
+
             {/* Se condiciona el renderizado general no safari */}
 
             {isModelLoaded && (
@@ -806,7 +810,12 @@ const App = () => {
                                         <Environment preset={light} />
                                     </>
                                 ) : (
-                                    <Environment preset={light} background blur backgroundBlurriness />
+                                    /* Optimización para Safari/Instagram: No usar background blur */
+                                    (isSafariMobile || isInstagramBrowser) ? (
+                                        <Environment preset={light} />
+                                    ) : (
+                                        <Environment preset={light} background blur backgroundBlurriness />
+                                    )
                                 )}
 
                                 {/* </Suspense> */}
@@ -936,6 +945,7 @@ const App = () => {
         </div>
     );
 }
+
 
 export default function WrappedApp() {
 
