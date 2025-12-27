@@ -636,7 +636,7 @@ const App = () => {
 
 
     return (
-        <div className="flex flex-col  items-center h-[100dvh] overflow-hidden relative">
+        <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
 
             {(isLoadingScreenVisible) && (
@@ -722,7 +722,7 @@ const App = () => {
 
             {/* Se condiciona el renderizado general no safari */}
 
-            {isModelLoaded && (
+            {!isSafariMobile && isModelLoaded && (
                 <div className='flex w-full h-full flex-col sm:flex-row'>
                     <div className='flex w-full h-full'>
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
@@ -811,12 +811,7 @@ const App = () => {
                                         <Environment preset={light} />
                                     </>
                                 ) : (
-                                    /* Optimización para Safari/Instagram: No usar background blur */
-                                    (isSafariMobile || isInstagramBrowser) ? (
-                                        <Environment preset={light} />
-                                    ) : (
-                                        <Environment preset={light} background blur backgroundBlurriness />
-                                    )
+                                    <Environment preset={light} background blur backgroundBlurriness />
                                 )}
 
                                 {/* </Suspense> */}
@@ -941,6 +936,128 @@ const App = () => {
                     </div>
                 </div> */}
                 </div>)}
+
+            {isSafariMobile && isModelLoaded && (
+                <div className='fixed inset-0 z-[100000000] bg-white w-full h-full'>
+                    <Suspense fallback={<LoadingScreen info={projectInfo} />}>
+                        <Canvas dpr={1} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={(gl) => {
+                            gl.toneMapping = THREE.LinearToneMapping
+                            gl.physicallyCorrectLights = true
+                            gl.toneMappingExposure = 1.25
+                        }}>
+                            <ambientLight intensity={1} />
+                            <directionalLight color="white" position={[0, 2, 50]} />
+
+                            <CameraViewManager cameraView={cameraView} />
+
+                            {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
+
+                            {isModelLoaded && currentTerrainMarkers.map(marker => (
+                                <Marker
+                                    key={marker.id}
+                                    position={marker.position}
+                                    label={marker.label}
+                                    onClick={() => setSelectedMarker(marker.id)}
+                                />
+                            ))}
+
+                            {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
+
+                            <OrbitControls
+                                ref={orbitControlsRef}
+                                minDistance={0}
+                                minPolarAngle={0}
+                                maxPolarAngle={Math.PI / 2}
+                                enableDamping={true}
+                                dampingFactor={0.05}
+                            />
+                            {background360 ? (
+                                <>
+                                    <Background360 url={background360} />
+                                    <Environment preset={light} />
+                                </>
+                            ) : (
+                                <Environment preset={light} />
+                            )}
+
+                        </Canvas>
+                        {/* Controls Overlay for Safari */}
+                        <div className="absolute bottom-4 left-4 z-[100000001]">
+                            <div className="flex flex-col items-center mb-1">
+                                <span className="text-[10px] uppercase tracking-tighter text-black/50 font-bold mb-1">
+                                    Fecha de toma
+                                </span>
+                                <span className="text-center text-xs md:text-sm font-medium text-black bg-white/80 backdrop-blur-md border border-black/10 px-4 py-1.5 rounded-full shadow-lg">
+                                    {currentModel?.creation_date
+                                        ? new Date(currentModel.creation_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
+                                        : "Sin fecha"}
+                                </span>
+                            </div>
+                        </div>
+                    </Suspense>
+                </div>
+            )}
+
+            {isInstagramBrowser && isModelLoaded && (
+                <div className='fixed inset-0 z-[100000000] bg-white w-full h-full'>
+                    <Suspense fallback={<LoadingScreen info={projectInfo} />}>
+                        <Canvas dpr={1} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={(gl) => {
+                            gl.toneMapping = THREE.LinearToneMapping
+                            gl.physicallyCorrectLights = true
+                            gl.toneMappingExposure = 1.25
+                        }}>
+                            <ambientLight intensity={1} />
+                            <directionalLight color="white" position={[0, 2, 50]} />
+
+                            <CameraViewManager cameraView={cameraView} />
+
+                            {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
+
+                            {isModelLoaded && currentTerrainMarkers.map(marker => (
+                                <Marker
+                                    key={marker.id}
+                                    position={marker.position}
+                                    label={marker.label}
+                                    onClick={() => setSelectedMarker(marker.id)}
+                                />
+                            ))}
+
+                            {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
+
+                            <OrbitControls
+                                ref={orbitControlsRef}
+                                minDistance={0}
+                                minPolarAngle={0}
+                                maxPolarAngle={Math.PI / 2}
+                                enableDamping={true}
+                                dampingFactor={0.05}
+                            />
+                            {background360 ? (
+                                <>
+                                    <Background360 url={background360} />
+                                    <Environment preset={light} />
+                                </>
+                            ) : (
+                                <Environment preset={light} />
+                            )}
+
+                        </Canvas>
+                        {/* Controls Overlay for Instagram */}
+                        <div className="absolute bottom-4 left-4 z-[100000001]">
+                            <div className="flex flex-col items-center mb-1">
+                                <span className="text-[10px] uppercase tracking-tighter text-black/50 font-bold mb-1">
+                                    Fecha de toma
+                                </span>
+                                <span className="text-center text-xs md:text-sm font-medium text-black bg-white/80 backdrop-blur-md border border-black/10 px-4 py-1.5 rounded-full shadow-lg">
+                                    {currentModel?.creation_date
+                                        ? new Date(currentModel.creation_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
+                                        : "Sin fecha"}
+                                </span>
+                            </div>
+                        </div>
+                    </Suspense>
+                </div>
+            )}
 
 
 
