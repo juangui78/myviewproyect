@@ -33,7 +33,7 @@ export default function Home() {
     <div className="bg-[#02121B] bg-[url(/images/op11.webp)] bg-no-repeat bg-cover overflow-hidden h-full min-h-screen text-foreground relative">
       <InteractiveBlobs />
 
-      <div className="overflow-auto h-[100vh] scrollbar relative z-10">
+      <div className="overflow-y-auto overflow-x-hidden h-[100vh] scrollbar relative z-10">
         <Navbar
           disableAnimation
           isBordered

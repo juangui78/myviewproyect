@@ -941,7 +941,7 @@ const App = () => {
                     <div>
                         < BlocksShuffle3 className="text-6xl" />
                     </div>
-                    <div className='w-full text-center'>
+                    <div className='w-full text-center text-black'>
                         <p>Estamos trabajando en tu experiencia.</p>
                         <p>Por favor utiliza un navegador diferente.</p>
                     </div>
@@ -970,7 +970,7 @@ const App = () => {
                     <div>
                         < BlocksShuffle3 className="text-6xl" />
                     </div>
-                    <div className='w-full text-center'>
+                    <div className='w-full text-center text-black'>
                         <p>Estamos trabajando en tu experiencia.</p>
                         <p>Por favor utiliza un navegador diferente.</p>
                     </div>
