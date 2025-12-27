@@ -955,18 +955,18 @@ const App = () => {
 
                             <CameraViewManager cameraView={cameraView} />
 
-                            {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
+                            {/* {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />} */}
 
-                            {isModelLoaded && currentTerrainMarkers.map(marker => (
+                            {/* {isModelLoaded && currentTerrainMarkers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
                                     label={marker.label}
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
-                            ))}
+                            ))} */}
 
-                            {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
+                            {/* <ModelComponent gltf={gltf} ref={objectRef} /> */}
 
                             <OrbitControls
                                 ref={orbitControlsRef}
@@ -976,7 +976,7 @@ const App = () => {
                                 enableDamping={true}
                                 dampingFactor={0.05}
                             />
-                            {/* Eliminado Environment para debugging de pantalla negra */}
+                            <Environment preset={light} background />
 
                         </Canvas>
                         {/* Controls Overlay for Safari */}
@@ -1009,18 +1009,18 @@ const App = () => {
 
                             <CameraViewManager cameraView={cameraView} />
 
-                            {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
+                            {/* {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />} */}
 
-                            {isModelLoaded && currentTerrainMarkers.map(marker => (
+                            {/* {isModelLoaded && currentTerrainMarkers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
                                     label={marker.label}
                                     onClick={() => setSelectedMarker(marker.id)}
                                 />
-                            ))}
+                            ))} */}
 
-                            {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
+                            {/* <ModelComponent gltf={gltf} ref={objectRef} /> */}
 
                             <OrbitControls
                                 ref={orbitControlsRef}
@@ -1030,14 +1030,7 @@ const App = () => {
                                 enableDamping={true}
                                 dampingFactor={0.05}
                             />
-                            {background360 ? (
-                                <>
-                                    <Background360 url={background360} />
-                                    <Environment preset={light} />
-                                </>
-                            ) : (
-                                <Environment preset={light} />
-                            )}
+                            <Environment preset={light} background />
 
                         </Canvas>
                         {/* Controls Overlay for Instagram */}
