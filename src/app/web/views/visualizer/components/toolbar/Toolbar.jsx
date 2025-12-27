@@ -26,36 +26,30 @@ const Toolbar = ({
 
   return (
 
-    <div className={styles.toolbarContainer}>
-
-      <Tooltip content="Cambiar Iluminación" placement='bottom'>
-        <Button isIconOnly variant="flat" aria-label="Iluminación" onClick={onToggleLight}>
-          {lightMode === 'sunset' ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
+    <div className="flex h-10 gap-2 px-3 rounded-full bg-black/60 backdrop-blur-md border border-white/20 shadow-lg items-center transition-all hover:bg-black/70">
+      <Tooltip content="Cambiar Iluminación" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
+        <Button
+          isIconOnly
+          size="md"
+          variant="light"
+          aria-label="Iluminación"
+          onClick={onToggleLight}
+          className="text-white hover:bg-white/20 rounded-full transition-colors h-8 w-8"
+        >
+          {lightMode === 'sunset' ? <SunIcon className="w-5 h-5 drop-shadow-sm" /> : <MoonIcon className="w-5 h-5 drop-shadow-sm" />}
         </Button>
       </Tooltip>
 
-      {/* <Tooltip content="Tomar Medidas" placement='bottom'>
+      <Tooltip content="Ocultar/Mostrar marcadores" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
         <Button
           isIconOnly
-          variant="flat"
-          aria-label="Medir distancia"
-          onClick={handleMeasureDistanceClick}
-          className={isMeasuringDistance ? styles.activeButton : ''} // Aplica una clase condicional
+          size="md"
+          variant="light"
+          aria-label="Modo selección"
+          onClick={showTerrains}
+          className="text-white hover:bg-white/20 rounded-full transition-colors h-8 w-8"
         >
-          <MapMarkerDistance className="w-4 h-4" />
-        </Button>
-      </Tooltip> */}
-
-
-      {/* <Tooltip content="Reiniciar Marcadores" placement='bottom'>
-        <Button isIconOnly variant="flat" aria-label="Reiniciar" onClick={onReset}>
-          <DeleteIcon className="w-4 h-4" />
-        </Button>
-      </Tooltip> */}
-
-      <Tooltip content="Ocultar/Mostrar marcadores" placement='bottom'>
-        <Button isIconOnly variant="flat" aria-label="Modo selección" onClick={showTerrains}>
-          <RulerIcon className="w-4 h-4" />
+          <RulerIcon className="w-5 h-5 drop-shadow-sm" />
         </Button>
       </Tooltip>
     </div>

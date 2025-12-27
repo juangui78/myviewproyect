@@ -10,59 +10,60 @@ import {
 
 const TablePrices = () => {
   return (
-    <section className="w-full bg-white rounded-lg p-3 ">
-      <table className="w-[100%] bg-white rounded-lg">
-        <thead className="rounded-lg bg-gray-200">
-          <tr>
-            <th className="text-black p-3 border-b">Plan</th>
-            <th className="text-black p-3 border-b">Actualización</th>
-            <th className="text-black p-3 border-b">Calidad</th>
-            <th className="text-black p-3 border-b">Área</th>
-            <th className="text-black p-3 border-b">Pauta digital</th>
-            <th className="text-black p-3 border-b">Alcance</th>
-            <th className="text-black p-3 border-b">Visitas</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td className="text-center text-black p-3 border-b">Static</td>
-            <td className="text-center text-black p-3 border-b">---</td>
-            <td className="text-center text-black p-3 border-b">250.000 vertices</td>
-            <td className="text-center text-black p-3 border-b">500m² - 50.000m²</td>
-            <td className="text-center text-black p-3 border-b">No</td>
-            <td className="text-center text-black p-3 border-b">---</td>
-            <td className="text-center text-black p-3 border-b">---</td>
-          </tr>
-          <tr>
-            <td className="text-center text-black p-3 border-b">Basic</td>
-            <td className="text-center text-black p-3 border-b">2 cada 2 meses</td>
-            <td className="text-center text-black p-3 border-b">250.000 vertices</td>
-            <td className="text-center text-black p-3 border-b">500m² - 50.000m²</td>
-            <td className="text-center text-black p-3 border-b">No</td>
-            <td className="text-center text-black p-3 border-b">---</td>
-            <td className="text-center text-black p-3 border-b">---</td>
-          </tr>
-          <tr>
-            <td className="text-center text-black p-3 border-b">Plus</td>
-            <td className="text-center text-black p-3 border-b">2 cada 2 meses</td>
-            <td className="text-center text-black p-3 border-b">500.000 vertices</td>
-            <td className="text-center text-black p-3 border-b">50.000m² - 100.000m²</td>
-            <td className="text-center text-black p-3 border-b">Si</td>
-            <td className="text-center text-black p-3 border-b">250.000 vistas</td>
-            <td className="text-center text-black p-3 border-b">9.500 vistas al modelo</td>
-          </tr>
-          <tr>
-            <td className="text-center text-black p-3 border-b">Pro</td>
-            <td className="text-center text-black p-3 border-b">2 cada 2 meses</td>
-            <td className="text-center text-black p-3 border-b">750.000 vertices</td>
-            <td className="text-center text-black p-3 border-b">100.000m² - 200.000m²</td>
-            <td className="text-center text-black p-3 border-b">Si</td>
-            <td className="text-center text-black p-3 border-b">330.000 vistas</td>
-            <td className="text-center text-black p-3 border-b">12.000 vistas al modelo</td>
-          </tr>
-      
-        </tbody>
-      </table>
+    <section className="w-full glass-card rounded-2xl p-6 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-[100%] text-left border-collapse">
+          <thead>
+            <tr>
+              <th className="text-primary font-bold p-4 border-b border-gray-700">Plan</th>
+              <th className="text-gray-300 p-4 border-b border-gray-700">Actualización</th>
+              <th className="text-gray-300 p-4 border-b border-gray-700">Calidad</th>
+              <th className="text-gray-300 p-4 border-b border-gray-700">Área</th>
+              <th className="text-gray-300 p-4 border-b border-gray-700">Pauta digital</th>
+              <th className="text-gray-300 p-4 border-b border-gray-700">Alcance</th>
+              <th className="text-gray-300 p-4 border-b border-gray-700">Visitas</th>
+            </tr>
+          </thead>
+          <tbody className="text-gray-200">
+            <tr className="hover:bg-white/5 transition-colors">
+              <td className="font-bold p-4 border-b border-gray-800">Static</td>
+              <td className="p-4 border-b border-gray-800 text-gray-500">---</td>
+              <td className="p-4 border-b border-gray-800">250.000 vertices</td>
+              <td className="p-4 border-b border-gray-800">500m² - 50.000m²</td>
+              <td className="p-4 border-b border-gray-800 text-gray-500">No</td>
+              <td className="p-4 border-b border-gray-800 text-gray-500">---</td>
+              <td className="p-4 border-b border-gray-800 text-gray-500">---</td>
+            </tr>
+            <tr className="hover:bg-white/5 transition-colors">
+              <td className="font-bold p-4 border-b border-gray-800">Basic</td>
+              <td className="p-4 border-b border-gray-800">2 cada 2 meses</td>
+              <td className="p-4 border-b border-gray-800">250.000 vertices</td>
+              <td className="p-4 border-b border-gray-800">500m² - 50.000m²</td>
+              <td className="p-4 border-b border-gray-800 text-gray-500">No</td>
+              <td className="p-4 border-b border-gray-800 text-gray-500">---</td>
+              <td className="p-4 border-b border-gray-800 text-gray-500">---</td>
+            </tr>
+            <tr className="hover:bg-white/5 transition-colors bg-primary/5">
+              <td className="font-bold p-4 border-b border-gray-800 text-primary">Plus</td>
+              <td className="p-4 border-b border-gray-800">2 cada 2 meses</td>
+              <td className="p-4 border-b border-gray-800">500.000 vertices</td>
+              <td className="p-4 border-b border-gray-800">50.000m² - 100.000m²</td>
+              <td className="p-4 border-b border-gray-800 text-green-400">Si</td>
+              <td className="p-4 border-b border-gray-800">250.000 vistas</td>
+              <td className="p-4 border-b border-gray-800">9.500 vistas al modelo</td>
+            </tr>
+            <tr className="hover:bg-white/5 transition-colors">
+              <td className="font-bold p-4 border-b border-gray-800">Pro</td>
+              <td className="p-4 border-b border-gray-800">2 cada 2 meses</td>
+              <td className="p-4 border-b border-gray-800">750.000 vertices</td>
+              <td className="p-4 border-b border-gray-800">100.000m² - 200.000m²</td>
+              <td className="p-4 border-b border-gray-800 text-green-400">Si</td>
+              <td className="p-4 border-b border-gray-800">330.000 vistas</td>
+              <td className="p-4 border-b border-gray-800">12.000 vistas al modelo</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     // <Table  isCompact aria-label="Example static collection table" classNames={{

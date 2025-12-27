@@ -59,31 +59,30 @@ const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
 
 export const InformationCard = ({ info }) => {
   console.log('InformationCard info:', info);
-  
+
   return (
-    <Card className="w-full max-w-[90vw] md:max-w-[70vh] border-none bg-black text-white" shadow="none">
-      <CardHeader className="justify-between">
+    <Card className="w-full max-w-[90vw] md:max-w-[70vh] border border-white/20 bg-black/80 backdrop-blur-md text-white shadow-2xl" shadow="none">
+      <CardHeader className="justify-between border-b border-white/10 pb-3">
         <div className="flex gap-3">
-          <h2 className="text-lg"><strong>{info?.name}</strong></h2>
+          <h2 className="text-lg font-bold tracking-wide">{info?.name}</h2>
         </div>
       </CardHeader>
-      <CardBody className="px-3 py-0 max-h-[50vh] overflow-y-auto">
-        <p className="text-small pl-px pb-[5px]"><strong>Ubicación:</strong> {info?.department}, {info?.city}, {info?.address}</p>
-        <p className="text-small pl-px pb-[5px]"><strong>Área:</strong> {info?.areaOfThisproyect} metros cuadrados</p>
-        {/* <p className="text-small pl-px pb-[5px]"><strong>Descripción:</strong> {info?.description}</p> */}
+      <CardBody className="px-4 py-4 max-h-[50vh] overflow-y-auto scrollbar-hide">
+        <p className="text-sm text-gray-200 mb-2"><strong>Ubicación:</strong> {info?.department}, {info?.city}, {info?.address}</p>
+        <p className="text-sm text-gray-200 mb-2"><strong>Área:</strong> {info?.areaOfThisproyect} m²</p>
       </CardBody>
-      <CardFooter className=" flex-col items-start justify-start text-left px-2 max-h-[30vh] overflow-y-auto">
-        
-      {info.description &&
-        info.description.split('\n').map((line, idx) =>
-          line.trim() === "" ? (
-            <br key={idx} />
-          ) : (
-            <p key={idx} className="text-small">{line}</p>
+      <CardFooter className="flex-col items-start justify-start text-left px-4 py-3 max-h-[30vh] overflow-y-auto border-t border-white/10 bg-black/20">
+
+        {info.description &&
+          info.description.split('\n').map((line, idx) =>
+            line.trim() === "" ? (
+              <br key={idx} />
+            ) : (
+              <p key={idx} className="text-sm text-gray-300 leading-relaxed">{line}</p>
+            )
           )
-        )
-      }
-        
+        }
+
       </CardFooter>
     </Card>
   );
@@ -95,15 +94,15 @@ export default function App({ info }) {
     <div className={styles.InformationContainer}>
       <Popover className="" showArrow placement="bottom">
         <PopoverTrigger>
-          
+
           <Button
-            className="border-none bg-black p-2 text-white h-8 gap-x-0.5"
+            className="border border-white/20 bg-black/60 backdrop-blur-md p-2 text-white h-10 gap-x-2 rounded-full hover:bg-black/80 transition-all font-medium px-4 shadow-lg"
           >
-            <PlusIcon className='h-[20px] w-[20px]'></PlusIcon>
+            <PlusIcon className='h-5 w-5 text-white/90'></PlusIcon>
             Información
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="p-1 border-none bg-black z-[999999999999] ">
+        <PopoverContent className="p-0 border-none bg-transparent shadow-none z-[9999]">
           <InformationCard info={info} />
         </PopoverContent>
       </Popover>
