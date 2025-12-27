@@ -992,7 +992,7 @@ const App = () => {
 
                     <div style={{ width: '480px', height: '480px', maxWidth: '100vw', maxHeight: '100vh' }} className="relative bg-white overflow-hidden shrink-0 shadow-2xl rounded-lg">
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
-                            <Canvas dpr={0.7} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
+                            <Canvas frameloop="demand" dpr={0.7} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
                                 antialias: false,
                                 stencil: false,
                                 depth: true,
@@ -1089,7 +1089,7 @@ const App = () => {
 
                     <div style={{ width: '480px', height: '480px', maxWidth: '100vw', maxHeight: '100vh' }} className="relative bg-white overflow-hidden shrink-0 shadow-2xl rounded-lg">
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
-                            <Canvas dpr={0.7} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
+                            <Canvas frameloop="demand" dpr={0.7} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={{
                                 antialias: false,
                                 stencil: false,
                                 depth: true,
