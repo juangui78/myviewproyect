@@ -945,7 +945,8 @@ const App = () => {
                             gl.physicallyCorrectLights = true
                             gl.toneMappingExposure = 1.25
                         }}>
-                            <ambientLight intensity={1} />
+                            <color attach="background" args={['#ffffff']} />
+                            <ambientLight intensity={2} />
                             <directionalLight color="white" position={[0, 2, 50]} />
 
                             <CameraViewManager cameraView={cameraView} />
@@ -971,14 +972,7 @@ const App = () => {
                                 enableDamping={true}
                                 dampingFactor={0.05}
                             />
-                            {background360 ? (
-                                <>
-                                    <Background360 url={background360} />
-                                    <Environment preset={light} />
-                                </>
-                            ) : (
-                                <Environment preset={light} />
-                            )}
+                            {/* Eliminado Environment para debugging de pantalla negra */}
 
                         </Canvas>
                         {/* Controls Overlay for Safari */}
