@@ -636,7 +636,7 @@ const App = () => {
 
 
     return (
-        <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
+        <div className="flex flex-col  items-center h-[100dvh] overflow-hidden relative">
             {/* div de carga inicial */}
 
             {(isLoadingScreenVisible) && (
@@ -715,6 +715,7 @@ const App = () => {
                 </div>
 
             </div>
+
 
 
 
@@ -940,6 +941,7 @@ const App = () => {
                     </div>
                 </div> */}
                 </div>)}
+
 
 
         </div>
