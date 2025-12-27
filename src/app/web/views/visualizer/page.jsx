@@ -468,7 +468,7 @@ const App = () => {
 
     // useEffect para cargar el modelo inicial con proyecto actual
     useEffect(() => {
-        if (isSafariMobile || isInstagramBrowser) return; // ← salir temprano en Safari iOS
+
         // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
@@ -643,9 +643,9 @@ const App = () => {
                         <SliderLoading info={projectInfo} />
                     </div>
                     <div>
-                        < BlocksShuffle3 className="text-6xl" />
+                        < BlocksShuffle3 className="text-6xl text-black" />
                     </div>
-                    <div className='w-full text-center'>
+                    <div className='w-full text-center text-black'>
                         <p>Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
                     </div>
                     <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
@@ -714,9 +714,10 @@ const App = () => {
 
             </div>
 
+
             {/* Se condiciona el renderizado general no safari */}
 
-            {!isSafariMobile && isModelLoaded && (
+            {isModelLoaded && (
                 <div className='flex w-full h-full flex-col sm:flex-row'>
                     <div className='flex w-full h-full'>
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
@@ -931,64 +932,6 @@ const App = () => {
                 </div> */}
                 </div>)}
 
-            {isSafariMobile && (
-
-                <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
-
-                    <div className='md:w-[90% sm:w-[98%] w-[98%]'>
-                        <SliderLoading info={projectInfo} />
-                    </div>
-                    <div>
-                        < BlocksShuffle3 className="text-6xl" />
-                    </div>
-                    <div className='w-full text-center text-black'>
-                        <p>Estamos trabajando en tu experiencia.</p>
-                        <p>Por favor utiliza un navegador diferente.</p>
-                    </div>
-                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
-                        <a
-                            href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                        >
-                            <Whatsapp className="text-white text-1xl" />
-
-                        </a>
-                    </div>
-                </div>
-
-            )}
-
-            {isInstagramBrowser && (
-
-                <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
-
-                    <div className='md:w-[90% sm:w-[98%] w-[98%]'>
-                        <SliderLoading info={projectInfo} />
-                    </div>
-                    <div>
-                        < BlocksShuffle3 className="text-6xl" />
-                    </div>
-                    <div className='w-full text-center text-black'>
-                        <p>Estamos trabajando en tu experiencia.</p>
-                        <p>Por favor utiliza un navegador diferente.</p>
-                    </div>
-                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
-                        <a
-                            href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                        >
-                            <Whatsapp className="text-white text-1xl" />
-
-                        </a>
-                    </div>
-                </div>
-
-
-            )}
 
         </div>
     );

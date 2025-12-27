@@ -39,7 +39,7 @@ const SliderLoading = ({ info }) => {
             <Slider {...settings}>
                 {slides.map((item, index) => (
                     <div key={index} className=" w-[100%] m-[10px] rounded-lg flex justify-center items-center">
-                        <h3 className="text-2xl text-center">{item}</h3>
+                        <h3 className="text-2xl text-center text-black">{item}</h3>
                     </div>
                 ))}
             </Slider>
