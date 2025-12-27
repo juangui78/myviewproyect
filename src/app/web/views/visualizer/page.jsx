@@ -1155,13 +1155,8 @@ const App = () => {
                         </Suspense>
                     </div>
                 </div>
-                </div>
-    )
-}
-
-
-
-        </div >
+            )}
+        </div>
     );
 }
 
