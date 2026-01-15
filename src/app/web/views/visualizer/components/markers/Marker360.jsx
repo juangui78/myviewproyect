@@ -5,51 +5,52 @@ import { useFrame, useThree } from '@react-three/fiber';
 function Marker360({ position, label, onClick, preview, hidden = false, picture }) {
     const groupRef = useRef();
     const { camera } = useThree();
-    
+
     // Opción 1: Elevar todo el marcador sumando altura a la posición Y
     const adjustedPosition = [position[0], position[1] + 6, position[2]];
-    
+
     const finalImage = picture || '/images/lowprev.jpg';
-    
+
     // Calcular escala basada en distancia - ANTES del return condicional
     useFrame(() => {
         if (groupRef.current && !hidden) {
             const distance = camera.position.distanceTo(groupRef.current.position);
-            
+
             // Ajusta estos valores según necesites:
             const baseScale = 0.5;
             const scaleFactor = 0.01;
             const minScale = 0.3;
             const maxScale = 1.0;
-            
+
             let scale = baseScale + distance * scaleFactor;
             scale = Math.max(minScale, Math.min(maxScale, scale));
-            
+
             groupRef.current.scale.setScalar(scale);
         }
     });
-    
+
     const handleClick = (e) => {
         e.stopPropagation();
         if (onClick) {
             onClick();
         }
     };
-    
+
     // Si está oculto, no renderizar nada - DESPUÉS de los hooks
     if (hidden) {
         return null;
     }
-    
+
     return (
         <group ref={groupRef} position={adjustedPosition}>
-            <Html 
-                center 
-                style={{ 
+            <Html
+                center
+                style={{
                     pointerEvents: 'auto',
-                    zIndex: 'auto'
+                    zIndex: 10
                 }}
                 distanceFactor={97}
+                zIndexRange={[40, 0]}
             >
                 <style>
                     {`
@@ -84,34 +85,41 @@ function Marker360({ position, label, onClick, preview, hidden = false, picture 
                                 width: 62,
                                 height: 32,
                                 objectFit: 'cover',
-                                borderRadius: 4,
-                                marginBottom: 2,
-                                boxShadow: '0 0 4px #0002',
-                                transition: 'transform 0.2s cubic-bezier(.4,2,.3,1)',
+                                borderRadius: 8,
+                                marginBottom: 4,
+                                boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                                border: '1px solid rgba(255,255,255,0.5)',
+                                transition: 'all 0.2s cubic-bezier(.4,2,.3,1)',
                             }}
                         />
                     ) : (
                         <div
                             className="marker360-preview"
                             style={{
-                                width: 60,
-                                height: 30,
-                                background: '#fff',
-                                borderRadius: 4,
-                                marginBottom: 2,
-                                boxShadow: '0 0 4px #0002',
-                                transition: 'transform 0.2s cubic-bezier(.4,2,.3,1)',
+                                width: 62,
+                                height: 32,
+                                background: 'rgba(255,255,255,0.2)',
+                                backdropFilter: 'blur(4px)',
+                                borderRadius: 8,
+                                marginBottom: 4,
+                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                transition: 'all 0.2s cubic-bezier(.4,2,.3,1)',
                             }}
                         />
                     )}
-                    <span 
+                    <span
                         className="marker360-label"
                         style={{
-                            color: 'black',
-                            background: '#FFFFFF',
-                            padding: '2px 7px',
-                            borderRadius: '5px',
-                            fontSize: 12,
+                            color: 'white',
+                            background: 'rgba(0, 0, 0, 0.6)',
+                            backdropFilter: 'blur(md)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: 11,
+                            fontWeight: '500',
                             marginTop: 2,
                             whiteSpace: 'nowrap',
                             transition: 'transform 0.2s cubic-bezier(.4,2,.3,1)',

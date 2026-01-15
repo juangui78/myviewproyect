@@ -13,55 +13,30 @@ export async function addNewModel(formData) {
         const idModelCrated = new mongoose.Types.ObjectId() //create _id object from moongose
         const idProject = formData.get('idProject')
 
-        const files = {
-            bin: formData.get('bin'),
-            gltf: formData.get('gltf'),
-            textures: formData.getAll('textures'),
-        }
+        const file = formData.get('glb')
 
-        if (!files.bin || !files.gltf || !files.textures) { //validate data from frontend
+        if (!file) { //validate data from frontend
             return {
-                message: "Debe seleccionar todos los archivos",
+                message: "Debe seleccionar el archivo .glb",
                 status: 400,
                 success: false
             }
         }
 
-        const uploadedFiles = {}
+        const urlS3 = `${idProject}/${idModelCrated}/3D/${file.name}`
+        const buffer = Buffer.from(await file.arrayBuffer())
+        const response = await uploadFile(buffer, urlS3)
 
-        const uploadPromies = Object.entries(files).map(async ([key, file]) => { //iterate over files and upload to s3
-            if (key === "textures"){
-                const texturesUrl = await Promise.all(file.map(async (texture) => { //iterate over the textures and upload to s3
-                    const urlS3 = `${idProject}/${idModelCrated}/3D/textures/${texture.name}`
-                    const buffer = Buffer.from(await texture.arrayBuffer())
-                    const response = await uploadFile(buffer, urlS3)
-
-                    if (response.success) return response.url
-                }))
-                uploadedFiles[key] = texturesUrl
-
-            }else{ // upload bin and gltf to s3 in a folder called 3D
-                const urlS3 = `${idProject}/${idModelCrated}/3D/${file.name}`
-                const buffer = Buffer.from(await file.arrayBuffer())
-                const response = await uploadFile(buffer, urlS3)
-               uploadedFiles[key] = response.success ? response.url : ''
-            }
-        })
-
-        await Promise.all(uploadPromies) // wait for all the files to be uploaded
-
-        //=========================================================================================================
-
-        if (uploadedFiles.bin && uploadedFiles.gltf && uploadedFiles.textures){ // validate if all files were uploaded
+        if (response.success) { // validate if all files were uploaded
             // save the model in the database
             const description = "descripcion de prueba"
-            const name = "nombre de prueba"
+            const name = file.name
             const newModel = new Model({
                 _id: idModelCrated,
                 name: name,
                 description: description,
                 model: {
-                    url : uploadedFiles.gltf,
+                    url: response.url,
                 },
                 idProyect: idProject,
                 terrains: []
@@ -69,7 +44,7 @@ export async function addNewModel(formData) {
 
             const modelCreated = await newModel.save()
 
-            if (!modelCreated){
+            if (!modelCreated) {
                 return {
                     message: "Error al crear el modelo",
                     status: 500,
@@ -92,7 +67,7 @@ export async function addNewModel(formData) {
 
     } catch (error) {
         console.log(error)
-        
+
         return {
             message: "Error en el servidor",
             status: 500,

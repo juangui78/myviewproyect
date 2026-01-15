@@ -20,28 +20,21 @@ module.exports = {
   },
   darkMode: "class",
   plugins: [nextui({
-    defaultTheme: "light",
+    defaultTheme: "dark",
     themes: {
-      // light: {
-      //   colors: {
-      //     danger: "#FF1A1A", // Color de peligro para el tema claro
-      //     primary: "#FF4ECD", // Color primario
-      //     secondary: "#9750DD", // Color secundario
-      //     background: "#FFFFFF", // Fondo claro
-      //     foreground: "#000000", // Texto claro
-      //   },
-      // },
-      light: {
+      dark: {
         colors: {
-          danger: {
-            DEFAULT: "#e60000",
-            foreground: "#fff0f0",
-            background: "#000",
-          },
+          background: "#030D1C", // User provided dark
+          foreground: "#FFFFFF",
           primary: {
-            DEFAULT: "#0CDBFF",
-            foreground: "#000",
-          }
+            DEFAULT: "#0CDBFF", // User provided Cyan
+            foreground: "#000000",
+          },
+          secondary: {
+            DEFAULT: "#00C662", // User provided Green
+            foreground: "#000000",
+          },
+          focus: "#0CDBFF",
         },
       },
     },

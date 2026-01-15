@@ -12,37 +12,37 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
     "🟢 🛣️ A 1h 10 de Rionegro y Marinilla",
     "🟢 🏙️ A 2h de Medellín",
     "🟢 🌄 A 40 min de Barbosa",
-  
+
     "📐 Área total del lote:",
     "3.333 m²",
     "🔨 Incluye explanación de 400 m² lista para construir",
-  
+
     "🛣️ Accesos y vías:",
     "🚗 A solo 10 min de la vía pavimentada que conecta San Vicente con Concepción",
-  
+
     "💧 Servicios de fácil conexión:",
     "💡 Energía",
     "🚿 Agua",
     "🌐 Internet",
-  
+
     "🏡 Usos posibles según certificado de usos del suelo:",
     "✅ Turismo rural",
     "✅ Vivienda",
     "✅ Agricultura",
     "✅ Inversión natural",
-  
+
     "🌿 Atractivos del lote:",
     "🌳 Bosque nativo",
     "🐦 Avistamiento de aves",
     "😌 Zona tranquila para descanso",
-  
+
     "📜 Estado legal:",
     "✔️ Escrituras al día en proindiviso.",
     "✔️ Licencia de construcción viable según usos del suelo y EOT municipal.",
-  
+
     "💰 Precio de venta:",
     "$133.000.000 COP",
-  
+
     "📞 Contacto directo:",
     "Esteban Gómez González",
 
@@ -52,7 +52,7 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
 const LoadingScreen = (info) => {
     console.log('LoadingScreen props:', info);
     return (
-        <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+        <div className='bg-white text-black w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
             <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                 <SliderLoading info={info} />
             </div>
