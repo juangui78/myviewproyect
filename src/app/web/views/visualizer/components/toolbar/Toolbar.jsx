@@ -40,6 +40,25 @@ const Toolbar = ({
         </Button>
       </Tooltip>
 
+      {/* <Tooltip content="Tomar Medidas" placement='bottom'>
+        <Button
+          isIconOnly
+          variant="flat"
+          aria-label="Medir distancia"
+          onClick={handleMeasureDistanceClick}
+          className={isMeasuringDistance ? styles.activeButton : ''} // Aplica una clase condicional
+        >
+          <MapMarkerDistance className="w-4 h-4" />
+        </Button>
+      </Tooltip>
+
+
+      <Tooltip content="Reiniciar Marcadores" placement='bottom'>
+        <Button isIconOnly variant="flat" aria-label="Reiniciar" onClick={onReset}>
+          <DeleteIcon className="w-4 h-4" />
+        </Button>
+      </Tooltip> */}
+
       <Tooltip content="Ocultar/Mostrar marcadores" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
         <Button
           isIconOnly

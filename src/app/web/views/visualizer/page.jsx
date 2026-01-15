@@ -362,6 +362,14 @@ const App = () => {
 
     }, []);
 
+    useEffect(() => {
+        THREE.Cache.enabled = true;
+        return () => {
+            THREE.Cache.clear();
+            THREE.Cache.enabled = false;
+        };
+    }, []);
+
     // console.log('info:', projectInfo);
 
     // traer todos los modelos del proyecto
@@ -560,6 +568,12 @@ const App = () => {
                 if (model.model.terrains.length > 0) {
                     setTerrains(model.model.terrains);
                     setAllTerrains(model.model.terrains);
+                }
+
+                if (model.markers) {
+                    setView360Markers(model.markers);
+                } else {
+                    setView360Markers([]);
                 }
 
                 // Restaurar el estado de la cámara después del render

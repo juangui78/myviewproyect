@@ -121,7 +121,7 @@ const App = () => {
     const [areaCalculated, setAreaCalculated] = useState(0);
     const [distanceCalculated, setDistanceCalculated] = useState(0)
     const [isModelLoaded, setIsModelLoaded] = useState(false);
-    const [models, setModels] = useState([]); 
+    const [models, setModels] = useState([]);
     const [terrains, setTerrains] = useState([]);
     const [currentTerrainMarkers, setCurrentTerrainMarkers] = useState([]);
     const [allTerrains, setAllTerrains] = useState([]);
@@ -156,73 +156,73 @@ const App = () => {
 
     const handleCameraViewChange = () => {
         setCameraView((prevView) => (prevView + 1) % 5); // Cambia entre 0, 1, 2 y 3
-        setIsUserControlling(false); 
+        setIsUserControlling(false);
     };
 
-    const CameraViewManager = ({ cameraView, 
-    onUserControlChange, 
-    onLastCameraViewChange, 
-    orbitControlsRef 
-}) => {
-    const { camera } = useThree();
+    const CameraViewManager = ({ cameraView,
+        onUserControlChange,
+        onLastCameraViewChange,
+        orbitControlsRef
+    }) => {
+        const { camera } = useThree();
 
-    useEffect(() => {
-        const positions = [
-            { x: 0, y: 50, z: 0 },
-            { x: -59.69, y: 103.87, z: -84.092 },
-            { x: 475.40, y: 223.10, z: -84.77 },
-            { x: -91.45, y: 71.300, z: -28.779 },
-            { x: 90.581, y: 32.404, z: 51.591 },
-        ];
+        useEffect(() => {
+            const positions = [
+                { x: 0, y: 50, z: 0 },
+                { x: -59.69, y: 103.87, z: -84.092 },
+                { x: 475.40, y: 223.10, z: -84.77 },
+                { x: -91.45, y: 71.300, z: -28.779 },
+                { x: 90.581, y: 32.404, z: 51.591 },
+            ];
 
-        const targetPosition = positions[cameraView];
+            const targetPosition = positions[cameraView];
 
-        // Solo ejecutar si realmente cambió la vista (no en cada render)
-        if (onLastCameraViewChange && onUserControlChange) {
-            // Marcar que la cámara está siendo controlada por el sistema
-            onUserControlChange(false);
-            
-            // Deshabilitar controles temporalmente
-            if (orbitControlsRef && orbitControlsRef.current) {
-                orbitControlsRef.current.enabled = false;
-            }
+            // Solo ejecutar si realmente cambió la vista (no en cada render)
+            if (onLastCameraViewChange && onUserControlChange) {
+                // Marcar que la cámara está siendo controlada por el sistema
+                onUserControlChange(false);
 
-            // Usar gsap para animar la posición de la cámara
-            gsap.to(camera.position, {
-                x: targetPosition.x,
-                y: targetPosition.y,
-                z: targetPosition.z,
-                duration: 1.5,
-                ease: "power2.inOut",
-                onUpdate: () => {
-                    camera.lookAt(0, 0, 0);
-                    if (orbitControlsRef && orbitControlsRef.current) {
-                        orbitControlsRef.current.target.set(0, 0, 0);
-                        orbitControlsRef.current.update();
-                    }
-                },
-                onComplete: () => {
-                    onLastCameraViewChange(cameraView);
-                    // Re-habilitar controles después de la animación
-                    if (orbitControlsRef && orbitControlsRef.current) {
-                        orbitControlsRef.current.enabled = true;
-                    }
+                // Deshabilitar controles temporalmente
+                if (orbitControlsRef && orbitControlsRef.current) {
+                    orbitControlsRef.current.enabled = false;
                 }
-            });
 
-            camera.updateProjectionMatrix();
-        }
-    }, [cameraView, camera, onUserControlChange, onLastCameraViewChange, orbitControlsRef]);
+                // Usar gsap para animar la posición de la cámara
+                gsap.to(camera.position, {
+                    x: targetPosition.x,
+                    y: targetPosition.y,
+                    z: targetPosition.z,
+                    duration: 1.5,
+                    ease: "power2.inOut",
+                    onUpdate: () => {
+                        camera.lookAt(0, 0, 0);
+                        if (orbitControlsRef && orbitControlsRef.current) {
+                            orbitControlsRef.current.target.set(0, 0, 0);
+                            orbitControlsRef.current.update();
+                        }
+                    },
+                    onComplete: () => {
+                        onLastCameraViewChange(cameraView);
+                        // Re-habilitar controles después de la animación
+                        if (orbitControlsRef && orbitControlsRef.current) {
+                            orbitControlsRef.current.enabled = true;
+                        }
+                    }
+                });
 
-    return null;
-};
+                camera.updateProjectionMatrix();
+            }
+        }, [cameraView, camera, onUserControlChange, onLastCameraViewChange, orbitControlsRef]);
+
+        return null;
+    };
 
     // Función para capturar el estado actual de la cámara
     const captureCurrentCameraState = () => {
         if (orbitControlsRef.current) {
             const controls = orbitControlsRef.current;
             const camera = controls.object;
-            
+
             const state = {
                 position: camera.position.clone(),
                 target: controls.target.clone(),
@@ -234,7 +234,7 @@ const App = () => {
                 near: camera.near,
                 far: camera.far
             };
-            
+
             setCameraState(state);
             return state;
         }
@@ -245,23 +245,23 @@ const App = () => {
         if (state && orbitControlsRef.current) {
             const controls = orbitControlsRef.current;
             const camera = controls.object;
-            
+
             // Si el usuario estaba controlando la cámara, restaurar su posición
             if (state.isUserControlling) {
                 // Restaurar posición manual del usuario
                 camera.position.copy(state.position);
                 controls.target.copy(state.target);
-                
+
                 if (state.zoom) camera.zoom = state.zoom;
                 if (state.fov && camera.isPerspectiveCamera) {
                     camera.fov = state.fov;
                     camera.near = state.near;
                     camera.far = state.far;
                 }
-                
+
                 camera.updateProjectionMatrix();
                 controls.update();
-                
+
                 // Mantener el estado de control del usuario
                 setIsUserControlling(true);
             } else {
@@ -296,17 +296,17 @@ const App = () => {
     };
 
     const handleAddView360Marker = (position) => {
-    // Aquí podrías abrir un modal para seleccionar la foto 360
-    const photo360 = "/images/mi-foto-360.jpg"; // Cambia esto por la lógica que necesites
+        // Aquí podrías abrir un modal para seleccionar la foto 360
+        const photo360 = "/images/mi-foto-360.jpg"; // Cambia esto por la lógica que necesites
 
-    const newMarker = {
-        id: Date.now(),
-        position,
-        photo360,
-        label: "Vista 360",
-    };
+        const newMarker = {
+            id: Date.now(),
+            position,
+            photo360,
+            label: "Vista 360",
+        };
 
-    setView360Markers((prev) => [...prev, newMarker]);
+        setView360Markers((prev) => [...prev, newMarker]);
     };
 
     const handleEditMarkersMode = (event) => {
@@ -354,30 +354,30 @@ const App = () => {
         setAreaCalculated(calculatedArea);
     };
 
-  // Se valida si el navegador es Safari en iOS para evitar problemas de carga
-  const checkIsSafariOnIOS = () => {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
-    
-    const ua = navigator.userAgent;
-    const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-    const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua) && !/CriOS/.test(ua);
-    const isInstagramBrowser = /Instagram/.test(ua);
-    
-    return {
-        isSafariMobile: isIOS && isSafari,
-        isInstagramBrowser: isIOS && isInstagramBrowser,
+    // Se valida si el navegador es Safari en iOS para evitar problemas de carga
+    const checkIsSafariOnIOS = () => {
+        if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+
+        const ua = navigator.userAgent;
+        const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua) && !/CriOS/.test(ua);
+        const isInstagramBrowser = /Instagram/.test(ua);
+
+        return {
+            isSafariMobile: isIOS && isSafari,
+            isInstagramBrowser: isIOS && isInstagramBrowser,
+        };
     };
-  };
-  
-  useEffect(() => {
-    const { isSafariMobile, isInstagramBrowser } = checkIsSafariOnIOS();
-    setIsSafariMobile(isSafariMobile);
-    setIsInstagramBrowser(isInstagramBrowser);
-    if (isSafariMobile || isInstagramBrowser) {
-        setIsLoadingScreenVisible(false); // Muestra la pantalla de carga si es Safari iOS o Instagram
-    }
-    
-}, []);
+
+    useEffect(() => {
+        const { isSafariMobile, isInstagramBrowser } = checkIsSafariOnIOS();
+        setIsSafariMobile(isSafariMobile);
+        setIsInstagramBrowser(isInstagramBrowser);
+        if (isSafariMobile || isInstagramBrowser) {
+            setIsLoadingScreenVisible(false); // Muestra la pantalla de carga si es Safari iOS o Instagram
+        }
+
+    }, []);
 
     console.log('info:', projectInfo);
 
@@ -387,18 +387,18 @@ const App = () => {
             try {
                 const response = await axios.get(`/api/controllers/models_/${idProyect}/allmodels`);
                 console.log("Fetched models:", response.data);
-                
+
                 if (response.data && response.data.length > 0) {
                     setModels(response.data);
                     setCurrentIndexModel(0); // Empieza con el modelo más reciente
                     setcurrentModel(response.data[0]); // Modelo más reciente
 
                     // Inicializa photo360Url con la URL del primer marcador 360 si existe
-                if (response.data[0]?.markers?.length > 0) {
-                    setView360Markers(response.data[0].markers);
-                }
-                    
-                    
+                    if (response.data[0]?.markers?.length > 0) {
+                        setView360Markers(response.data[0].markers);
+                    }
+
+
                 }
             } catch (error) {
                 console.error("Error fetching models:", error);
@@ -409,7 +409,7 @@ const App = () => {
     }, [idProyect]);
 
     console.log('Current Model:', currentModel);
-    
+
 
     const handleNextModel = (event) => {
         event.preventDefault();
@@ -419,7 +419,7 @@ const App = () => {
             setcurrentModel(models[nextIndex]);
             loadModel(models[nextIndex])
             console.log('current modellll:', currentModel);
-            
+
         }
     };
 
@@ -430,11 +430,11 @@ const App = () => {
             setCurrentIndexModel(prevIndex);
             setcurrentModel(models[prevIndex]);
             loadModel(models[prevIndex]);
-            
+
             console.log('current modelllll:', currentModel);
         }
     };
-    
+
     // useEffect para obtener el proyecto y modelo
     useEffect(() => {
         const getModel = async () => {
@@ -444,8 +444,8 @@ const App = () => {
                 if (response.data != undefined && response.data.model !== undefined) {
                     setcurrentModel(response.data.model)
                     console.log('aqui hay: ', response.data.model);
-                    
-                    
+
+
                     if (response.data.terrains) {
                         setTerrains(response.data.terrains);
                         setAllTerrains(response.data.terrains);
@@ -453,15 +453,15 @@ const App = () => {
 
 
                     setProjectInfo(response.data.proyect)
-                    
+
                 }
             } catch (error) {
                 console.log(error);
             }
         };
 
-        
-        
+
+
 
         //save analytics from views
         const saveAnalyticsPerView = async () => {
@@ -526,9 +526,9 @@ const App = () => {
 
     // Función para cargar un modelo específico
     const loadModel = (model) => {
-    // Capturar estado actual ANTES de cambiar el modelo
+        // Capturar estado actual ANTES de cambiar el modelo
         const currentCameraState = captureCurrentCameraState();
-        
+
         if (model && model.model && model.model.url) {
             const modelUrl = model.model.url;
 
@@ -550,6 +550,12 @@ const App = () => {
                 if (model.model.terrains.length > 0) {
                     setTerrains(model.model.terrains);
                     setAllTerrains(model.model.terrains);
+                }
+
+                if (model.markers) {
+                    setView360Markers(model.markers);
+                } else {
+                    setView360Markers([]);
                 }
 
                 // Restaurar el estado de la cámara después del render
@@ -579,65 +585,65 @@ const App = () => {
     }, [view360Markers]);
 
     useEffect(() => {
-    if (orbitControlsRef.current) {
-        const controls = orbitControlsRef.current;
-        
-        let userInteractionTimeout;
-        
-        const handleStart = () => {
-            if (userInteractionTimeout) {
-                clearTimeout(userInteractionTimeout);
-            }
-            setIsUserControlling(true);
-        };
-        
-        const handleChange = () => {
-            setIsUserControlling(true);
-            
-            if (userInteractionTimeout) {
-                clearTimeout(userInteractionTimeout);
-            }
-            
-            userInteractionTimeout = setTimeout(() => {
-                // No cambiar isUserControlling aquí
-            }, 2000);
-        };
-        
-        controls.addEventListener('start', handleStart);
-        controls.addEventListener('change', handleChange);
-        
-        return () => {
-            controls.removeEventListener('start', handleStart);
-            controls.removeEventListener('change', handleChange);
-            if (userInteractionTimeout) {
-                clearTimeout(userInteractionTimeout);
-            }
-        };
-    }
-}, []);
+        if (orbitControlsRef.current) {
+            const controls = orbitControlsRef.current;
+
+            let userInteractionTimeout;
+
+            const handleStart = () => {
+                if (userInteractionTimeout) {
+                    clearTimeout(userInteractionTimeout);
+                }
+                setIsUserControlling(true);
+            };
+
+            const handleChange = () => {
+                setIsUserControlling(true);
+
+                if (userInteractionTimeout) {
+                    clearTimeout(userInteractionTimeout);
+                }
+
+                userInteractionTimeout = setTimeout(() => {
+                    // No cambiar isUserControlling aquí
+                }, 2000);
+            };
+
+            controls.addEventListener('start', handleStart);
+            controls.addEventListener('change', handleChange);
+
+            return () => {
+                controls.removeEventListener('start', handleStart);
+                controls.removeEventListener('change', handleChange);
+                if (userInteractionTimeout) {
+                    clearTimeout(userInteractionTimeout);
+                }
+            };
+        }
+    }, []);
 
     // OrbitControls mejorado con detección de interacción del usuario
     const OrbitControlsWithDetection = () => {
         const { camera, gl } = useThree();
-        
+
         useEffect(() => {
             if (orbitControlsRef.current) {
                 const controls = orbitControlsRef.current;
-                
+
                 // Detectar cuando el usuario comienza a interactuar
                 const handleStart = () => {
                     setIsUserControlling(true);
                 };
-                
+
                 // Detectar cuando el usuario termina de interactuar
                 const handleEnd = () => {
                     // El usuario sigue controlando hasta que se use una vista predefinida
                     setIsUserControlling(true);
                 };
-                
+
                 controls.addEventListener('start', handleStart);
                 controls.addEventListener('end', handleEnd);
-                
+
                 return () => {
                     controls.removeEventListener('start', handleStart);
                     controls.removeEventListener('end', handleEnd);
@@ -646,17 +652,17 @@ const App = () => {
         }, []);
 
         return (
-            <OrbitControls 
+            <OrbitControls
                 ref={orbitControlsRef}
-                minDistance={0} 
-                minPolarAngle={0} 
+                minDistance={0}
+                minPolarAngle={0}
                 maxPolarAngle={Math.PI / 2}
                 enableDamping={true}
                 dampingFactor={0.05}
             />
         );
     };
-   
+
 
 
     const saveTerrainsToDB = async () => {
@@ -686,24 +692,24 @@ const App = () => {
         );
     };
 
-    
 
-    
+
+
     console.log('view360Markers:', view360Markers);
     console.log('current mode: ', addView360Mode);
-    
+
     useEffect(() => {
-    console.log("Photo360 URL updated:", photo360Url);
-}, [photo360Url]);
-    
+        console.log("Photo360 URL updated:", photo360Url);
+    }, [photo360Url]);
+
 
 
 
     return (
         <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
             {/* div de carga inicial */}
-            
-            {  (isLoadingScreenVisible) && (
+
+            {(isLoadingScreenVisible) && (
                 <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading info={projectInfo} />
@@ -715,15 +721,15 @@ const App = () => {
                         <p>Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
                     </div>
                     <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
-                            <a
-                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                            >
-                                <Whatsapp className="text-white text-1xl"/>
-                                
-                            </a>
+                        <a
+                            href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                        >
+                            <Whatsapp className="text-white text-1xl" />
+
+                        </a>
                     </div>
                 </div>
             )}
@@ -764,19 +770,19 @@ const App = () => {
                             showTerrains={toggleTerrains}
                         />}
 
-                        
 
-                     {/* {currentTerrainMarkers.length > 2 && (
-                            <Button onClick={handleAddTerrain} color="primary">
-                                Añadir Terreno
-                            </Button>
-                        )}
-                        <Button onClick={handleSaveButtonClick} color="primary"
-                        >
-                            Guardar Terrenos
-                        </Button> 
-                        <Button onClick={() => setAddView360Mode(true)}>Agregar Vista 360</Button>
-                        <Button onClick={() => setAddView360Mode(false)}>Agregar Trazado</Button> */}
+
+                    {/* {currentTerrainMarkers.length > 2 && (
+                        <Button onClick={handleAddTerrain} color="primary">
+                            Añadir Terreno
+                        </Button>
+                    )}
+                    <Button onClick={handleSaveButtonClick} color="primary"
+                    >
+                        Guardar Terrenos
+                    </Button>
+                    <Button onClick={() => setAddView360Mode(true)}>Agregar Vista 360</Button>
+                    <Button onClick={() => setAddView360Mode(false)}>Agregar Trazado</Button> */}
                 </div>
                 <div>
                     <InformationCard info={projectInfo} />
@@ -785,36 +791,36 @@ const App = () => {
             </div>
 
             {/* Se condiciona el renderizado general no safari */}
-            
+
             {!isSafariMobile && isModelLoaded && (
-            <div className='flex w-full h-full flex-col sm:flex-row'>
-                <div className='flex w-full h-full'>
-                    <Suspense fallback={<LoadingScreen info={projectInfo}/>}>
-                    <Canvas dpr={1} ref={objectRef} gl={(gl) => {
-    gl.toneMapping = THREE.LinearToneMapping
-    gl.physicallyCorrectLights = true
-    gl.toneMappingExposure = 1.25 // súbele o bájale según lo oscuro/claro
-    }}
-    camera={{ position: [0, 160, 0], fov: 75 }}
-    >
-                        {/* <Suspense fallback={null}> */}
-                            {/* <gridHelper args={[500, 500, 'gray']}/>
+                <div className='flex w-full h-full flex-col sm:flex-row'>
+                    <div className='flex w-full h-full'>
+                        <Suspense fallback={<LoadingScreen info={projectInfo} />}>
+                            <Canvas dpr={1} ref={objectRef} gl={(gl) => {
+                                gl.toneMapping = THREE.LinearToneMapping
+                                gl.physicallyCorrectLights = true
+                                gl.toneMappingExposure = 1.25 // súbele o bájale según lo oscuro/claro
+                            }}
+                                camera={{ position: [0, 160, 0], fov: 75 }}
+                            >
+                                {/* <Suspense fallback={null}> */}
+                                {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}
-                            <ambientLight intensity={1} />
-                            <directionalLight color="white" position={[0, 2, 50]} />
-                        
-                            <CameraViewManager cameraView={cameraView} />
-                            {/* <CameraDebugger /> */}
-                            
-                            {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} onAddView360Marker={handleAddView360Marker} addView360Mode={addView360Mode}/>}
-                            {/* {markers.map(marker => (
-                                <Marker
-                                    key={marker.id}
-                                    position={marker.position}
-                                    label={marker.label}
-                                    onClick={() => setSelectedMarker(marker.id)}
-                                />
-                            ))} */}
+                                <ambientLight intensity={1} />
+                                <directionalLight color="white" position={[0, 2, 50]} />
+
+                                <CameraViewManager cameraView={cameraView} />
+                                {/* <CameraDebugger /> */}
+
+                                {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} onAddView360Marker={handleAddView360Marker} addView360Mode={addView360Mode} />}
+                                {markers.map(marker => (
+                                    <Marker
+                                        key={marker.id}
+                                        position={marker.position}
+                                        label={marker.label}
+                                        onClick={() => setSelectedMarker(marker.id)}
+                                    />
+                                ))}
                                 {isModelLoaded && currentTerrainMarkers.map(marker => (
                                     <Marker
                                         key={marker.id}
@@ -833,12 +839,12 @@ const App = () => {
                                         picture={marker.lowpic}
                                         onClick={() => {
                                             console.log('Marker 360 clicked:', marker.photo360);
-                                            
+
                                             setPhoto360Url(marker.photo360);
                                             setIsPhoto360ModalOpen(true); // Abrir el modal
                                         }}
                                     />
-                                    ))}
+                                ))}
                                 {isModelLoaded && showTerrains && terrains.map((terrain) => (
                                     <React.Fragment key={terrain.id}>
                                         {terrain.markers.map(marker => (
@@ -846,7 +852,8 @@ const App = () => {
                                                 key={marker.id}
                                                 position={marker.position}
                                                 label={marker.label}
-                                                onClick={() => {setSelectedMarker(marker.id);
+                                                onClick={() => {
+                                                    setSelectedMarker(marker.id);
                                                 }}
                                             />
                                         ))}
@@ -863,37 +870,37 @@ const App = () => {
                                 ))}
 
 
-                            {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
-                            {/* <CameraPositioner /> */}
-                            {/* <CameraController terrain={selectedTerrain} /> */}
-                            {/* <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} /> */}
-                            {/* <OrbitControlsWithDetection /> */}
-                            <OrbitControls 
-                                ref={orbitControlsRef}
-                                minDistance={0} 
-                                minPolarAngle={0} 
-                                maxPolarAngle={Math.PI / 2}
-                                enableDamping={true}
-                                dampingFactor={0.05}
-                            />
+                                {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
+                                {/* <CameraPositioner /> */}
+                                {/* <CameraController terrain={selectedTerrain} /> */}
+                                {/* <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} /> */}
+                                {/* <OrbitControlsWithDetection /> */}
+                                <OrbitControls
+                                    ref={orbitControlsRef}
+                                    minDistance={0}
+                                    minPolarAngle={0}
+                                    maxPolarAngle={Math.PI / 2}
+                                    enableDamping={true}
+                                    dampingFactor={0.05}
+                                />
 
-                            {background360 ? (
-                                <>
-                                    <Background360 url={background360} />
-                                    <Environment preset={light} />
-                                </>
+                                {background360 ? (
+                                    <>
+                                        <Background360 url={background360} />
+                                        <Environment preset={light} />
+                                    </>
                                 ) : (
-                                <Environment preset={light} background blur backgroundBlurriness />
-                            )}
+                                    <Environment preset={light} background blur backgroundBlurriness />
+                                )}
 
 
-                        {/* </Suspense> */}
-                    </Canvas>
-                    </Suspense>
+                                {/* </Suspense> */}
+                            </Canvas>
+                        </Suspense>
 
-                        
+
                         <div className="z-[9999]">
-                            {isModelLoaded && 
+                            {isModelLoaded &&
                                 <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4">
                                     <div className="navigation-controls flex flex-col items-center mb-4">
                                         {/* Fecha arriba */}
@@ -925,7 +932,7 @@ const App = () => {
                                         <Eye></Eye>
                                         Cambiar Vista
                                     </Button>
-                            </div>
+                                </div>
                             }
 
                             <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
@@ -938,20 +945,20 @@ const App = () => {
                                     <Whatsapp className="text-white text-3xl md:text-4xl " />
                                 </a>
                             </div>
-                        
+
                         </div>
-                </div>
+                    </div>
 
-                <Photo360Modal
-                url={photo360Url}
-                isOpen={isPhoto360ModalOpen}
-                onClose={() => {
-                    setPhoto360Url(null);
-                    setIsPhoto360ModalOpen(false);
-                }}
-                />
+                    <Photo360Modal
+                        url={photo360Url}
+                        isOpen={isPhoto360ModalOpen}
+                        onClose={() => {
+                            setPhoto360Url(null);
+                            setIsPhoto360ModalOpen(false);
+                        }}
+                    />
 
-                {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
+                    {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
 
                     <div className="py-4 w-[100%] px-4" >
                         <p className="text-base text-white italic font-lg font-semibold tracking-wide">Terrenos</p>
@@ -1001,12 +1008,12 @@ const App = () => {
                         </div>
                     </div>
                 </div> */}
-            </div>)}
-            
+                </div>)}
+
             {isSafariMobile && (
-                
-                    <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
-    
+
+                <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+
                     <div className='md:w-[90% sm:w-[98%] w-[98%]'>
                         <SliderLoading info={projectInfo} />
                     </div>
@@ -1018,56 +1025,56 @@ const App = () => {
                         <p>Por favor utiliza un navegador diferente.</p>
                     </div>
                     <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
-                            <a
-                                href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                            >
-                                <Whatsapp className="text-white text-1xl"/>
-                                
-                            </a>
+                        <a
+                            href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                        >
+                            <Whatsapp className="text-white text-1xl" />
+
+                        </a>
                     </div>
                 </div>
-                
+
             )}
 
             {isInstagramBrowser && (
-                            
-                            <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
-                            
-                            <div className='md:w-[90% sm:w-[98%] w-[98%]'>
-                                <SliderLoading info={projectInfo} />
-                            </div>
-                            <div>
-                                < BlocksShuffle3 className="text-6xl" />
-                            </div>
-                            <div className='w-full text-center'>
-                                <p>Estamos trabajando en tu experiencia.</p>
-                                <p>Por favor utiliza un navegador diferente.</p>
-                            </div>
-                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
-                                    <a
-                                        href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                                    >
-                                        <Whatsapp className="text-white text-1xl"/>
-                                        
-                                    </a>
-                            </div>
-                        </div>
-                
-                        
-                    )}
-            
+
+                <div className='bg-white w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+
+                    <div className='md:w-[90% sm:w-[98%] w-[98%]'>
+                        <SliderLoading info={projectInfo} />
+                    </div>
+                    <div>
+                        < BlocksShuffle3 className="text-6xl" />
+                    </div>
+                    <div className='w-full text-center'>
+                        <p>Estamos trabajando en tu experiencia.</p>
+                        <p>Por favor utiliza un navegador diferente.</p>
+                    </div>
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                        <a
+                            href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
+                        >
+                            <Whatsapp className="text-white text-1xl" />
+
+                        </a>
+                    </div>
+                </div>
+
+
+            )}
+
         </div>
     );
 }
 
 export default function WrappedApp() {
-    
+
     return (
         <Suspense fallback={<SliderLoading />}>
             <App />
