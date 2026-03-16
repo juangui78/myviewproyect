@@ -2,9 +2,9 @@
 import mongoose from "mongoose";
 import { getUploadPresignedUrl } from "@/api/libs/s3";
 
-export async function generatePresignedUrlAction(idProject, fileName) {
+export async function generatePresignedUrlAction(idProject, fileName, existingIdModel = null) {
     try {
-        const idModelCrated = new mongoose.Types.ObjectId(); // Create a new unique ID for the model
+        const idModelCrated = existingIdModel ? existingIdModel : new mongoose.Types.ObjectId().toString(); // Create a new unique ID for the model or use existing
         const urlS3Key = `${idProject}/${idModelCrated}/3D/${fileName}`;
         
         const response = await getUploadPresignedUrl(urlS3Key);
