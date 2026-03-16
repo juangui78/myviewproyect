@@ -5,7 +5,7 @@ import { Environment, OrbitControls, useProgress } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { Suspense, useEffect } from "react";
 import { useState } from "react";
-import { Button } from "@nextui-org/react";
+import { Button, Spinner, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
@@ -142,6 +142,42 @@ const App = () => {
     const [lastCameraView, setLastCameraView] = useState(0);
     const orbitControlsRef = React.useRef();
     const [background360, setBackground360] = useState(null);
+    const [isSwitchingModel, setIsSwitchingModel] = useState(false);
+
+    // Función profunda para liberar RAM / VRAM de ThreeJS
+    const disposeGLTF = (currentGltf) => {
+        if (!currentGltf || !currentGltf.scene) return;
+        
+        currentGltf.scene.traverse((node) => {
+            if (node.isMesh) {
+                // Liberar geometría
+                if (node.geometry) {
+                    node.geometry.dispose();
+                }
+                
+                // Liberar materiales y texturas
+                if (node.material) {
+                    const materials = Array.isArray(node.material) ? node.material : [node.material];
+                    
+                    materials.forEach((material) => {
+                        // Limpiar texturas en mapas
+                        ['map', 'lightMap', 'bumpMap', 'normalMap', 'specularMap', 'envMap', 'alphaMap', 'aoMap', 'displacementMap', 'emissiveMap', 'metalnessMap', 'roughnessMap'].forEach((mapName) => {
+                            if (material[mapName]) {
+                                material[mapName].dispose();
+                            }
+                        });
+                        
+                        material.dispose();
+                    });
+                }
+            }
+        });
+        
+        // Limpiar caché global de loaders si existe
+        if (THREE.Cache && THREE.Cache.enabled) {
+            THREE.Cache.clear();
+        }
+    };
 
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -423,6 +459,14 @@ const App = () => {
         }
     };
 
+    const handleSelectModel = (index) => {
+        if (index !== currentIndexModel) {
+            setCurrentIndexModel(index);
+            setcurrentModel(models[index]);
+            loadModel(models[index]);
+        }
+    };
+
 
     // useEffect para obtener el proyecto y modelo
     useEffect(() => {
@@ -557,24 +601,34 @@ const App = () => {
 
             setTerrains([]);
             setAllTerrains([]);
+            setView360Markers([]);
+            setIsSwitchingModel(true);
+
+            // 1. Limpiar el modelo actual en memoria RAM / CPU y Tarjeta Gráfica VRAM
+            if (gltf) {
+                disposeGLTF(gltf);
+                setGltf(null); // Desrenderiza el componente GLTF antiguo de inmediato
+            }
 
             const loader = new GLTFLoader();
             loader.load(modelUrl, (gltfLoaded) => {
                 setGltf(gltfLoaded);
                 setIsModelLoaded(true);
                 setCurrentModelUrl(modelUrl);
-                setCurrentModelId(model.key);
+                setCurrentModelId(model.key || model._id);
 
-                if (model.model.terrains.length > 0) {
-                    setTerrains(model.model.terrains);
-                    setAllTerrains(model.model.terrains);
+                if (model.terrains && model.terrains.length > 0) {
+                    setTerrains(model.terrains);
+                    setAllTerrains(model.terrains);
                 }
 
-                if (model.markers) {
+                if (model.markers && model.markers.length > 0) {
                     setView360Markers(model.markers);
                 } else {
                     setView360Markers([]);
                 }
+                
+                setIsSwitchingModel(false);
 
                 // Restaurar el estado de la cámara después del render
                 setTimeout(() => {
@@ -861,6 +915,12 @@ const App = () => {
 
 
                         <div className="z-[9999]">
+                            {isSwitchingModel && (
+                                <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/20 px-6 py-2 rounded-full shadow-lg z-[10000]">
+                                    <Spinner color="white" size="sm" />
+                                    <span className="text-white text-sm font-medium tracking-wide">Cargando modelo...</span>
+                                </div>
+                            )}
                             {isModelLoaded &&
                                 <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4">
                                     <div className="navigation-controls flex flex-col items-center mb-4 gap-2">
@@ -868,11 +928,42 @@ const App = () => {
                                             <span className="text-[10px] uppercase tracking-tighter text-white/50 font-bold mb-1">
                                                 Fecha de toma
                                             </span>
-                                            <span className="text-center text-xs md:text-sm font-medium text-white bg-black/60 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full shadow-lg">
-                                                {currentModel?.creation_date
-                                                    ? new Date(currentModel.creation_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
-                                                    : "Sin fecha"}
-                                            </span>
+                                            
+                                            <Dropdown className="bg-[#1a1a1a]/90 backdrop-blur-md border border-white/10" placement="top">
+                                                <DropdownTrigger>
+                                                    <Button 
+                                                        variant="light" 
+                                                        className="text-center text-xs md:text-sm font-medium text-white bg-black/60 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full shadow-lg min-w-0 h-auto cursor-pointer hover:bg-white/10 transition-colors"
+                                                    >
+                                                        {currentModel?.creation_date
+                                                            ? new Date(currentModel.creation_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
+                                                            : "Sin fecha"}
+                                                        <span className="ml-1 text-[10px] opacity-70">▼</span>
+                                                    </Button>
+                                                </DropdownTrigger>
+                                                <DropdownMenu 
+                                                    aria-label="Seleccionar modelo"
+                                                    className="w-full"
+                                                    itemClasses={{
+                                                        base: "data-[hover=true]:bg-white/10 text-white",
+                                                    }}
+                                                    selectionMode="single"
+                                                    selectedKeys={new Set([currentIndexModel.toString()])}
+                                                >
+                                                    {models.map((mod, index) => (
+                                                        <DropdownItem 
+                                                            key={index.toString()}
+                                                            onClick={() => handleSelectModel(index)}
+                                                            className={index === currentIndexModel ? "bg-white/20" : ""}
+                                                            description={mod.name}
+                                                        >
+                                                            {mod.creation_date 
+                                                                ? new Date(mod.creation_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
+                                                                : "Sin fecha"}
+                                                        </DropdownItem>
+                                                    ))}
+                                                </DropdownMenu>
+                                            </Dropdown>
                                         </div>
                                         {/* Botones abajo */}
                                         {models.length > 1 && (

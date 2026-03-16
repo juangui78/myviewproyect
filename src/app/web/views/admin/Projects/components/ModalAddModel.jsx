@@ -1,19 +1,38 @@
 import React, { useState, useEffect } from "react";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button } from "@nextui-org/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, RadioGroup, Radio, Select, SelectItem } from "@nextui-org/react";
 import Dropzone from "react-dropzone";
 import { addNewModel } from "../actions/addNewModel";
+import { updateModelFile } from "../actions/updateModelFile";
+import { getModels } from "../actions/getModels";
 import { toast } from "sonner";
+
+import { generatePresignedUrlAction } from "../actions/generatePresignedUrl";
 
 const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
 
     const [errorGlb, setErrorGlb] = useState(false)
     const [glb, setGlb] = useState([])
     const [send, setSending] = useState(false)
+    const [actionType, setActionType] = useState("create")
+    const [modelsList, setModelsList] = useState([])
+    const [selectedModelId, setSelectedModelId] = useState("")
 
     useEffect(() => {
         setErrorGlb(false)
         setGlb([])
         setSending(false)
+        setActionType("create")
+        setSelectedModelId("")
+        
+        const fetchModels = async () => {
+            const res = await getModels(idProject)
+            if (res.success) {
+                setModelsList(res.data.plainModels)
+            }
+        }
+        if (isOpen && idProject) {
+            fetchModels()
+        }
     }, [isOpen, idProject])
 
     const verifyFiles = (Files, type) => {
@@ -39,28 +58,70 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
             return
         }
 
-        const formData = new FormData()
-        formData.append('idProject', idProject)
-        formData.append('glb', glb[0])
-
         try {
+            if (actionType === "replace" && !selectedModelId) {
+                toast.warning("Debe seleccionar un modelo a reemplazar");
+                return;
+            }
+
             setSending(true)
-            const response = await addNewModel(formData)
-            console.log(response)
-            if (response.success) {
-                toast.success("Modelo agregado")
+
+            // 1. Obtener la Presigned URL y el idModel generado
+            toast.loading("Paso 1/2: Configurando subida...", { id: 'upload-toast' });
+            const presignedResponse = await generatePresignedUrlAction(idProject, glb[0].name, actionType === "replace" ? selectedModelId : null);
+
+            if (!presignedResponse.success) {
+                toast.error(presignedResponse.message, { id: 'upload-toast' });
+                setSending(false);
+                return;
+            }
+
+            // 2. Subir el archivo directamente a S3
+            toast.loading("Paso 2/2: Subiendo archivo...", { id: 'upload-toast' });
+            
+            const uploadResponse = await fetch(presignedResponse.uploadUrl, {
+                method: "PUT",
+                body: glb[0],
+                headers: {
+                    "Content-Type": "model/gltf-binary",
+                },
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error("Error al subir el archivo directamente a AWS S3.");
+            }
+
+            // 3. Guardar el modelo en la base de datos
+            let finalResponse;
+            if (actionType === "replace") {
+                finalResponse = await updateModelFile(
+                    idProject,
+                    selectedModelId,
+                    glb[0].name,
+                    presignedResponse.finalUrl
+                );
+            } else {
+                finalResponse = await addNewModel(
+                    idProject, 
+                    presignedResponse.idModel, 
+                    glb[0].name, 
+                    presignedResponse.finalUrl
+                );
+            }
+
+            if (finalResponse.success) {
+                toast.success(actionType === "replace" ? "Modelo reemplazado correctamente" : "Modelo agregado correctamente", { id: 'upload-toast' });
                 onOpenChange()
             } else {
-                toast.error(response.message)
+                toast.error(finalResponse.message, { id: 'upload-toast' });
             }
 
             setSending(false)
         } catch (error) {
-            console.log(error)
-            toast.error("Error al enviar")
+            console.error(error)
+            toast.error("Error inesperado en el servidor", { id: 'upload-toast' });
             setSending(false)
         }
-
 
     }
 
@@ -84,6 +145,31 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
                             <h2 className="text-3xl font-bold text-white">Agregar modelo</h2>
                         </ModalHeader>
                         <ModalBody>
+                            <div className="flex flex-col gap-4 mb-4">
+                                <RadioGroup
+                                    orientation="horizontal"
+                                    value={actionType}
+                                    onValueChange={setActionType}
+                                >
+                                    <Radio value="create" classNames={{ label: "text-white" }}>Crear nuevo modelo</Radio>
+                                    <Radio value="replace" classNames={{ label: "text-white" }}>Reemplazar modelo existente</Radio>
+                                </RadioGroup>
+
+                                {actionType === "replace" && (
+                                    <Select 
+                                        label="Selecciona un modelo a reemplazar" 
+                                        placeholder="Elige un modelo"
+                                        selectedKeys={selectedModelId ? [selectedModelId] : []}
+                                        onChange={(e) => setSelectedModelId(e.target.value)}
+                                    >
+                                        {modelsList.map((model) => (
+                                            <SelectItem key={model._id} value={model._id}>
+                                                {model.name}
+                                            </SelectItem>
+                                        ))}
+                                    </Select>
+                                )}
+                            </div>
                             <Dropzone onDrop={acceptedFiles => verifyFiles(acceptedFiles, "glb")}>
                                 {({ getRootProps, getInputProps }) => (
                                     <section
