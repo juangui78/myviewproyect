@@ -4,6 +4,8 @@ import Dropzone from "react-dropzone";
 import { addNewModel } from "../actions/addNewModel";
 import { toast } from "sonner";
 
+import { generatePresignedUrlAction } from "../actions/generatePresignedUrl";
+
 const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
 
     const [errorGlb, setErrorGlb] = useState(false)
@@ -39,28 +41,55 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
             return
         }
 
-        const formData = new FormData()
-        formData.append('idProject', idProject)
-        formData.append('glb', glb[0])
-
         try {
             setSending(true)
-            const response = await addNewModel(formData)
-            console.log(response)
-            if (response.success) {
-                toast.success("Modelo agregado")
+
+            // 1. Obtener la Presigned URL y el idModel generado
+            toast.loading("Paso 1/2: Configurando subida...", { id: 'upload-toast' });
+            const presignedResponse = await generatePresignedUrlAction(idProject, glb[0].name);
+
+            if (!presignedResponse.success) {
+                toast.error(presignedResponse.message, { id: 'upload-toast' });
+                setSending(false);
+                return;
+            }
+
+            // 2. Subir el archivo directamente a S3
+            toast.loading("Paso 2/2: Subiendo archivo...", { id: 'upload-toast' });
+            
+            const uploadResponse = await fetch(presignedResponse.uploadUrl, {
+                method: "PUT",
+                body: glb[0],
+                headers: {
+                    "Content-Type": "model/gltf-binary",
+                },
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error("Error al subir el archivo directamente a AWS S3.");
+            }
+
+            // 3. Guardar el modelo en la base de datos
+            const finalResponse = await addNewModel(
+                idProject, 
+                presignedResponse.idModel, 
+                glb[0].name, 
+                presignedResponse.finalUrl
+            );
+
+            if (finalResponse.success) {
+                toast.success("Modelo agregado correctamente", { id: 'upload-toast' });
                 onOpenChange()
             } else {
-                toast.error(response.message)
+                toast.error(finalResponse.message, { id: 'upload-toast' });
             }
 
             setSending(false)
         } catch (error) {
-            console.log(error)
-            toast.error("Error al enviar")
+            console.error(error)
+            toast.error("Error inesperado en el servidor", { id: 'upload-toast' });
             setSending(false)
         }
-
 
     }
 
