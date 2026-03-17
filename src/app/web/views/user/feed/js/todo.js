@@ -52,3 +52,16 @@ export const shareModelToUser = async (email, permissions, idProyect) => {
         }
     }
 }
+
+export const updateProject = async (id, data) => {
+    try {
+        const response = await axios.put(`/api/controllers/proyects/${id}`, data);
+        if (response.status === 200) {
+            return ["success", response.data];
+        }
+        return ["error", response.data];
+    } catch (error) {
+        console.error("Error updating project:", error);
+        return ["error", error.response?.data || error.message];
+    }
+}

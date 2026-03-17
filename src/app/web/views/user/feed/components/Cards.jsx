@@ -51,102 +51,107 @@ export default function Cards({ proyects }) {
   return (
     <>
       <div
-        className="grid 2xl:grid-cols-6 gap-[60px] w-[70%] m-auto mt-[40px] p-[8px] mb-[40px]  max-[1535px]:w-[80%] max-[1535px]:grid-cols-6  max-[1400px]:w-[95%]
-                  max-[1218px]:grid-cols-1 max-[1218px]:w-[70%] max-[1218px]:place-items-center max-[977px]:w-[90%]  max-[785px]:w-[100%] max-[526px]:w-[80%]
-        ">
+        className="grid grid-cols-1 lg:grid-cols-2 gap-10 w-[95%] xl:w-[85%] 2xl:w-[75%] max-w-[1800px] m-auto mt-[40px] px-4 mb-[80px]"
+      >
         {proyects.length > 0 ? (
           proyects.map((item) => {
             return (
               <Card
-                isFooterBlurred
                 key={item._id}
-                className="glass-card relative flex flex-col col-span-3 md:h-[100%] h-[35vh] w-full rounded-lg max-[526px]:h-[45vh] max-[1535px]:col-span-3 max-[1218px]:grid-cols-1 max-[1218px]:w-[80%] max-[742px]:w-[95%] max-[624px]:w-[98%]"
+                className="bg-[#1A1F26]/60 backdrop-blur-xl border border-white/10 shadow-2xl relative flex flex-col min-h-[400px] w-full rounded-[32px] overflow-hidden group hover:border-cyan-500/30 transition-all duration-500 hover:shadow-[0_0_50px_rgba(6,182,212,0.15)]"
               >
-                <CardBody className="h-[100%] flex flex-col md:flex-row  justify-center items-center">
-                  {/* Imagen */}
-                  <div className={`${styles.imagenCard} h-[100%] md:h-[100%] w-full md:w-[60%] pt-[2px] pb-[2px] overflow-hidden`}>
-                    <Link
-                      href={{
-                        pathname: `/web/views/visualizer`,
-                        query: { id: encrypt(item._id) },
-                      }}
-                      target="_blank"
-                      className="w-full h-full flex justify-center items-center">
-                      <Image
-                        removeWrapper
-                        alt={item.name}
-                        className="z-0 w-full h-full object-cover transition-transform hover:scale-110"
-                        src={
-                          item.urlImage === ""
-                            ? "/images/parcela.jpg"
-                            : item.urlImage
-                        }
-                      />
-                    </Link>
+                <CardBody className="p-5 flex flex-col lg:flex-row gap-6 items-stretch">
+                  {/* Left Column: Image Area */}
+                  <div className="w-full lg:w-[55%] flex flex-col">
+                    <div className="relative h-full min-h-[250px] rounded-[24px] overflow-hidden border border-white/10 shadow-inner group-hover:shadow-[0_0_30px_rgba(0,0,0,0.3)] transition-all duration-500">
+                      <Link
+                        href={{
+                          pathname: `/web/views/visualizer`,
+                          query: { id: encrypt(item._id) },
+                        }}
+                        target="_blank"
+                        className="w-full h-full block"
+                      >
+                        <Image
+                          removeWrapper
+                          alt={item.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          src={item.urlImage || "/images/parcela.jpg"}
+                        />
+                      </Link>
+                    </div>
                   </div>
-                  {/* Contenedor de botones */}
-                  <div className="flex flex-col md:flex-col h-[30%] md:h-[100%] w-full md:w-[40%] pt-[2px] pb-[2px] items-center justify-center">
-                    <div >
-                      <h4 className="text-white font-medium text-xl text-center">
+
+                  {/* Right Column: Info & Actions */}
+                  <div className="w-full lg:w-[45%] flex flex-col">
+                    {/* Header */}
+                    <div className="mb-6">
+                      <h4 className="text-white font-bold text-2xl uppercase tracking-tight mb-1">
                         {item.name}
                       </h4>
-
+                      <p className="text-white/40 text-xs font-semibold uppercase tracking-[3px]">
+                        {item.description?.substring(0, 30) || "PROYECTO RESIDENCIAL"}
+                      </p>
                     </div>
 
-
-                    <div className="flex flex-row md:flex-col gap-4 mt-2 justify-center items-center">
-                      <Tooltip content="Ver modelo 3D" placement="bottom" delay={0} closeDelay={0} motionProps={{ variants: { enter: { opacity: 1, transition: { duration: 0.2 } }, exit: { opacity: 0, transition: { duration: 0.1 } } } }}>
-                        <Link
+                    {/* Actions List */}
+                    <div className="bg-white/[0.03] border border-white/5 rounded-[24px] p-2 flex flex-col gap-1 mb-6">
+                      <Link
                           href={{
                             pathname: `/web/views/visualizer`,
                             query: { id: encrypt(item._id) },
                           }}
                           target="_blank"
                         >
-                          <Button
-                            isIconOnly
-                            className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-110 active:scale-95 shadow-xl w-[50px] h-[50px] rounded-xl group"
-                            size="md"
-                          >
-                            <Eye
-                              className="text-white group-hover:text-cyan-400 transition-colors cursor-pointer"
-                              aria-label="Visualizar el modelo 3D"
-                            />
-                          </Button>
-                        </Link>
-                      </Tooltip>
+                        <div className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-[18px] transition-all cursor-pointer group/item">
+                          <div className="bg-cyan-500/10 p-2.5 rounded-[14px] border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)] group-hover/item:shadow-[0_0_20px_rgba(6,182,212,0.3)] group-hover/item:bg-cyan-500/20 transition-all">
+                            <Eye className="w-5 h-5 text-cyan-400" />
+                          </div>
+                          <span className="text-white/80 font-semibold text-sm">Ver Modelo</span>
+                        </div>
+                      </Link>
 
-                      <Tooltip content="Editar información" placement="bottom" delay={0} closeDelay={0}>
-                        <Button
-                          isIconOnly
-                          className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-110 active:scale-95 shadow-xl w-[50px] h-[50px] rounded-xl group"
-                          size="md"
-                          onClick={() => handleOpen(item._id)}
-                        >
-                          <EditIconV2
-                            className="text-white group-hover:text-cyan-400 transition-colors cursor-pointer"
-                            aria-label="Información del proyecto"
-                          />
-                        </Button>
-                      </Tooltip>
+                      <div 
+                        onClick={() => handleOpen(item._id)}
+                        className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-[18px] transition-all cursor-pointer group/item"
+                      >
+                        <div className="bg-white/5 p-2.5 rounded-[14px] border border-white/10 group-hover/item:bg-white/10 transition-all">
+                          <EditIconV2 className="w-5 h-5 text-white/70" />
+                        </div>
+                        <span className="text-white/80 font-semibold text-sm">Editar Proyecto</span>
+                      </div>
 
-                      <Tooltip content="Compartir QR" placement="bottom" delay={0} closeDelay={0}>
-                        <Button
-                          isIconOnly
-                          className="bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-110 active:scale-95 shadow-xl w-[50px] h-[50px] rounded-xl group"
-                          size="md"
-                          onClick={() => handleOpenQr(item._id)}
-                        >
-                          <Qr
-                            className="text-white group-hover:text-cyan-400 transition-colors cursor-pointer"
-                            aria-label="Compartir modelo"
-                          />
-                        </Button>
-                      </Tooltip>
+                      <div 
+                        onClick={() => handleOpenQr(item._id)}
+                        className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-[18px] transition-all cursor-pointer group/item"
+                      >
+                        <div className="bg-white/5 p-2.5 rounded-[14px] border border-white/10 group-hover/item:bg-white/10 transition-all">
+                          <Qr className="w-5 h-5 text-white/70" />
+                        </div>
+                        <span className="text-white/80 font-semibold text-sm">Compartir</span>
+                      </div>
+                    </div>
+
+                    {/* Project Status Section */}
+                    <div className="mt-auto bg-white/[0.03] border border-white/5 rounded-[24px] p-5 flex flex-col gap-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-white/60 text-[11px] font-bold uppercase tracking-widest">Estado del Proyecto</span>
+                        {item.lastScanDate && (
+                          <span className="text-white/40 text-[11px] font-medium uppercase tracking-tight">
+                            Último escaneo: <span className="text-white">{new Date(item.lastScanDate).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.6)]" />
+                        <span className="text-white text-base font-bold tracking-tight">Activo</span>
+                      </div>
                     </div>
                   </div>
+
                 </CardBody>
               </Card>
+
             );
           })
         ) : (

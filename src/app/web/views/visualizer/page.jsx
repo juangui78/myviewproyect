@@ -106,7 +106,7 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
 
 
 const App = () => {
-    const [light, setLight] = useState('sunset')
+    const [light, setLight] = useState('lobby')
     const [currentModel, setcurrentModel] = useState(null);
     const [gltf, setGltf] = useState(null);
     const { progress } = useProgress();
@@ -731,7 +731,8 @@ const App = () => {
 
 
     return (
-        <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
+        <div className="flex flex-col items-center h-[100vh] overflow-hidden relative select-none">
+
             {/* div de carga inicial */}
 
             {(isLoadingScreenVisible) && (
@@ -916,7 +917,7 @@ const App = () => {
 
                         <div className="z-[9999]">
                             {isSwitchingModel && (
-                                <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/20 px-6 py-2 rounded-full shadow-lg z-[10000]">
+                                <div className="fixed bottom-40 left-1/2 transform -translate-x-1/2 flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/20 px-6 py-2 rounded-full shadow-lg z-[10000]">
                                     <Spinner color="white" size="sm" />
                                     <span className="text-white text-sm font-medium tracking-wide">Cargando modelo...</span>
                                 </div>
@@ -925,7 +926,10 @@ const App = () => {
                                 <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4">
                                     <div className="navigation-controls flex flex-col items-center mb-4 gap-2">
                                         <div className="flex flex-col items-center mb-1">
-                                            <span className="text-[10px] uppercase tracking-tighter text-white/50 font-bold mb-1">
+                                            <span className="text-[12px] uppercase tracking-wider text-white font-bold mb-0.5 drop-shadow-md">
+                                                {projectInfo?.name || pjname || "Proyecto"}
+                                            </span>
+                                            <span className="text-[9px] uppercase tracking-tighter text-white/40 font-medium mb-1">
                                                 Fecha de toma
                                             </span>
                                             
@@ -938,7 +942,7 @@ const App = () => {
                                                         {currentModel?.creation_date
                                                             ? new Date(currentModel.creation_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
                                                             : "Sin fecha"}
-                                                        <span className="ml-1 text-[10px] opacity-70">▼</span>
+                                                        <span className="ml-1 text-[10px] opacity-70">▲</span>
                                                     </Button>
                                                 </DropdownTrigger>
                                                 <DropdownMenu 
@@ -1006,6 +1010,13 @@ const App = () => {
                             </div>
 
                         </div>
+
+                        {/* Branding */}
+                        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[9999] pointer-events-none">
+                            <span className="text-[10px] text-white/40 font-medium tracking-widest uppercase">
+                                Powered by <span className="text-white/70">MyView_</span>
+                            </span>
+                        </div>
                     </div>
 
                     <Photo360Modal
@@ -1016,58 +1027,8 @@ const App = () => {
                             setIsPhoto360ModalOpen(false);
                         }}
                     />
-
-                    {/* <div className="flex flex-col items-center h-full p-2 max-w-[15%] w-[15%] overflow-auto bg-[url(/images/op22.webp)] bg-cover bg-center px-2 ">
-
-                    <div className="py-4 w-[100%] px-4" >
-                        <p className="text-base text-white italic font-lg font-semibold tracking-wide">Terrenos</p>
-                        {currentTerrainMarkers.length > 2 && (
-                            <Button onClick={handleAddTerrain} color="primary">
-                                Añadir Terreno
-                            </Button>
-                        )}
-                        <Button onClick={handleSaveButtonClick} color="primary"
-                        >
-                            Guardar Terrenos
-                        </Button>
-
-                        <Terrains terrains={terrains} onSelectTerrain={setSelectedTerrain} />
-
-                        <p className="text-base italic text-white font-semibold tracking-wide">Información</p>
-                        <h3 className='text-xs break-words text-white '>
-                            {currentModel?.description ? currentModel.description : "Cargando..."}
-                            <p> Lorem ipsum dolor sit, amet consectetur adipisicing elit. Deleniti, ipsam ab harum aliquid, minus ducimus tempore ullam, hic nostrum molestiae impedit provident delectus repellendus? Maiores illum iure in asperiores nobis.</p>
-                        </h3>
-                        <br />
-                        <h3 className='italic text-xs text-white'>{currentModel?.creation_date ? formatDate(currentModel?.creation_date) : null} </h3>
-                        <h3 className='italic text-xs text-gray-500 border-b-1 border-l-red-950 pb-4'>Fecha de Subida: </h3>
-
-
-                        <div className="z-[9999]">
-                            {isModelLoaded &&
-                                <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4">
-                                    <Button onClick={handleCameraViewChange} className="text-sm md:text-sm border-none bg-black p-2 text-white h-8">
-                                        <Eye></Eye>
-                                        Cambiar Vista
-                                    </Button>
-                                </div>
-                            }
-
-                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
-                                <a
-                                    href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center justify-center w-[40px] h-[40px] bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                                >
-                                    <Whatsapp className="text-white text-3xl md:text-4xl " />
-                                </a>
-                            </div>
-
-                        </div>
-                    </div>
-                </div> */}
                 </div>)}
+
 
             {isSafariMobile && (
                 <div className='bg-white text-black w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>

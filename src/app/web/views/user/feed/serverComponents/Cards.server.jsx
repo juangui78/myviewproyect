@@ -1,5 +1,6 @@
 import { dbConnected } from "@/api/libs/mongoose";
 import Proyect from "@/api/models/proyect";
+import Model from "@/api/models/models";
 import { getServerSession } from "next-auth";
 import { AuthOptions } from "@/api/auth/[...nextauth]/route";
 import style from "./../styles/feed.module.css";
@@ -24,6 +25,7 @@ export default async function CardsList({ searchParams }) {
         name: 1,
         state: 1,
         urlImage: 1,
+        creation_date: 1,
       };
 
       let proyectsFromDB;
@@ -36,9 +38,17 @@ export default async function CardsList({ searchParams }) {
         proyectsFromDB = await Proyect.find({ idCompany }, searchParamas).lean();
       }
 
-      data = proyectsFromDB.map((proyect) => ({
-        ...proyect,
-        _id: proyect._id.toString(),
+      data = await Promise.all(proyectsFromDB.map(async (proyect) => {
+        const lastModel = await Model.findOne({ idProyect: proyect._id })
+          .sort({ creation_date: -1 })
+          .select('creation_date')
+          .lean();
+        
+        return {
+          ...proyect,
+          _id: proyect._id.toString(),
+          lastScanDate: lastModel?.creation_date || proyect.creation_date,
+        };
       }));
     }
   } catch (err) {

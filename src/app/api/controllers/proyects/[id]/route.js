@@ -26,3 +26,40 @@ export async function GET(request, {params}) {
         return NextResponse.json({message: 'Error'}, { status: 500 })
     }
 }
+
+export async function PUT(request, { params }) {
+    try {
+        const { id } = params;
+        const body = await request.json();
+
+        const schemaId = z.string().regex(/^[a-f\d]{24}$/i, "Invalid ObjectId");
+        const resultSchemaId = schemaId.safeParse(id);
+
+        if (!resultSchemaId.success) {
+            return NextResponse.json({ message: 'Invalid Id' }, { status: 400 });
+        }
+
+        const updateSchema = z.object({
+            name: z.string().max(100).optional(),
+            address: z.string().max(300).optional(),
+            description: z.string().max(500).optional(),
+        });
+
+        const resultUpdate = updateSchema.safeParse(body);
+        if (!resultUpdate.success) {
+            return NextResponse.json({ message: 'Invalid data', errors: resultUpdate.error.errors }, { status: 400 });
+        }
+
+        const updatedProyect = await Proyect.findByIdAndUpdate(id, body, { new: true });
+
+        if (!updatedProyect) {
+            return NextResponse.json({ message: 'Project not found' }, { status: 404 });
+        }
+
+        return NextResponse.json(updatedProyect, { status: 200 });
+
+    } catch (error) {
+        console.error("Error updating project:", error);
+        return NextResponse.json({ message: 'Error', error: error.message }, { status: 500 });
+    }
+}
