@@ -90,13 +90,14 @@ export default function Login() {
                         clearable
                         classNames={{
                           label: "text-white !important",
-                          input: "text-black !important",
-                          root: "text-black !important",
+                          input: "text-white !important",
+                          innerWrapper: "bg-transparent",
                           inputWrapper: [
-                            "bg-[#fff]",
-                            "backdrop-blur-xl",
-                            "backdrop-saturate-200",
-                            "hover:bg-default-200/70",
+                            "bg-black/40",
+                            "backdrop-blur-md",
+                            "border-white/20",
+                            "group-data-[hover=true]:bg-black/60",
+                            "group-data-[focus=true]:bg-black/60",
                             "!cursor-text",
                           ],
                         }}
@@ -123,13 +124,14 @@ export default function Login() {
                         label="Contraseña"
                         classNames={{
                           label: "text-white !important",
-                          input: "text-black !important",
-                          root: "text-black !important",
+                          input: "text-white !important",
+                          innerWrapper: "bg-transparent",
                           inputWrapper: [
-                            "bg-[#fff]",
-                            "backdrop-blur-xl",
-                            "backdrop-saturate-200",
-                            "hover:bg-default-200/70",
+                            "bg-black/40",
+                            "backdrop-blur-md",
+                            "border-white/20",
+                            "group-data-[hover=true]:bg-black/60",
+                            "group-data-[focus=true]:bg-black/60",
                             "!cursor-text",
                           ],
                         }}
