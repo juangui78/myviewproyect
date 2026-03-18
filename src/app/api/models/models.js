@@ -48,6 +48,19 @@ const models_schema = new Schema({
     type: Date,
     default: Date.now
   },
+  version_notes: {
+    type: String,
+    required: false,
+    trim: true,
+  },
+  updated_by: {
+    type: String,
+    required: false,
+  },
+  notes_updated_at: {
+    type: Date,
+    required: false,
+  },
 
 });
 

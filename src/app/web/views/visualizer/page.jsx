@@ -172,11 +172,49 @@ const App = () => {
                 }
             }
         });
-        
-        // Limpiar caché global de loaders si existe
+
+        // Forzar limpieza de texturas huérfanas o en caché si es posible
         if (THREE.Cache && THREE.Cache.enabled) {
             THREE.Cache.clear();
         }
+    };
+
+    // Función para aplicar optimizaciones de memoria en móviles (Safari/Instagram)
+    const preprocessLoadedGltf = (gltfLoaded) => {
+        if (!isSafariMobile && !isInstagramBrowser) return gltfLoaded;
+
+        console.log("Applying mobile optimizations to loaded GLTF...");
+        gltfLoaded.scene.traverse((node) => {
+            if (node.isMesh) {
+                node.frustumCulled = true;
+                node.castShadow = false;
+                node.receiveShadow = false;
+                // Deshabilitar computación de sombras
+                node.matrixAutoUpdate = false; 
+                node.updateMatrix();
+
+                if (node.material) {
+                    const materials = Array.isArray(node.material) ? node.material : [node.material];
+                    materials.forEach(material => {
+                        const optimizeTexture = (tex) => {
+                            if (tex) {
+                                tex.anisotropy = 1;
+                                tex.minFilter = THREE.LinearFilter;
+                                tex.magFilter = THREE.LinearFilter;
+                                tex.generateMipmaps = false; // Ahorra mucha VRAM
+                            }
+                        };
+                        optimizeTexture(material.map);
+                        optimizeTexture(material.emissiveMap);
+                        optimizeTexture(material.normalMap);
+                        optimizeTexture(material.roughnessMap);
+                        optimizeTexture(material.metalnessMap);
+                        optimizeTexture(material.aoMap);
+                    });
+                }
+            }
+        });
+        return gltfLoaded;
     };
 
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
@@ -535,47 +573,20 @@ const App = () => {
                 const projectId = currentModel._id;
 
                 loader.load(modelLocation.url, (gltfLoaded) => {
+                    const optimizedGltf = preprocessLoadedGltf(gltfLoaded);
+                    setGltf(optimizedGltf);
 
-                    // Optimización agresiva para texturas en Safari/iOS
-                    if (isSafariMobile || isInstagramBrowser) {
-                        gltfLoaded.scene.traverse((node) => {
-                            if (node.isMesh) {
-                                node.frustumCulled = true;
-                                node.castShadow = false;
-                                node.receiveShadow = false;
-
-                                if (node.material) {
-                                    const optimizeTexture = (tex) => {
-                                        if (tex) {
-                                            tex.anisotropy = 1;
-                                            tex.minFilter = THREE.LinearFilter;
-                                            tex.generateMipmaps = false; // Ahorra mucha memoria
-                                        }
-                                    };
-                                    optimizeTexture(node.material.map);
-                                    optimizeTexture(node.material.emissiveMap);
-                                    optimizeTexture(node.material.normalMap);
-                                    optimizeTexture(node.material.roughnessMap);
-                                    optimizeTexture(node.material.metalnessMap);
-                                }
-                            }
-                        });
-                    }
-
-                    setGltf(gltfLoaded);
                     setIsModelLoaded(true);
                     setIsLoadingScreenVisible(false); // Oculta la pantalla de carga
                     setCurrentModelUrl(modelLocation.url);
-                    setCurrentModelId(projectId); // Usa la variable local
-                    setPjname(currentModel.name) // Usa la variable local
+                    setCurrentModelId(projectId);
+                    setPjname(currentModel.name)
                     setBackground360(currentModel.background360 || null);
-                    // console.log('ID CARGADA:', projectId); // Usa la variable local
 
-                    // Si necesitas hacer algo con los terrenos después de cargar
                     if (currentModel.terrains) {
                         setTerrains(currentModel.terrains);
                         setAllTerrains(currentModel.terrains);
-                        setView360Markers(currentModel.markers || []); // Carga los markers 360 si existen
+                        setView360Markers(currentModel.markers || []);
                     }
                 });
             } else {
@@ -584,7 +595,7 @@ const App = () => {
         }
 
         if (session !== null && session !== undefined) setIsPublish(false);
-    }, [currentModel, isModelLoaded]);
+    }, [currentModel, isModelLoaded, isSafariMobile, isInstagramBrowser]);
 
     // Función para cargar un modelo específico
     const loadModel = (model) => {
@@ -611,8 +622,12 @@ const App = () => {
             }
 
             const loader = new GLTFLoader();
+            loader.setMeshoptDecoder(MeshoptDecoder); // Asegurar decodificación consistente
+
             loader.load(modelUrl, (gltfLoaded) => {
-                setGltf(gltfLoaded);
+                const optimizedGltf = preprocessLoadedGltf(gltfLoaded);
+                setGltf(optimizedGltf);
+
                 setIsModelLoaded(true);
                 setCurrentModelUrl(modelUrl);
                 setCurrentModelId(model.key || model._id);
@@ -635,7 +650,7 @@ const App = () => {
                     if (currentCameraState) {
                         restoreCameraState(currentCameraState);
                     }
-                }, 150); // Un poco más de tiempo para asegurar el render completo
+                }, 150);
 
                 console.log('Modelo cargado correctamente. ID:', model.key);
             });
@@ -646,6 +661,8 @@ const App = () => {
 
     // Pre-cargar imágenes 360 cuando se cargan los markers
     useEffect(() => {
+        if (isSafariMobile || isInstagramBrowser) return; // ← No pre-cargar imágenes pesadas en móviles
+
         if (view360Markers.length > 0) {
             view360Markers.forEach(marker => {
                 if (marker.photo360) {
@@ -721,6 +738,11 @@ const App = () => {
                 error: (err) => `Error!`
             }
         );
+    };
+
+    const handleUpdateModelNotes = (modelId, newNotes, updatedBy, updatedAt) => {
+        setModels(prev => prev.map(m => (m._id === modelId || m.key === modelId) ? { ...m, version_notes: newNotes, updated_by: updatedBy, notes_updated_at: updatedAt } : m));
+        setcurrentModel(prev => (prev?._id === modelId || prev?.key === modelId) ? { ...prev, version_notes: newNotes, updated_by: updatedBy, notes_updated_at: updatedAt } : prev);
     };
 
 
@@ -807,7 +829,12 @@ const App = () => {
                         </Button> */}
                 </div>
                 <div>
-                    <InformationCard info={projectInfo} />
+                    <InformationCard 
+                        info={projectInfo} 
+                        currentModel={currentModel} 
+                        session={session} 
+                        onUpdateModelNotes={handleUpdateModelNotes}
+                    />
                 </div>
 
             </div>
@@ -822,11 +849,22 @@ const App = () => {
                 <div className='flex w-full h-full flex-col sm:flex-row'>
                     <div className='flex w-full h-full'>
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
-                            <Canvas dpr={1} ref={objectRef} camera={{ position: [0, 160, 0], fov: 75 }} gl={(gl) => {
-                                gl.toneMapping = THREE.LinearToneMapping
-                                gl.physicallyCorrectLights = true
-                                gl.toneMappingExposure = 1.25 // súbele o bájale según lo oscuro/claro
-                            }}>
+                            <Canvas 
+                                dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]} 
+                                ref={objectRef} 
+                                camera={{ position: [0, 160, 0], fov: 75 }}
+                                performance={{ min: 0.5 }}
+                                gl={{
+                                    antialias: !(isSafariMobile || isInstagramBrowser),
+                                    powerPreference: "high-performance",
+                                    precision: isSafariMobile || isInstagramBrowser ? "mediump" : "highp",
+                                }}
+                                onCreated={({ gl }) => {
+                                    gl.toneMapping = THREE.LinearToneMapping
+                                    gl.physicallyCorrectLights = true
+                                    gl.toneMappingExposure = 1.25
+                                }}
+                            >
                                 {/* <Suspense fallback={null}> */}
                                 {/* <gridHelper args={[500, 500, 'gray']}/>
                             <axesHelper args={[100, 10, 10]} /> */}

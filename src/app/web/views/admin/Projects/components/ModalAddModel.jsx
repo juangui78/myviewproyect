@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, RadioGroup, Radio, Select, SelectItem } from "@nextui-org/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, RadioGroup, Radio, Select, SelectItem, Textarea } from "@nextui-org/react";
 import Dropzone from "react-dropzone";
 import { addNewModel } from "../actions/addNewModel";
 import { updateModelFile } from "../actions/updateModelFile";
@@ -16,6 +16,7 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
     const [actionType, setActionType] = useState("create")
     const [modelsList, setModelsList] = useState([])
     const [selectedModelId, setSelectedModelId] = useState("")
+    const [versionNotes, setVersionNotes] = useState("")
 
     useEffect(() => {
         setErrorGlb(false)
@@ -23,6 +24,7 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
         setSending(false)
         setActionType("create")
         setSelectedModelId("")
+        setVersionNotes("")
         
         const fetchModels = async () => {
             const res = await getModels(idProject)
@@ -98,14 +100,16 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
                     idProject,
                     selectedModelId,
                     glb[0].name,
-                    presignedResponse.finalUrl
+                    presignedResponse.finalUrl,
+                    versionNotes
                 );
             } else {
                 finalResponse = await addNewModel(
                     idProject, 
                     presignedResponse.idModel, 
                     glb[0].name, 
-                    presignedResponse.finalUrl
+                    presignedResponse.finalUrl,
+                    versionNotes
                 );
             }
 
@@ -169,6 +173,20 @@ const ModalAddModel = ({ isOpen, onOpenChange, idProject }) => {
                                         ))}
                                     </Select>
                                 )}
+                                <Textarea
+                                    label="Notas de la versión / Actualizaciones"
+                                    placeholder="Describe los cambios en esta versión..."
+                                    value={versionNotes}
+                                    onChange={(e) => setVersionNotes(e.target.value)}
+                                    className="text-white"
+                                    classNames={{
+                                        input: "text-white",
+                                        label: "text-white/70",
+                                        innerWrapper: "bg-transparent",
+                                        inputWrapper: "border-white/20 bg-white/5 hover:bg-white/10"
+                                    }}
+                                    variant="bordered"
+                                />
                             </div>
                             <Dropzone onDrop={acceptedFiles => verifyFiles(acceptedFiles, "glb")}>
                                 {({ getRootProps, getInputProps }) => (
