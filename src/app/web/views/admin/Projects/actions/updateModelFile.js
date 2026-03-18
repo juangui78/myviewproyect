@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { dbConnected } from "@/api/libs/mongoose";
 import Model from "@/api/models/models";
 
-export async function updateModelFile(idProject, idModel, name, finalUrl) {
+export async function updateModelFile(idProject, idModel, name, finalUrl, version_notes) {
 
     try {
 
@@ -23,6 +23,7 @@ export async function updateModelFile(idProject, idModel, name, finalUrl) {
                 $set: {
                     name: name,
                     "model.url": finalUrl,
+                    version_notes: version_notes,
                     update_date: new Date()
                 }
             },
