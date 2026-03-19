@@ -160,7 +160,7 @@ export const InformationCard = ({ info, currentModel, canEdit, onUpdateModelNote
                 </span>
             </div>
           </CardHeader>
-          <CardBody className="px-4 py-4">
+          <CardBody className="px-4 py-4 max-h-[30vh] md:max-h-[40vh] overflow-y-auto scrollbar-hide">
             {isEditing ? (
                 <div className="flex flex-col gap-3">
                     <Textarea
@@ -225,7 +225,7 @@ export default function App({ info, currentModel, session, onUpdateModelNotes })
 
   return (
     <div className={styles.InformationContainer}>
-      <Popover className="" showArrow placement="bottom">
+      <Popover className="" showArrow placement="bottom" shouldCloseOnScroll={false}>
         <PopoverTrigger>
 
           <Button
