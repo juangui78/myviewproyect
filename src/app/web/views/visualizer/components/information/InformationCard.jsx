@@ -232,7 +232,8 @@ export default function App({ info, currentModel, session, onUpdateModelNotes })
             className="border border-white/20 bg-black/60 backdrop-blur-md p-2 text-white h-10 gap-x-2 rounded-full hover:bg-black/80 transition-all font-medium px-4 shadow-lg"
           >
             <PlusIcon className='h-5 w-5 text-white/90'></PlusIcon>
-            Información
+            <span className="hidden md:inline">Información</span>
+            <span className="inline md:hidden">Info</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="p-0 border-none bg-transparent shadow-none z-[9999]">
