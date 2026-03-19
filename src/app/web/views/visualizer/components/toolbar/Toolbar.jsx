@@ -7,6 +7,8 @@ import MoonIcon from '@/web/global_components/icons/MoonIcon.jsx';
 import SunIcon from '@/web/global_components/icons/SunIcon.jsx';
 import MapMarkerDistance from '@/web/global_components/icons/MapMarkerDistance';
 import DeleteIcon from '@/web/global_components/icons/DeleteIcon';
+import { WireframeIcon } from '@/web/global_components/icons/WireframeIcon';
+import { ElevationIcon } from '@/web/global_components/icons/ElevationIcon';
 
 const Toolbar = ({
   onToggleLight,
@@ -15,7 +17,11 @@ const Toolbar = ({
   onSelectMode,
   onReset,
   lightMode,
-  showTerrains
+  showTerrains,
+  isWireframe,
+  onToggleWireframe,
+  isElevationMode,
+  onToggleElevation
 }) => {
   const [isMeasuringDistance, setIsMeasuringDistance] = useState(false);
 
@@ -69,6 +75,32 @@ const Toolbar = ({
           className="text-white hover:bg-white/20 rounded-full transition-colors h-8 w-8"
         >
           <RulerIcon className="w-5 h-5 drop-shadow-sm" />
+        </Button>
+      </Tooltip>
+
+      <Tooltip content="Modo Wireframe" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
+        <Button
+          isIconOnly
+          size="md"
+          variant="light"
+          aria-label="Wireframe"
+          onClick={onToggleWireframe}
+          className={`text-white hover:bg-white/20 rounded-full transition-colors h-8 w-8 ${isWireframe ? 'bg-white/20 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : ''}`}
+        >
+          <WireframeIcon className="w-5 h-5 drop-shadow-sm" />
+        </Button>
+      </Tooltip>
+
+      <Tooltip content="Espectro de Altura" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
+        <Button
+          isIconOnly
+          size="md"
+          variant="light"
+          aria-label="Elevación"
+          onClick={onToggleElevation}
+          className={`text-white hover:bg-white/20 rounded-full transition-colors h-8 w-8 ${isElevationMode ? 'bg-white/20 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : ''}`}
+        >
+          <ElevationIcon className="w-5 h-5 drop-shadow-sm" />
         </Button>
       </Tooltip>
     </div>

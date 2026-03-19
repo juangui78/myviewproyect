@@ -143,22 +143,25 @@ const App = () => {
     const orbitControlsRef = React.useRef();
     const [background360, setBackground360] = useState(null);
     const [isSwitchingModel, setIsSwitchingModel] = useState(false);
+    const [isWireframe, setIsWireframe] = useState(false);
+    const [isElevationMode, setIsElevationMode] = useState(false);
+    const [heightBounds, setHeightBounds] = useState({ min: 0, max: 1 });
 
     // Función profunda para liberar RAM / VRAM de ThreeJS
     const disposeGLTF = (currentGltf) => {
         if (!currentGltf || !currentGltf.scene) return;
-        
+
         currentGltf.scene.traverse((node) => {
             if (node.isMesh) {
                 // Liberar geometría
                 if (node.geometry) {
                     node.geometry.dispose();
                 }
-                
+
                 // Liberar materiales y texturas
                 if (node.material) {
                     const materials = Array.isArray(node.material) ? node.material : [node.material];
-                    
+
                     materials.forEach((material) => {
                         // Limpiar texturas en mapas
                         ['map', 'lightMap', 'bumpMap', 'normalMap', 'specularMap', 'envMap', 'alphaMap', 'aoMap', 'displacementMap', 'emissiveMap', 'metalnessMap', 'roughnessMap'].forEach((mapName) => {
@@ -166,7 +169,7 @@ const App = () => {
                                 material[mapName].dispose();
                             }
                         });
-                        
+
                         material.dispose();
                     });
                 }
@@ -190,7 +193,7 @@ const App = () => {
                 node.castShadow = false;
                 node.receiveShadow = false;
                 // Deshabilitar computación de sombras
-                node.matrixAutoUpdate = false; 
+                node.matrixAutoUpdate = false;
                 node.updateMatrix();
 
                 if (node.material) {
@@ -576,6 +579,10 @@ const App = () => {
                     const optimizedGltf = preprocessLoadedGltf(gltfLoaded);
                     setGltf(optimizedGltf);
 
+                    // Calcular límites de altura
+                    const box = new THREE.Box3().setFromObject(optimizedGltf.scene);
+                    setHeightBounds({ min: box.min.y, max: box.max.y });
+
                     setIsModelLoaded(true);
                     setIsLoadingScreenVisible(false); // Oculta la pantalla de carga
                     setCurrentModelUrl(modelLocation.url);
@@ -632,6 +639,10 @@ const App = () => {
                 setCurrentModelUrl(modelUrl);
                 setCurrentModelId(model.key || model._id);
 
+                // Calcular límites de altura para el nuevo modelo
+                const box = new THREE.Box3().setFromObject(optimizedGltf.scene);
+                setHeightBounds({ min: box.min.y, max: box.max.y });
+
                 if (model.terrains && model.terrains.length > 0) {
                     setTerrains(model.terrains);
                     setAllTerrains(model.terrains);
@@ -642,7 +653,7 @@ const App = () => {
                 } else {
                     setView360Markers([]);
                 }
-                
+
                 setIsSwitchingModel(false);
 
                 // Restaurar el estado de la cámara después del render
@@ -745,6 +756,74 @@ const App = () => {
         setcurrentModel(prev => (prev?._id === modelId || prev?.key === modelId) ? { ...prev, version_notes: newNotes, updated_by: updatedBy, notes_updated_at: updatedAt } : prev);
     };
 
+    useEffect(() => {
+        if (gltf && gltf.scene) {
+            gltf.scene.traverse((node) => {
+                if (node.isMesh) {
+                    // Si activamos el modo elevación
+                    if (isElevationMode) {
+                        // Guardar el material original si no existe
+                        if (!node.userData.originalMaterial) {
+                            node.userData.originalMaterial = node.material;
+                        }
+
+                        // Crear material de elevación para este mesh
+                        node.material = new THREE.ShaderMaterial({
+                            uniforms: {
+                                minHeight: { value: heightBounds.min },
+                                maxHeight: { value: heightBounds.max },
+                            },
+                            vertexShader: `
+                                varying float vHeight;
+                                void main() {
+                                    vHeight = (modelMatrix * vec4(position, 1.0)).y;
+                                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                                }
+                            `,
+                            fragmentShader: `
+                                uniform float minHeight;
+                                uniform float maxHeight;
+                                varying float vHeight;
+                                void main() {
+                                    float h = (vHeight - minHeight) / (maxHeight - minHeight);
+                                    h = clamp(h, 0.0, 1.0);
+                                    
+                                    vec3 color;
+                                    if (h < 0.25) {
+                                        color = mix(vec3(0.0, 0.0, 0.5), vec3(0.0, 0.5, 1.0), h * 4.0);
+                                    } else if (h < 0.5) {
+                                        color = mix(vec3(0.0, 0.5, 1.0), vec3(0.0, 1.0, 0.0), (h - 0.25) * 4.0);
+                                    } else if (h < 0.75) {
+                                        color = mix(vec3(0.0, 1.0, 0.0), vec3(1.0, 1.0, 0.0), (h - 0.5) * 4.0);
+                                    } else {
+                                        color = mix(vec3(1.0, 1.0, 0.0), vec3(1.0, 0.0, 0.0), (h - 0.75) * 4.0);
+                                    }
+                                    
+                                    gl_FragColor = vec4(color, 1.0);
+                                }
+                            `,
+                            wireframe: isWireframe
+                        });
+                    } else {
+                        // Restaurar material original si existe
+                        if (node.userData.originalMaterial) {
+                            node.material = node.userData.originalMaterial;
+                        }
+                    }
+
+                    // Siempre aplicar el estado de wireframe al material actual
+                    if (Array.isArray(node.material)) {
+                        node.material.forEach(m => {
+                            if (m) m.wireframe = isWireframe;
+                        });
+                    } else if (node.material) {
+                        node.material.wireframe = isWireframe;
+                    }
+                }
+            });
+        }
+    }, [isElevationMode, isWireframe, gltf, heightBounds]);
+
 
 
 
@@ -816,6 +895,10 @@ const App = () => {
                             onReset={handleResetMarkers}
                             lightMode={light}
                             showTerrains={toggleTerrains}
+                            isWireframe={isWireframe}
+                            onToggleWireframe={() => setIsWireframe(!isWireframe)}
+                            isElevationMode={isElevationMode}
+                            onToggleElevation={() => setIsElevationMode(!isElevationMode)}
                         />}
 
                     {/* {currentTerrainMarkers.length > 2 && (
@@ -829,10 +912,10 @@ const App = () => {
                         </Button> */}
                 </div>
                 <div>
-                    <InformationCard 
-                        info={projectInfo} 
-                        currentModel={currentModel} 
-                        session={session} 
+                    <InformationCard
+                        info={projectInfo}
+                        currentModel={currentModel}
+                        session={session}
                         onUpdateModelNotes={handleUpdateModelNotes}
                     />
                 </div>
@@ -849,9 +932,9 @@ const App = () => {
                 <div className='flex w-full h-full flex-col sm:flex-row'>
                     <div className='flex w-full h-full'>
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
-                            <Canvas 
-                                dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]} 
-                                ref={objectRef} 
+                            <Canvas
+                                dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]}
+                                ref={objectRef}
                                 camera={{ position: [0, 160, 0], fov: 75 }}
                                 performance={{ min: 0.5 }}
                                 gl={{
@@ -970,11 +1053,11 @@ const App = () => {
                                             <span className="text-[9px] uppercase tracking-tighter text-white/40 font-medium mb-1">
                                                 Fecha de toma
                                             </span>
-                                            
+
                                             <Dropdown className="bg-[#1a1a1a]/90 backdrop-blur-md border border-white/10" placement="top">
                                                 <DropdownTrigger>
-                                                    <Button 
-                                                        variant="light" 
+                                                    <Button
+                                                        variant="light"
                                                         className="text-center text-xs md:text-sm font-medium text-white bg-black/60 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full shadow-lg min-w-0 h-auto cursor-pointer hover:bg-white/10 transition-colors"
                                                     >
                                                         {currentModel?.creation_date
@@ -983,7 +1066,7 @@ const App = () => {
                                                         <span className="ml-1 text-[10px] opacity-70">▲</span>
                                                     </Button>
                                                 </DropdownTrigger>
-                                                <DropdownMenu 
+                                                <DropdownMenu
                                                     aria-label="Seleccionar modelo"
                                                     className="w-full"
                                                     itemClasses={{
@@ -993,13 +1076,13 @@ const App = () => {
                                                     selectedKeys={new Set([currentIndexModel.toString()])}
                                                 >
                                                     {models.map((mod, index) => (
-                                                        <DropdownItem 
+                                                        <DropdownItem
                                                             key={index.toString()}
                                                             onClick={() => handleSelectModel(index)}
                                                             className={index === currentIndexModel ? "bg-white/20" : ""}
                                                             description={mod.name}
                                                         >
-                                                            {mod.creation_date 
+                                                            {mod.creation_date
                                                                 ? new Date(mod.creation_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
                                                                 : "Sin fecha"}
                                                         </DropdownItem>
@@ -1052,7 +1135,7 @@ const App = () => {
                         {/* Branding */}
                         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[9999] pointer-events-none">
                             <span className="text-[10px] text-white/40 font-medium tracking-widest uppercase">
-                                Powered by <span className="text-white/70">MyView_</span>
+                                by <span className="text-white/70">MyView_</span>
                             </span>
                         </div>
                     </div>
