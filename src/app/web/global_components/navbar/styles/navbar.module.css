@@ -1,0 +1,17 @@
+.NavBar{
+  background-color: transparent !important;
+
+}
+
+.NavBar > header{
+  max-width: 70% !important;
+  padding-left: 0rem !important;
+  padding-right: 0rem !important;
+
+}
+
+@media screen and (max-width: 536px){
+  .NavBar > header{
+    max-width: 90% !important;
+  }
+}
