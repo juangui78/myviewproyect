@@ -65,7 +65,7 @@ const Toolbar = ({
         </Button>
       </Tooltip> */}
 
-      <Tooltip content="Ocultar/Mostrar marcadores" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
+      {/* <Tooltip content="Ocultar/Mostrar marcadores" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
         <Button
           isIconOnly
           size="md"
@@ -76,7 +76,7 @@ const Toolbar = ({
         >
           <RulerIcon className="w-5 h-5 drop-shadow-sm" />
         </Button>
-      </Tooltip>
+      </Tooltip> */}
 
       <Tooltip content="Modo Wireframe" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
         <Button
@@ -91,7 +91,7 @@ const Toolbar = ({
         </Button>
       </Tooltip>
 
-      <Tooltip content="Espectro de Altura" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
+      {/* <Tooltip content="Espectro de Altura" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
         <Button
           isIconOnly
           size="md"
@@ -102,7 +102,7 @@ const Toolbar = ({
         >
           <ElevationIcon className="w-5 h-5 drop-shadow-sm" />
         </Button>
-      </Tooltip>
+      </Tooltip> */}
     </div>
 
 

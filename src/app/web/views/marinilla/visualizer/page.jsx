@@ -935,7 +935,7 @@ const App = () => {
                             <Canvas
                                 dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]}
                                 ref={objectRef}
-                                camera={{ position: [0, 3.5, 10.5], fov: 30 }}
+                                camera={{ position: [0, 3, 9], fov: 30 }}
                                 performance={{ min: 0.5 }}
                                 gl={{
                                     antialias: !(isSafariMobile || isInstagramBrowser),
@@ -1119,7 +1119,7 @@ const App = () => {
                                 </div>
                             }
 
-                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                            {/* <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
                                 <a
                                     href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                                     target="_blank"
@@ -1128,7 +1128,7 @@ const App = () => {
                                 >
                                     <Whatsapp className="text-white text-3xl md:text-4xl " />
                                 </a>
-                            </div>
+                            </div> */}
 
                         </div>
 
