@@ -935,7 +935,7 @@ const App = () => {
                             <Canvas
                                 dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]}
                                 ref={objectRef}
-                                camera={{ position: [0, 30, 80], fov: 45 }}
+                                camera={{ position: [0, 10, 30], fov: 30 }}
                                 performance={{ min: 0.5 }}
                                 gl={{
                                     antialias: !(isSafariMobile || isInstagramBrowser),
@@ -1048,7 +1048,7 @@ const App = () => {
                                     <div className="navigation-controls flex flex-col items-center mb-4 gap-2">
                                         <div className="flex flex-col items-center mb-1">
                                             <span className="text-[11px] uppercase tracking-[1.4px] text-[#C9A96E] font-bold mb-0.5">
-                                                {projectInfo?.name || pjname || "Proyecto"}
+                                                {projectInfo?.name || pjname || "Fragmento Patrimonial"}
                                             </span>
                                             <span className="text-[9px] uppercase tracking-[1.0px] text-[#8A8070] font-medium mb-1">
                                                 Fecha de toma

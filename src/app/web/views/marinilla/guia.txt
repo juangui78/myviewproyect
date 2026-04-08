@@ -1,0 +1,26 @@
+El Texto de Bienvenida (El Umbral Literario)
+Este texto debe aparecer en la pantalla de inicio (Splash Screen o Home) apenas el usuario abre la app. Su tono debe ser inmersivo e invitar a la acción:
+Bienvenido a Resonancias de Esparta: El Atlas vivo de Marinilla.
+Marinilla no es solo un punto en el mapa; es una partitura viva. Eres habitante de la Esparta colombiana, una tierra declarada Patrimonio Inmaterial de la Nación, donde el espíritu de la libertad se forjó a golpe de tiple, guitarra y resistencia.
+Hoy, la ciudad sigue vibrando, pero su memoria está fragmentada. Te invitamos a convertirte en un Expedicionario. En tus manos tienes el artefacto para descifrarla. Escucha lo que está ocurriendo hoy en nuestras calles y busca las huellas ocultas de nuestro pasado.
+¿Por dónde quieres empezar a explorar?
+Debajo de este texto, estarían los dos botones principales de tu interfaz:
+________________________________________
+2. Botón 1: 💓 EL LATIDO (La Agenda Cultural)
+Dado que la web/app actual (agendamarinilla.com) ya tiene la estructura de cartelera, los ajustes para el prototipo de Crea Digital no requieren rehacer el código, sino hacer un reskin (cambio de piel) narrativo:
+Ideas de ajustes pequeños para el prototipo:
+•	Cambio de copys (textos): En lugar de "Eventos de la semana", usa "El Pulso de esta semana". En vez de "Categorías", usa "Frecuencias" (Música, Teatro, Literatura).
+•	Etiquetas narrativas: Si en la agenda hay un evento de rock contemporáneo, digamos, un toque de Los Eskejes, ponle un pequeño tag visual que diga: "Ecos del presente". Si es un ensamble de música tradicional, el tag diría "Raíces".
+•	El puente hacia la gamificación: Al final de la descripción de cada evento de la agenda, añade un pequeño bloque que diga: "¿Vas a este evento? Abre los ojos. Cerca de aquí hay un fragmento de la memoria oculto".
+________________________________________
+3. Botón 2: 🔎 LA LUPA DEL TIEMPO (El Reto Gamificado)
+Esta es la sección nueva que integra el concepto de la fotogrametría y la memoria. Al hacer clic, el usuario no ve un directorio aburrido, sino "El Reto del Día" o "El Rompecabezas del Patrimonio".
+Cómo estructurarlo para el prototipo:
+•	El Vistazo al Reto: El usuario ve una silueta en negro (por ejemplo, la forma de una guitarra) y un acertijo que lo lleva al espacio físico: "Fui tallada en las montañas, mis cuerdas cantaron antes que la pólvora. Búscame donde descansan los maestros (Casa de la Cultura)".
+•	La Cacería (El código QR): El usuario va al sitio físico, encuentra un pequeño sticker o placa de la app y lo escanea.
+•	El Descubrimiento (El Modelo 3D): Al escanear, se desbloquea la pieza. Aquí se abre el visor 3D (My_view). El usuario puede rotar y hacer zoom a la guitarra histórica.
+•	La Reseña Expandida: Debajo del modelo 3D no solo está la historia del instrumento, sino que puedes conectar la narrativa con el territorio. Por ejemplo, detallar que la madera proviene del cedro negro o el nogal del bosque montano bajo del Oriente antioqueño, integrando la riqueza de la flora local con el patrimonio artesanal.
+•	La Recompensa: Al terminar de leer, la app le avisa: "Has recuperado 1/5 fragmentos del alma musical de Marinilla". (Incluso, si lo logras a futuro, esto podría darle un cupón de descuento en negocios locales aliados, cerrando el ciclo económico).
+¿Por qué esta ruta es ganadora para mañana?
+1.	Cumple la regla Transmedia a la perfección: Tienes Plataforma Web/App (El Latido) + Interacción en el Espacio Físico (Búsqueda de QRs) + Realidad Aumentada / Visor 3D (La Lupa del Tiempo).
+2.	Es viable para el prototipo: En el enlace de "Versión preliminar" de la Ficha Técnica, puedes grabar un video de pantalla (screencast) mostrando cómo navegas por la agenda actual (El Latido) y luego mostrar un mockup o prueba de cómo funciona el escaneo y el modelo 3D (La Lupa). No tiene que estar programado al 100% mañana, solo debe ser funcional como prototipo para demostrar la idea.

@@ -15,6 +15,7 @@ import styles from "./InformationCard.module.css";
 import { PlusIcon } from "@/web/global_components/icons/PlusIcon";
 import { EditIcon } from "@/web/global_components/icons/EditIcon";
 import CheckIcon from "@/web/global_components/icons/CheckIcon";
+import SearchIcon from "@/web/global_components/icons/SearchIcon";
 import { Ban } from "@/web/global_components/icons/Ban";
 import axios from "axios";
 import { toast } from "sonner";
@@ -111,26 +112,35 @@ export const InformationCard = ({ info, currentModel, canEdit, onUpdateModelNote
     <div className="flex flex-col gap-3">
       <Card className="w-full max-w-[90vw] md:max-w-[70vh] border border-[#3D3425] bg-[#252117]/95 backdrop-blur-md text-[#F0E8DA] shadow-2xl rounded-[18px]" shadow="none">
         <CardHeader className="justify-between border-b border-[#3D3425] pb-3">
-          <div className="flex gap-3">
-            <h2 className="text-lg font-bold tracking-wide">{info?.name}</h2>
+          <div className="flex gap-2 items-center">
+            <SearchIcon className="w-5 h-5 text-[#C9A96E]" />
+            <h2 className="text-lg font-bold tracking-wide text-[#C9A96E]">{info?.name || "Descubrimiento Histórico"}</h2>
           </div>
         </CardHeader>
         <CardBody className="px-4 py-4 max-h-[50vh] overflow-y-auto scrollbar-hide">
-          <p className="text-sm text-[#C8BFAE] mb-2"><strong className="text-[#F0E8DA]">Ubicación:</strong> {info?.department}, {info?.city}, {info?.address}</p>
-          <p className="text-sm text-[#C8BFAE] mb-2"><strong className="text-[#F0E8DA]">Área:</strong> {info?.areaOfThisproyect} m²</p>
-        </CardBody>
-        <CardFooter className="flex-col items-start justify-start text-left px-4 py-3 max-h-[30vh] overflow-y-auto border-t border-[#3D3425] bg-[#1E1B14]">
-
-          {info.description &&
+          <p className="text-[11px] uppercase tracking-[1.4px] text-[#B87333] mb-3 font-bold">Reseña Expandida</p>
+          
+          {info?.description ? (
             info.description.split('\n').map((line, idx) =>
               line.trim() === "" ? (
                 <br key={idx} />
               ) : (
-                <p key={idx} className="text-sm text-[#8A8070] leading-relaxed">{line}</p>
+                <p key={idx} className="text-sm text-[#8A8070] leading-relaxed mb-2">{line}</p>
               )
             )
-          }
+          ) : (
+            <p className="text-sm text-[#8A8070] leading-relaxed">
+              Fui tallada en las montañas, mis cuerdas cantaron antes que la pólvora. Esta pieza histórica fue fabricada con maderas nativas de los bosques orientales, conectando el patrimonio natural con el alma artesanal de Marinilla.
+            </p>
+          )}
 
+        </CardBody>
+        <CardFooter className="flex-col items-start justify-start text-left px-4 py-3 border-t border-[#3D3425] bg-[#3A2E1A]/40">
+           <div className="flex items-center gap-2 mb-1">
+             <span className="text-lg">🏆</span>
+             <h3 className="text-sm font-bold text-[#F0E8DA]">Recompensa Desbloqueada</h3>
+           </div>
+           <p className="text-xs text-[#C8BFAE]">Has recuperado <strong className="text-[#C9A96E]">1/5 fragmentos</strong> del alma musical de Marinilla.</p>
         </CardFooter>
       </Card>
 
@@ -232,8 +242,8 @@ export default function App({ info, currentModel, session, onUpdateModelNotes })
             className="border-none bg-[#B87333] p-2 text-white h-10 gap-x-2 rounded-[16px] hover:bg-[#8B5E3C] transition-all font-bold px-4 shadow-[0_4px_10px_rgba(184,115,51,0.3)]"
           >
             <PlusIcon className='h-5 w-5 text-white/90'></PlusIcon>
-            <span className="hidden md:inline">Información</span>
-            <span className="inline md:hidden">Info</span>
+            <span className="hidden md:inline">La Reseña</span>
+            <span className="inline md:hidden">Reseña</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="p-0 border-none bg-transparent shadow-none z-[9999]">
