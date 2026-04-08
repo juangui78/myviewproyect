@@ -15,7 +15,7 @@ import styles from "./InformationCard.module.css";
 import { PlusIcon } from "@/web/global_components/icons/PlusIcon";
 import { EditIcon } from "@/web/global_components/icons/EditIcon";
 import CheckIcon from "@/web/global_components/icons/CheckIcon";
-import SearchIcon from "@/web/global_components/icons/SearchIcon";
+import { SearchIcon } from "@/web/global_components/icons/SearchIcon";
 import { Ban } from "@/web/global_components/icons/Ban";
 import axios from "axios";
 import { toast } from "sonner";
