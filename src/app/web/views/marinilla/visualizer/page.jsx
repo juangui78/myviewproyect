@@ -935,7 +935,7 @@ const App = () => {
                             <Canvas
                                 dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]}
                                 ref={objectRef}
-                                camera={{ position: [0, 5, 15], fov: 30 }}
+                                camera={{ position: [0, 3.5, 10.5], fov: 30 }}
                                 performance={{ min: 0.5 }}
                                 gl={{
                                     antialias: !(isSafariMobile || isInstagramBrowser),
