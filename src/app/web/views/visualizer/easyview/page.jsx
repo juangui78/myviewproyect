@@ -10,6 +10,8 @@ function EasyViewContent() {
     const encryptedId = searchParams.get("id");
     
     const [modelUrl, setModelUrl] = useState(null);
+    const [currentModel, setCurrentModel] = useState(null);
+    const [projectInfo, setProjectInfo] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -24,10 +26,14 @@ function EasyViewContent() {
                 const idProyect = decrypt(encryptedId);
                 const response = await axios.get(`/api/controllers/visualizer/${idProyect}`);
                 
-                if (response.data && response.data.model) {
-                    const modelLocation = response.data.model.model;
-                    if (modelLocation && modelLocation.url) {
-                        setModelUrl(modelLocation.url);
+                if (response.data) {
+                    setProjectInfo(response.data.proyect);
+                    if (response.data.model) {
+                        setCurrentModel(response.data.model);
+                        const modelLocation = response.data.model.model;
+                        if (modelLocation && modelLocation.url) {
+                            setModelUrl(modelLocation.url);
+                        }
                     }
                 }
             } catch (error) {
@@ -56,7 +62,7 @@ function EasyViewContent() {
         );
     }
 
-    return <EasyView modelUrl={modelUrl} />;
+    return <EasyView modelUrl={modelUrl} currentModel={currentModel} projectInfo={projectInfo} />;
 }
 
 export default function EasyViewPage() {

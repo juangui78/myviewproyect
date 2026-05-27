@@ -847,7 +847,15 @@ const App = () => {
                     <div className='w-full text-center text-black'>
                         <p>Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
                     </div>
-                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 flex flex-col items-end gap-3">
+                        <Link
+                            href={`/web/views/visualizer/easyview?id=${searchParams.get("id")}`}
+                            className="flex items-center justify-center gap-2 px-4 h-10 bg-black/60 backdrop-blur-md border border-white/20 rounded-full shadow-lg hover:bg-white/20 transition-all text-white"
+                            title="¿Problemas de rendimiento en el móvil? Visualizar con EasyView"
+                        >
+                            <span className="text-sm font-semibold">Visualizar con EasyView</span>
+                            <Eye className="w-5 h-5 text-white" />
+                        </Link>
                         <a
                             href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                             target="_blank"
@@ -1119,7 +1127,15 @@ const App = () => {
                                 </div>
                             }
 
-                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 flex flex-col items-end gap-3">
+                                <Link
+                                    href={`/web/views/visualizer/easyview?id=${searchParams.get("id")}`}
+                                    className="flex items-center justify-center gap-2 px-4 h-[40px] bg-black/60 backdrop-blur-md border border-white/20 rounded-full shadow-lg hover:bg-white/20 transition-all text-white"
+                                    title="¿Problemas de rendimiento en el móvil? Visualizar con EasyView"
+                                >
+                                    <span className="text-sm font-semibold">Visualizar con EasyView</span>
+                                    <Eye className="w-5 h-5 text-white" />
+                                </Link>
                                 <a
                                     href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                                     target="_blank"
@@ -1160,7 +1176,15 @@ const App = () => {
                         <p>Estamos trabajando para que disfrutes de la experiencia en este dispositivo.</p>
                         <p className="text-sm text-gray-500 mt-2">Por favor intenta en Chrome o desde un ordenador.</p>
                     </div>
-                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 flex flex-col items-end gap-3">
+                        <Link
+                            href={`/web/views/visualizer/easyview?id=${searchParams.get("id")}`}
+                            className="flex items-center justify-center gap-2 px-4 h-12 bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-white"
+                            title="¿Problemas de rendimiento en el móvil? Visualizar con EasyView"
+                        >
+                            <span className="text-sm font-semibold">Visualizar con EasyView</span>
+                            <span className="text-xl">💡</span>
+                        </Link>
                         <a
                             href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                             target="_blank"
@@ -1183,7 +1207,15 @@ const App = () => {
                         <p>Estamos trabajando para que disfrutes de la experiencia en este dispositivo.</p>
                         <p className="text-sm text-gray-500 mt-2">Por favor intenta en Chrome o desde un ordenador.</p>
                     </div>
-                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 flex flex-col items-end gap-3">
+                        <Link
+                            href={`/web/views/visualizer/easyview?id=${searchParams.get("id")}`}
+                            className="flex items-center justify-center gap-2 px-4 h-12 bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-white"
+                            title="¿Problemas de rendimiento en el móvil? Visualizar con EasyView"
+                        >
+                            <span className="text-sm font-semibold">Visualizar con EasyView</span>
+                            <span className="text-xl">💡</span>
+                        </Link>
                         <a
                             href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                             target="_blank"
