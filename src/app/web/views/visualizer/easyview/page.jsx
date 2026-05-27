@@ -8,6 +8,7 @@ import EasyView from './EasyView';
 function EasyViewContent() {
     const searchParams = useSearchParams();
     const encryptedId = searchParams.get("id");
+    const modelIndex = parseInt(searchParams.get("modelIndex") ?? "0", 10);
     
     const [modelUrl, setModelUrl] = useState(null);
     const [currentModel, setCurrentModel] = useState(null);
@@ -22,18 +23,22 @@ function EasyViewContent() {
             }
 
             try {
-                // Desencriptar el ID tal como se hace en el visualizador actual
                 const idProyect = decrypt(encryptedId);
-                const response = await axios.get(`/api/controllers/visualizer/${idProyect}`);
-                
-                if (response.data) {
-                    setProjectInfo(response.data.proyect);
-                    if (response.data.model) {
-                        setCurrentModel(response.data.model);
-                        const modelLocation = response.data.model.model;
-                        if (modelLocation && modelLocation.url) {
-                            setModelUrl(modelLocation.url);
-                        }
+
+                // Traer info del proyecto
+                const projectResponse = await axios.get(`/api/controllers/visualizer/${idProyect}`);
+                if (projectResponse.data) {
+                    setProjectInfo(projectResponse.data.proyect);
+                }
+
+                // Traer todos los modelos y seleccionar el índice correcto
+                const modelsResponse = await axios.get(`/api/controllers/models_/${idProyect}/allmodels`);
+                if (modelsResponse.data && modelsResponse.data.length > 0) {
+                    const safeIndex = Math.min(modelIndex, modelsResponse.data.length - 1);
+                    const selectedModel = modelsResponse.data[safeIndex];
+                    setCurrentModel(selectedModel);
+                    if (selectedModel?.model?.url) {
+                        setModelUrl(selectedModel.model.url);
                     }
                 }
             } catch (error) {
@@ -44,7 +49,7 @@ function EasyViewContent() {
         };
 
         fetchModel();
-    }, [encryptedId]);
+    }, [encryptedId, modelIndex]);
 
     if (loading) {
         return (
