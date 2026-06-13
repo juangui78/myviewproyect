@@ -13,12 +13,15 @@ export default async function CardsList({ searchParams }) {
   if (search === undefined) search = '';
 
   let data = [];
+  let totalProyects = 0;
 
   try {
     const idCompany = session?.user?.id_company;
     
     if (idCompany) {
       await dbConnected();
+      
+      totalProyects = await Proyect.countDocuments({ idCompany });
       
       const searchParamas = {
         _id: 1,
@@ -57,8 +60,8 @@ export default async function CardsList({ searchParams }) {
   }
 
   return (
-    <div className={`${style.fatherBoxes} min-h-[60vh]...`}>
-      <Cards proyects={data} />
+    <div className={`${style.fatherBoxes} min-h-[60vh]`}>
+      <Cards proyects={data} totalProyects={totalProyects} />
     </div>
   )
 }

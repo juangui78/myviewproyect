@@ -8,7 +8,7 @@ export const getQr = async (id) => {
 
         if (response.status === 200) { 
             return {
-                data: response.data.qrCode,
+                data: { qrCode: response.data.qrCode, urlShare: response.data.urlShare },
                 status: true
              } 
         }

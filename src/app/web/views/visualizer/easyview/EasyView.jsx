@@ -56,18 +56,48 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
       loader.load(modelUrl, (gltf) => {
         scene.add(gltf.scene);
         
-        // Centrar el modelo y ajustar la cámara dinámicamente
+        // Centrar el modelo y ajustar la cámara dinámicamente sin que quede recortada o muy lejos
         const box = new THREE.Box3().setFromObject(gltf.scene);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const fov = camera.fov * (Math.PI / 180);
-        let cameraZ = Math.abs(maxDim / 2 * Math.tan(fov * 2));
-        cameraZ *= 1.5; // Zoom out inicial
+        // Obtener radio de la esfera delimitadora para medir el tamaño real del modelo
+        const sphere = box.getBoundingSphere(new THREE.Sphere());
+        const radius = sphere.radius || Math.max(size.x, size.y, size.z) / 2;
         
-        camera.position.set(center.x, center.y, center.z + cameraZ);
-        controls.target.set(center.x, center.y, center.z);
+        // Calcular la distancia de la cámara óptima según el FOV (Vertical y Horizontal)
+        const fovRad = (camera.fov * Math.PI) / 180;
+        const aspect = camera.aspect || (window.innerWidth / window.innerHeight);
+        
+        const distY = radius / Math.sin(fovRad / 2);
+        const fovH = 2 * Math.atan(Math.tan(fovRad / 2) * aspect);
+        const distX = radius / Math.sin(fovH / 2);
+        
+        // Distancia base con un margen extra de 20% (1.2) para que no quede pegado a los bordes
+        let distance = Math.max(distY, distX) * 1.2;
+        
+        if (isNaN(distance) || distance <= 0) {
+          distance = 10;
+        }
+
+        // Ajustar dinámicamente los planos de recorte de la cámara
+        // camera.near no debe ser menor a 0.1 para evitar problemas de precisión del búfer de profundidad
+        camera.near = Math.max(0.1, radius / 100);
+        // camera.far debe cubrir todo el modelo a la distancia en la que está la cámara
+        camera.far = Math.max(1000, distance + radius * 10);
+        camera.updateProjectionMatrix();
+        
+        // Posicionar la cámara con un ángulo de perspectiva tridimensional (x, y, z)
+        // para que no apunte directamente de forma plana
+        const direction = new THREE.Vector3(1, 0.8, 1.2).normalize();
+        const cameraPosition = center.clone().add(direction.multiplyScalar(distance));
+        
+        camera.position.copy(cameraPosition);
+        controls.target.copy(center);
+        
+        // Ajustar los límites del zoom del usuario basados en la escala del objeto
+        controls.minDistance = Math.max(0.2, radius / 10);
+        controls.maxDistance = distance * 4;
         controls.update();
         
         setIsLoading(false);

@@ -16,6 +16,7 @@ import Link from "next/link";
 import style from "../web/global_components/navbar/styles/navbar.module.css";
 import Check from "../web/global_components/icons/CheckIcon";
 import InteractiveBlobs from "../InteractiveBlobs.client";
+import ContactSection from "../ContactSection.client";
 import Footer from "../web/global_components/footer/Footer";
 import TablePrices from "../tablePrices";
 
@@ -164,28 +165,37 @@ export default function InmobiliariasPage() {
               Ofrece recorridos interactivos virtuales 360° para que tus clientes exploren, conozcan y se enamoren de su lote ideal desde cualquier rincón del mundo.
             </motion.h2>
             <motion.div
-              variants={{
-                hidden: { opacity: 0, scale: 0.9 },
-                visible: { opacity: 1, scale: 1 }
-              }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-block"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex flex-wrap justify-center gap-4 mt-2"
             >
-              <Button
-                as={Link}
-                href="/web/views/login"
-                size="lg"
-                className="bg-gradient-to-r from-primary to-secondary text-black font-bold shadow-[0_0_20px_rgba(12,219,255,0.3)] hover:shadow-[0_0_35px_rgba(12,219,255,0.6)] transition-all duration-300 border border-primary/20"
-              >
-                Empezar ya
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  as={Link}
+                  href="/web/views/login"
+                  size="lg"
+                  className="bg-gradient-to-r from-primary to-secondary text-black font-bold shadow-[0_0_20px_rgba(12,219,255,0.3)] hover:shadow-[0_0_35px_rgba(12,219,255,0.6)] transition-all duration-300 border border-primary/20"
+                >
+                  Empezar ya
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  as="a"
+                  href="#contacto"
+                  size="lg"
+                  className="bg-transparent border-2 border-primary/45 text-white font-semibold hover:bg-primary/10 transition-all duration-300 shadow-[0_0_15px_rgba(12,219,255,0.1)] hover:border-primary"
+                >
+                  Solicitar Información
+                </Button>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>
 
         {/* Feature Grid / Cards */}
-        <div className="w-[90%] md:w-[70%] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 py-10">
+        <div className="w-[90%] md:w-[80%] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-10">
           {[
             {
               title: "Visitas Virtuales 24/7",
@@ -194,6 +204,10 @@ export default function InmobiliariasPage() {
             {
               title: "Captación Internacional",
               desc: "Los inversionistas internacionales pueden evaluar la topografía, linderos y entorno real en 3D, facilitando la toma de decisiones de compra a distancia."
+            },
+            {
+              title: "Evolución en el Tiempo",
+              desc: "Muestra el avance de obras y adecuación de terrenos. Los clientes pueden ver la línea de tiempo del proyecto y comparar el progreso real del lote en 3D."
             },
             {
               title: "Diferenciación de Marca",
@@ -224,13 +238,13 @@ export default function InmobiliariasPage() {
         >
           <div className="w-[90%] md:w-[70%] grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <motion.div
-              className="relative aspect-[3/4] w-full max-w-sm mx-auto glow-card-hover rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+              className="relative aspect-square w-full max-w-md md:max-w-full mx-auto glow-card-hover rounded-3xl overflow-hidden border border-white/10 shadow-2xl"
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <Image src="/images/explore.png" alt="Marketing Inmobiliario 3D" fill className="object-cover relative z-10" />
+              <Image src="/images/real_estate_3d_twin.png" alt="Marketing Inmobiliario 3D" fill className="object-cover relative z-10" />
             </motion.div>
 
             <motion.div
@@ -284,10 +298,19 @@ export default function InmobiliariasPage() {
                 <p className="text-lg text-gray-300 leading-relaxed">
                   Ofrece a tus compradores una herramienta inmersiva inigualable. Ideal para inmobiliarias independientes, constructoras y agencias de corretaje de parcelaciones.
                 </p>
-                <div className="mt-6 flex gap-4">
+                <div className="mt-6 flex flex-wrap gap-4">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button className="bg-gradient-to-r from-primary to-secondary text-black font-bold shadow-[0_0_15px_rgba(12,219,255,0.3)]" as={Link} href="/web/views/login">
                       Empezar ahora
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      as="a"
+                      href="#contacto"
+                      className="bg-transparent border-2 border-primary/45 text-white font-semibold hover:bg-primary/10 transition-all duration-300 shadow-[0_0_15px_rgba(12,219,255,0.1)] hover:border-primary"
+                    >
+                      Solicitar Información
                     </Button>
                   </motion.div>
                 </div>
@@ -404,6 +427,7 @@ export default function InmobiliariasPage() {
           </div>
         </div>
 
+        <ContactSection />
         <Footer />
       </div>
     </div>

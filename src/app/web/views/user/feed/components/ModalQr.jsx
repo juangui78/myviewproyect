@@ -9,10 +9,12 @@ const ModalQr = ({ isOpenQr, onOpenChangeQr, _id }) => {
     const [errorLoad, setErrorLoad] = useState(false)
     const [loading, setLoading] = useState(false)
     const [qrCode, setQrCode] = useState(null)
+    const [shareUrl, setShareUrl] = useState("")
 
     const initializateState = () => {
         setErrorLoad(false)
         setQrCode(null)
+        setShareUrl("")
         setLoading(false)
     }
 
@@ -29,7 +31,8 @@ const ModalQr = ({ isOpenQr, onOpenChangeQr, _id }) => {
                         return
                     }
 
-                    setQrCode(response.data)
+                    setQrCode(response.data.qrCode)
+                    setShareUrl(response.data.urlShare)
                 } 
                 catch (error) { toast.error("Se ha producido un error al cargar el código QR.") }
                 finally { 
@@ -54,6 +57,13 @@ const ModalQr = ({ isOpenQr, onOpenChangeQr, _id }) => {
         }
     }
 
+    const copyToClipboard = () => {
+        if (shareUrl) {
+            navigator.clipboard.writeText(shareUrl)
+            toast.success("Enlace copiado al portapapeles")
+        }
+    }
+
     return (
         <Modal
             backdrop={"blur"}
@@ -68,13 +78,34 @@ const ModalQr = ({ isOpenQr, onOpenChangeQr, _id }) => {
                     <>
                         <ModalHeader className="flex flex-col gap-1 border-white text-white">
                             <h1 className="font-bold text-xl">Generar QR</h1>
-                            <p className="text-sm italic">Compartir proyecto mediante un QR</p>
+                            <p className="text-sm italic">Compartir proyecto mediante un QR o enlace</p>
                         </ModalHeader>
                         <ModalBody>
-                            <div className="flex justify-center items-center">
+                            <div className="flex flex-col gap-4 justify-center items-center">
                                 {errorLoad ? <p className="text-white">Se ha producido un error al cargar el código QR.</p> : 
                                     (loading ?   <div className="h-[25vh] flex justify-center items-center "> <BlocksShuffle3 className="text-white text-6xl" /> </div> : 
-                                        <img src={qrCode} alt="qr" />
+                                        <>
+                                            <img src={qrCode} alt="qr" className="w-48 h-48 rounded-lg border border-white/10 p-2 bg-white" />
+                                            {shareUrl && (
+                                                <div className="w-full flex flex-col gap-1.5 mt-2">
+                                                    <label className="text-xs text-slate-300 font-medium">Enlace del proyecto:</label>
+                                                    <div className="flex gap-2 w-full">
+                                                        <input 
+                                                            type="text" 
+                                                            readOnly 
+                                                            value={shareUrl} 
+                                                            className="flex-1 bg-[#1a1a1a] text-white border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#0CDBFF] select-all overflow-ellipsis"
+                                                        />
+                                                        <Button 
+                                                            className="bg-[#0CDBFF] text-black font-semibold rounded-lg px-4 py-2 hover:bg-[#00c2e0] transition-colors"
+                                                            onClick={copyToClipboard}
+                                                        >
+                                                            Copiar
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
                                     )
                                 }
                             </div>

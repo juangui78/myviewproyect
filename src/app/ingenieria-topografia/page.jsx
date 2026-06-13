@@ -16,6 +16,7 @@ import Link from "next/link";
 import style from "../web/global_components/navbar/styles/navbar.module.css";
 import Check from "../web/global_components/icons/CheckIcon";
 import InteractiveBlobs from "../InteractiveBlobs.client";
+import ContactSection from "../ContactSection.client";
 import Footer from "../web/global_components/footer/Footer";
 import TablePrices from "../tablePrices";
 
@@ -164,28 +165,37 @@ export default function IngenieriaTopografiaPage() {
               Modelos 3D y ortomosaicos georreferenciados para levantamientos técnicos, curvas de nivel y planificación vial con tecnología drone avanzada.
             </motion.h2>
             <motion.div
-              variants={{
-                hidden: { opacity: 0, scale: 0.9 },
-                visible: { opacity: 1, scale: 1 }
-              }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="inline-block"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex flex-wrap justify-center gap-4 mt-2"
             >
-              <Button
-                as={Link}
-                href="/web/views/login"
-                size="lg"
-                className="bg-gradient-to-r from-primary to-secondary text-black font-bold shadow-[0_0_20px_rgba(12,219,255,0.3)] hover:shadow-[0_0_35px_rgba(12,219,255,0.6)] transition-all duration-300 border border-primary/20"
-              >
-                Empezar ya
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  as={Link}
+                  href="/web/views/login"
+                  size="lg"
+                  className="bg-gradient-to-r from-primary to-secondary text-black font-bold shadow-[0_0_20px_rgba(12,219,255,0.3)] hover:shadow-[0_0_35px_rgba(12,219,255,0.6)] transition-all duration-300 border border-primary/20"
+                >
+                  Empezar ya
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  as="a"
+                  href="#contacto"
+                  size="lg"
+                  className="bg-transparent border-2 border-primary/45 text-white font-semibold hover:bg-primary/10 transition-all duration-300 shadow-[0_0_15px_rgba(12,219,255,0.1)] hover:border-primary"
+                >
+                  Solicitar Información
+                </Button>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>
 
         {/* Feature Grid */}
-        <div className="w-[90%] md:w-[70%] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 py-10">
+        <div className="w-[90%] md:w-[80%] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-10">
           {[
             {
               title: "Exportación CAD/GIS",
@@ -198,6 +208,10 @@ export default function IngenieriaTopografiaPage() {
             {
               title: "Modelos de Elevación (DEM)",
               desc: "Generación automatizada de curvas de nivel, mapas de pendientes y modelado digital de elevaciones (DEM) para drenajes y planeación de laderas."
+            },
+            {
+              title: "Historial y Seguimiento 3D",
+              desc: "Realiza un seguimiento cronológico y preciso del movimiento de tierras y avance de la obra. Compara nubes de puntos y modelos entre diferentes fechas de escaneo."
             }
           ].map((item, index) => (
             <motion.div
@@ -224,13 +238,13 @@ export default function IngenieriaTopografiaPage() {
         >
           <div className="w-[90%] md:w-[70%] grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <motion.div
-              className="relative aspect-[3/4] w-full max-w-sm mx-auto glow-card-hover rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+              className="relative aspect-square w-full max-w-md md:max-w-full mx-auto glow-card-hover rounded-3xl overflow-hidden border border-white/10 shadow-2xl"
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <Image src="/images/explore.png" alt="Ingeniería y Topografía 3D" fill className="object-cover relative z-10" />
+              <Image src="/images/drone_topography_map.png" alt="Ingeniería y Topografía 3D" fill className="object-cover relative z-10" />
             </motion.div>
 
             <motion.div
@@ -284,10 +298,19 @@ export default function IngenieriaTopografiaPage() {
                 <p className="text-lg text-gray-300 leading-relaxed">
                   Lleva tus estudios topográficos al estándar digital tridimensional interactivo. Compatible con proyectos de parcelación, desarrollo urbano e infraestructura vial.
                 </p>
-                <div className="mt-6 flex gap-4">
+                <div className="mt-6 flex flex-wrap gap-4">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button className="bg-gradient-to-r from-primary to-secondary text-black font-bold shadow-[0_0_15px_rgba(12,219,255,0.3)]" as={Link} href="/web/views/login">
                       Empezar ahora
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button
+                      as="a"
+                      href="#contacto"
+                      className="bg-transparent border-2 border-primary/45 text-white font-semibold hover:bg-primary/10 transition-all duration-300 shadow-[0_0_15px_rgba(12,219,255,0.1)] hover:border-primary"
+                    >
+                      Solicitar Información
                     </Button>
                   </motion.div>
                 </div>
@@ -404,6 +427,7 @@ export default function IngenieriaTopografiaPage() {
           </div>
         </div>
 
+        <ContactSection />
         <Footer />
       </div>
     </div>
