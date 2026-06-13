@@ -1,4 +1,5 @@
 "use client";
+import { useState, useEffect } from "react";
 import {
   Navbar,
   NavbarBrand,
@@ -9,28 +10,33 @@ import {
   NavbarMenuToggle,
   Button,
   Image,
-  Card,
-  CardBody,
-  CardFooter,
-  CardHeader,
 } from "@heroui/react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import axios from "axios";
 import style from "./web/global_components/navbar/styles/navbar.module.css";
-import Check from "./web/global_components/icons/CheckIcon";
 import Whatsapp from "./web/global_components/icons/Whatsapp";
 
 import SectionOne from "./sectionOne.client";
-import TablePrices from "./tablePrices";
 import InteractiveBlobs from "./InteractiveBlobs.client";
 import Footer from "./web/global_components/footer/Footer";
 
 axios.defaults.baseURL = "http://localhost:3000/";
 
+const words = ["parcelas", "terrenos"];
+
 export default function Home() {
+  const [wordIndex, setWordIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWordIndex((prevIndex) => (prevIndex + 1) % words.length);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="bg-[#02121B] bg-[url(/images/op11.webp)] bg-no-repeat bg-cover overflow-hidden h-full min-h-screen text-foreground relative">
+    <div className="bg-[#02121B] bg-[url(/images/op11.webp)] bg-no-repeat bg-cover bg-grid-pattern overflow-hidden h-full min-h-screen text-foreground relative">
       <InteractiveBlobs />
 
       <div className="overflow-y-auto overflow-x-hidden h-[100vh] scrollbar relative z-10">
@@ -46,29 +52,38 @@ export default function Home() {
 
           <NavbarContent className="sm:hidden pr-3" justify="center">
             <NavbarBrand>
-              <Image
-                src="/logos/completo-fullblanco.png"
-                className="object-cover"
-                alt="logo"
-                width={150}
-                height={150}
-              />
+              <Link href="/">
+                <Image
+                  src="/logos/completo-fullblanco.png"
+                  className="object-cover cursor-pointer"
+                  alt="logo"
+                  width={150}
+                  height={150}
+                />
+              </Link>
             </NavbarBrand>
           </NavbarContent>
 
-          <NavbarContent className="hidden sm:flex gap-4" justify="center">
+          <NavbarContent className="hidden sm:flex gap-6" justify="center">
             <NavbarBrand>
-              <Image
-                src="/logos/completo-fullblanco.png"
-                className="object-cover"
-                alt="logo"
-                width={150}
-                height={150}
-              />
+              <Link href="/">
+                <Image
+                  src="/logos/completo-fullblanco.png"
+                  className="object-cover cursor-pointer"
+                  alt="logo"
+                  width={150}
+                  height={150}
+                />
+              </Link>
             </NavbarBrand>
             <NavbarItem>
-              <Link className="text-white" href="#precios">
-                Precios
+              <Link className="text-white font-medium hover:text-primary transition-colors" href="/inmobiliarias">
+                Inmobiliarias
+              </Link>
+            </NavbarItem>
+            <NavbarItem>
+              <Link className="text-white font-medium hover:text-primary transition-colors" href="/ingenieria-topografia">
+                Ingeniería y Topografía
               </Link>
             </NavbarItem>
           </NavbarContent>
@@ -87,85 +102,88 @@ export default function Home() {
             </NavbarItem>
           </NavbarContent>
 
-          <NavbarMenu>
-            <NavbarMenuItem>
-              <Link className="w-full text-white" href="#precios" size="lg">
-                Precios
+          <NavbarMenu className="bg-[#02121B]/95 backdrop-blur-md border-t border-white/10">
+            <NavbarMenuItem className="pt-4">
+              <Link className="w-full text-white py-2 border-b border-white/5 hover:text-primary transition-colors" href="/inmobiliarias" size="lg">
+                Inmobiliarias
               </Link>
             </NavbarMenuItem>
-
+            <NavbarMenuItem>
+              <Link className="w-full text-white py-2 hover:text-primary transition-colors" href="/ingenieria-topografia" size="lg">
+                Ingeniería y Topografía
+              </Link>
+            </NavbarMenuItem>
           </NavbarMenu>
         </Navbar>
 
-        <div className="flex flex-col items-center justify-center min-h-[70vh] w-full mx-auto relative overflow-hidden">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: {
-                  staggerChildren: 0.1,
-                  delayChildren: 0.3
-                }
-              }
-            }}
-            className="w-[80%] max-w-4xl text-center z-10"
-          >
-            <motion.h1
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 }
-              }}
-              className="text-5xl md:text-7xl font-bold mb-6 tracking-tighter"
-            >
-              Transforma parcelaciones en <span className="text-gradient">modelos 3D</span>
-            </motion.h1>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] py-12 md:py-20 w-full mx-auto relative overflow-hidden">
+          <div className="w-[90%] max-w-5xl text-center z-10">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tighter leading-tight flex flex-wrap justify-center items-center gap-x-3 gap-y-2">
+              <span className="text-white">Transforma</span>
+              <span className="relative inline-flex justify-center items-center h-[1.2em] w-[200px] md:w-[300px] overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={wordIndex}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -20, opacity: 0 }}
+                    transition={{ duration: 0.35, ease: "easeInOut" }}
+                    className="absolute text-gradient text-glow-animated px-2"
+                  >
+                    {words[wordIndex]}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
+              <span className="text-white">en</span>
+              <span className="text-gradient text-glow-animated">modelos 3D</span>
+            </h1>
             <motion.h2
-              variants={{
-                hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0 }
-              }}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xl md:text-2xl text-gray-400 mb-8 max-w-2xl mx-auto"
             >
               Fotogrametría avanzada para construir, planificar y gestionar proyectos con eficiencia del futuro.
             </motion.h2>
             <motion.div
-              variants={{
-                hidden: { opacity: 0, scale: 0.9 },
-                visible: { opacity: 1, scale: 1 }
-              }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-block"
             >
               <Button
+                as={Link}
+                href="/web/views/login"
                 size="lg"
-                className="bg-gradient-to-r from-primary to-secondary text-black font-bold shadow-lg shadow-primary/50"
+                className="bg-gradient-to-r from-primary to-secondary text-black font-bold shadow-[0_0_20px_rgba(12,219,255,0.3)] hover:shadow-[0_0_35px_rgba(12,219,255,0.6)] transition-all duration-300 border border-primary/20"
               >
                 Empezar ya
               </Button>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
 
         {/* sección dos del landing con framer motion */}
         <SectionOne />
-
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="w-[100%] min-h-[75vh] mx-auto flex justify-center items-center my-20"
+          className="w-full py-10 md:py-14 mx-auto flex justify-center items-center"
         >
           <div className="w-[90%] md:w-[70%] grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
             <motion.div
-              className="glass-card p-8 rounded-2xl"
-              initial={{ opacity: 0, x: -50 }}
+              className="glass-card glow-card-hover p-8 rounded-2xl"
+              initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
               <h1 className="font-bold text-3xl italic text-left bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-6">
-                Evolución en el Tiempo: <span className="text-primary not-italic">Modelos 3D Históricos</span>
+                Evolución en el Tiempo: <span className="text-primary not-italic text-glow-animated">Modelos 3D Históricos</span>
               </h1>
               <p className="pt-6 text-lg text-gray-300 leading-relaxed">
                 Visualiza la transformación de terrenos, edificaciones y
@@ -190,153 +208,158 @@ export default function Home() {
             </motion.div>
 
             <motion.div
-              className="relative aspect-video w-full rounded-2xl overflow-hidden glass-card flex items-center justify-center border border-white/10"
-              initial={{ opacity: 0, scale: 0.9 }}
+              className="relative aspect-video w-full rounded-2xl overflow-hidden glass-card glow-card-hover flex items-center justify-center border border-white/10"
+              initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.3 }}
             >
               <div className="absolute -inset-4 bg-gradient-to-r from-secondary to-primary opacity-20 blur-2xl rounded-full"></div>
               <div className="z-10 text-center p-6">
-                <span className="text-6xl mb-4 block">📼</span>
-                <p className="text-gray-400 text-sm">VIDEO DEMOSTRACION</p>
+                <span className="text-6xl mb-4 block select-none">📼</span>
+                <p className="text-gray-400 text-sm font-semibold tracking-wider">VIDEO DEMOSTRACION</p>
               </div>
             </motion.div>
           </div>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.5 }}
-          className="w-[100%] min-h-[25vh] mx-auto flex justify-center items-center my-20"
+          className="w-full py-10 md:py-14 mx-auto flex justify-center items-center"
         >
-          <div className="w-[90%] md:w-[70%] glass-card p-10 rounded-3xl relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/20 blur-[100px] rounded-full pointer-events-none"></div>
+          <div className="w-[90%] md:w-[70%] glass-card glow-card-hover p-10 rounded-3xl relative overflow-hidden bg-gradient-to-br from-white/5 to-white/0">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] rounded-full pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 blur-[100px] rounded-full pointer-events-none"></div>
 
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
               <div className="flex-1">
                 <h1 className="font-bold text-4xl text-left bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-4">
-                  Aprovéchate del <span className="text-primary">marketing 3D</span>
+                  Aprovéchate del <span className="text-primary text-glow-animated">marketing 3D</span>
                 </h1>
                 <p className="text-lg text-gray-300 leading-relaxed">
                   Comparte tus modelos 3D en redes sociales, páginas web y
                   aplicaciones móviles. <span className="text-white font-medium">Visualización interactiva</span> que cautiva a tus clientes desde el primer momento.
                 </p>
                 <div className="mt-6 flex gap-4">
-                  <Button color="primary" variant="shadow" className="font-bold" as={Link} href="/web/views/login">
-                    Empezar ahora
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button className="bg-gradient-to-r from-primary to-secondary text-black font-bold shadow-[0_0_15px_rgba(12,219,255,0.3)]" as={Link} href="/web/views/login">
+                      Empezar ahora
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
-              <div className="flex-1 flex justify-center">
-                {/* Placeholder for a marketing icon or graphic if available, reusing existing image style or leaving as abstract 3D element */}
-                <div className="w-full h-[200px] rounded-2xl bg-gradient-to-tr from-gray-900 to-black border border-white/10 flex items-center justify-center relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <span className="text-6xl group-hover:scale-110 transition-transform duration-500">🚀</span>
-                </div>
+              <div className="flex-1 flex justify-center w-full">
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  className="w-full h-[200px] rounded-2xl bg-gradient-to-tr from-gray-900/80 to-black border border-white/10 flex items-center justify-center relative overflow-hidden group"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <span className="text-6xl group-hover:scale-110 transition-transform duration-500 select-none">🚀</span>
+                </motion.div>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Pricing Section Refactored */}
-        <div id="precios" className="w-full flex flex-col justify-center my-20">
-          <div className="w-[90%] md:w-[70%] mx-auto pt-[80px] text-center">
-            <h1 className="text-5xl font-bold mb-4 text-gradient">Planes</h1>
-            <p className="text-gray-400 mb-2">Convierte tus espacios en modelos digitales detallados.</p>
-            <p className="text-gray-400 mb-2">Ahorra tiempo y dinero.</p>
+        {/* Servicios - Niche Navigation Cards */}
+        <div className="w-full py-10 md:py-14">
+          <div className="w-[90%] md:w-[70%] mx-auto text-center mb-10">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-5xl font-bold mb-4 text-gradient"
+            >
+              Nuestros Servicios
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-gray-400 max-w-2xl mx-auto"
+            >
+              Soluciones especializadas de fotogrametría y modelado 3D adaptadas a tu industria
+            </motion.p>
           </div>
-
-          <div className="w-[90%] xl:w-[80%] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-[60px] mb-[100px]">
-            {[
-              {
-                name: "Static",
-                price: "$1.232.000",
-                monthly: "$205.333",
-                features: ["1 escaneo 3D único", "Calidad: 250.000 vertices", "Área: 500m² - 50.000m²"],
-                highlight: false
-              },
-              {
-                name: "Basic",
-                price: "$2.432.000",
-                monthly: "$405.333",
-                features: ["1 escaneo 3D", "Actualización cada 2 meses", "Calidad: 250.000 vertices", "Área: 500m² - 50.000m²"],
-                highlight: true
-              },
-              {
-                name: "Plus",
-                price: "$4.172.800",
-                monthly: "$695.467",
-                features: ["1 escaneo 3D", "Actualización cada 2 meses", "Calidad: 500.000 vertices", "Área: 50.000m² - 100.000m²", "Alcance: 250.000 views", "Visitas: 9.500"],
-                highlight: false
-              },
-              {
-                name: "Pro",
-                price: "$6.228.480",
-                monthly: "$1.038.080",
-                features: ["1 escaneo 3D", "Actualización cada 2 meses", "Calidad: 750.000 vertices", "Área: 100.000m² - 200.000m²", "Alcance: 330.000 views", "Visitas: 12.000"],
-                highlight: false
-              }
-            ].map((plan, index) => (
-              <motion.div
-                key={plan.name}
-                whileHover={{ y: -10 }}
-                className={`flex flex-col p-6 rounded-2xl border ${plan.highlight ? 'border-primary shadow-[0_0_30px_rgba(0,240,255,0.3)]' : 'border-white/10'} glass-card relative overflow-hidden`}
-              >
-                {plan.highlight && (
-                  <div className="absolute top-0 right-0 bg-primary text-black text-xs font-bold px-3 py-1 rounded-bl-lg">
-                    POPULAR
-                  </div>
-                )}
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold mb-1">{plan.name}</h2>
-                  <p className="text-sm text-gray-400">6 meses</p>
-                  <div className="mt-4">
-                    <h3 className="text-2xl font-bold">{plan.price} <span className="text-sm font-normal">COP</span></h3>
-                    <p className="text-xs text-gray-500 mt-1">{plan.monthly} COP por mes</p>
-                  </div>
-                </div>
-
-                <div className="flex-grow mb-6">
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2 text-sm text-gray-300">
-                        <Check className="text-primary w-4 h-4 flex-shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="mt-auto">
-                  <div className="w-full text-center mb-4">
-                    <p className="text-xs text-gray-400">
-                      Empieza hoy y obtén un 20% de{" "}
-                      <span className="text-primary font-bold underline">descuento</span>
-                    </p>
-                  </div>
-                  <Button
-                    as={Link}
-                    href="/web/views/login"
-                    className={`w-full ${plan.highlight ? 'bg-primary text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                  >
-                    Contactar
-                  </Button>
-                </div>
+          <div className="w-[90%] md:w-[70%] mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Inmobiliarias Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              whileHover={{ y: -8 }}
+              className="glass-card glow-card-hover p-8 rounded-3xl border border-white/10 relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-primary/20 transition-all duration-700"></div>
+              <span className="text-5xl mb-6 block select-none">🏡</span>
+              <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Inmobiliarias</h2>
+              <p className="text-gray-400 mb-6 leading-relaxed">
+                Vende lotes y proyectos más rápido con recorridos virtuales 3D interactivos. Atrae clientes internacionales y diferénciate con marketing inmersivo.
+              </p>
+              <ul className="space-y-2 mb-8 text-sm text-gray-400">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0"></span>
+                  Visitas virtuales 24/7
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-secondary rounded-full flex-shrink-0"></span>
+                  Captación de clientes internacionales
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0"></span>
+                  Marketing inmobiliario 3D
+                </li>
+              </ul>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button as={Link} href="/inmobiliarias" className="bg-gradient-to-r from-primary to-secondary text-black font-bold shadow-[0_0_15px_rgba(12,219,255,0.3)]">
+                  Ver planes y soluciones →
+                </Button>
               </motion.div>
-            ))}
-          </div>
+            </motion.div>
 
-          {/* Tabla Title */}
-          <div className="w-[90%] md:w-[70%] mx-auto pt-[40px] text-center">
-            <h1 className="text-4xl font-bold mb-4 text-gradient">Tabla de Precios</h1>
-            <p className="text-gray-400">Compara detalladamente nuestros planes</p>
-          </div>
-          <div className="w-[90%] xl:w-[70%] h-[60%] mx-auto mt-[35px] mb-[100px]">
-            <TablePrices />
+            {/* Ingeniería y Topografía Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              whileHover={{ y: -8 }}
+              className="glass-card glow-card-hover p-8 rounded-3xl border border-white/10 relative overflow-hidden group"
+            >
+              <div className="absolute top-0 right-0 w-48 h-48 bg-secondary/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-secondary/20 transition-all duration-700"></div>
+              <span className="text-5xl mb-6 block select-none">📐</span>
+              <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Ingeniería y Topografía</h2>
+              <p className="text-gray-400 mb-6 leading-relaxed">
+                Levantamientos aéreos de alta precisión con fotogrametría avanzada. Genera curvas de nivel, modelos DEM y exporta a CAD/GIS.
+              </p>
+              <ul className="space-y-2 mb-8 text-sm text-gray-400">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0"></span>
+                  Exportación CAD/GIS compatible
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-secondary rounded-full flex-shrink-0"></span>
+                  Cálculos volumétricos precisos
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0"></span>
+                  Modelos de elevación (DEM)
+                </li>
+              </ul>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button as={Link} href="/ingenieria-topografia" className="bg-gradient-to-r from-primary to-secondary text-black font-bold shadow-[0_0_15px_rgba(12,219,255,0.3)]">
+                  Ver planes y soluciones →
+                </Button>
+              </motion.div>
+            </motion.div>
           </div>
         </div>
+
         <Footer />
       </div>
     </div>

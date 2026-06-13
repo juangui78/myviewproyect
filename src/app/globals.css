@@ -51,27 +51,23 @@ body {
 
   /* Estiliza la scrollbar en navegadores WebKit (Chrome, Edge, Safari) */
   .scrollbar::-webkit-scrollbar {
-    width: 8px;
-    /* Ancho de la scrollbar */
-    height: 8px;
-    /* Alto en caso de scroll horizontal */
+    width: 6px;
+    height: 6px;
   }
 
   .scrollbar::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    /* Color del fondo */
+    background: #030D1C;
     border-radius: 10px;
   }
 
   .scrollbar::-webkit-scrollbar-thumb {
-    background: #888;
-    /* Color del thumb (barra de desplazamiento) */
+    background: rgba(12, 219, 255, 0.2);
     border-radius: 10px;
+    border: 1px solid rgba(12, 219, 255, 0.1);
   }
 
   .scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #555;
-    /* Color al pasar el mouse */
+    background: rgba(12, 219, 255, 0.4);
   }
 }
 
@@ -131,4 +127,59 @@ body {
   -ms-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-}
+}
+
+/* Patrón de cuadrícula técnica de fondo de alto rendimiento */
+.bg-grid-pattern {
+  background-size: 60px 60px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+}
+
+/* Efecto de borde degradado e iluminación interna interactiva */
+.glow-card-hover {
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glow-card-hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(135deg, rgba(12, 219, 255, 0.05), rgba(0, 198, 98, 0.05));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  transition: background 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glow-card-hover:hover::before {
+  background: linear-gradient(135deg, rgba(12, 219, 255, 0.5), rgba(0, 198, 98, 0.5));
+}
+
+.glow-card-hover:hover {
+  box-shadow: 
+    0 20px 40px -15px rgba(12, 219, 255, 0.1), 
+    0 0 30px -5px rgba(0, 198, 98, 0.05);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* Text glow keyframe and utility */
+@keyframes text-glow-pulse {
+  0%, 100% {
+    text-shadow: 0 0 15px rgba(12, 219, 255, 0.2);
+  }
+  50% {
+    text-shadow: 0 0 30px rgba(12, 219, 255, 0.5), 0 0 10px rgba(0, 198, 98, 0.3);
+  }
+}
+
+.text-glow-animated {
+  animation: text-glow-pulse 4s infinite ease-in-out;
+}
+
