@@ -24,7 +24,7 @@ import Footer from "./web/global_components/footer/Footer";
 
 axios.defaults.baseURL = "http://localhost:3000/";
 
-const words = ["parcelas", "terrenos"];
+const words = ["parcelas", "terrenos", "obras"];
 
 export default function Home() {
   const [wordIndex, setWordIndex] = useState(0);
@@ -146,7 +146,8 @@ export default function Home() {
             <div className="w-full lg:w-[40%] flex flex-col items-center lg:items-start">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tighter leading-tight flex flex-wrap justify-center lg:justify-start items-center gap-x-3 gap-y-2">
                 <span className="text-white">Transforma</span>
-                <span className="relative inline-flex justify-center lg:justify-start items-center h-[1.2em] w-[200px] md:w-[260px] lg:w-[230px] overflow-hidden">
+                <span className="relative inline-flex justify-center lg:justify-start items-center h-[1.2em] overflow-hidden">
+                  <span className="invisible pointer-events-none select-none">terrenos</span>
                   <AnimatePresence mode="wait">
                     <motion.span
                       key={wordIndex}
@@ -154,14 +155,16 @@ export default function Home() {
                       animate={{ y: 0, opacity: 1 }}
                       exit={{ y: -20, opacity: 0 }}
                       transition={{ duration: 0.35, ease: "easeInOut" }}
-                      className="absolute text-gradient text-glow-animated left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 pl-0 pr-2"
+                      className="absolute text-gradient text-glow-animated left-0 right-0 text-center lg:text-left pl-0 pr-2"
                     >
                       {words[wordIndex]}
                     </motion.span>
                   </AnimatePresence>
                 </span>
-                <span className="text-white">en</span>
-                <span className="text-gradient text-glow-animated">modelos 3D</span>
+                <span className="inline-flex items-center gap-x-3">
+                  <span className="text-white">en</span>
+                  <span className="text-gradient text-glow-animated">modelos 3D</span>
+                </span>
               </h1>
               <motion.h2
                 initial={{ opacity: 0, y: 15 }}
