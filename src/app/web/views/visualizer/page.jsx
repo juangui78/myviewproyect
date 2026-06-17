@@ -1,14 +1,15 @@
 'use client'
 import React, { forwardRef } from 'react';
 import { Canvas, useThree } from "@react-three/fiber";
-import { Environment, OrbitControls, useProgress } from "@react-three/drei";
+import { Environment, OrbitControls, useProgress, TransformControls } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { Suspense, useEffect } from "react";
 import { useState } from "react";
-import { Button, Spinner, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
+import { Button, Spinner, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input } from "@nextui-org/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
+import { upload360PhotoAction } from "../user/feed/actions/uploadImage";
 import Marker from "./components/markers/Markers";
 import Marker360 from './components/markers/Marker360';
 import ClickHandler from "./components/clickhandler/ClickHandler";
@@ -141,11 +142,22 @@ const App = () => {
     const [isUserControlling, setIsUserControlling] = useState(false);
     const [lastCameraView, setLastCameraView] = useState(0);
     const orbitControlsRef = React.useRef();
+    const transformControlsRef = React.useRef();
+    const selectedMarkerRef = React.useRef();
     const [background360, setBackground360] = useState(null);
     const [isSwitchingModel, setIsSwitchingModel] = useState(false);
     const [isWireframe, setIsWireframe] = useState(false);
     const [isElevationMode, setIsElevationMode] = useState(false);
     const [heightBounds, setHeightBounds] = useState({ min: 0, max: 1 });
+    const [isEditingMode, setIsEditingMode] = useState(false);
+    const [editMarkerType, setEditMarkerType] = useState('area');
+    const [originalTerrains, setOriginalTerrains] = useState([]);
+    const [originalView360Markers, setOriginalView360Markers] = useState([]);
+    const [isAdd360ModalOpen, setIsAdd360ModalOpen] = useState(false);
+    const [pending360Position, setPending360Position] = useState(null);
+    const [new360Label, setNew360Label] = useState("");
+    const [new360File, setNew360File] = useState(null);
+    const [isUploading360, setIsUploading360] = useState(false);
 
     // Función profunda para liberar RAM / VRAM de ThreeJS
     const disposeGLTF = (currentGltf) => {
@@ -735,8 +747,14 @@ const App = () => {
                 view360Markers: view360Markers,
             });
             console.log('Terrenos guardados:', response.data);
+            setOriginalTerrains(allTerrains);
+            setOriginalView360Markers(view360Markers);
+            setIsEditingMode(false);
+            setEditMarkersMode(false);
+            return response.data;
         } catch (error) {
             console.error('Error al guardar los terrenos:', error);
+            throw error;
         }
     };
 
@@ -750,6 +768,306 @@ const App = () => {
             }
         );
     };
+
+    const handleToggleEditingMode = () => {
+        if (!isEditingMode) {
+            setOriginalTerrains(allTerrains);
+            setOriginalView360Markers(view360Markers);
+            setIsEditingMode(true);
+            setEditMarkersMode(false);
+            setEditMarkerType('area');
+            setAddView360Mode(false);
+        } else {
+            handleCancelEditing();
+        }
+    };
+
+    const handleCancelEditing = () => {
+        if (window.confirm("¿Deseas descartar los cambios no guardados?")) {
+            setTerrains(originalTerrains);
+            setAllTerrains(originalTerrains);
+            setView360Markers(originalView360Markers);
+            setCurrentTerrainMarkers([]);
+            setMarkers([]);
+            setIsEditingMode(false);
+            setEditMarkersMode(false);
+        }
+    };
+
+    const handleSetEditMarkerType = (type) => {
+        setEditMarkerType(type);
+        setAddView360Mode(type === '360');
+        setCurrentTerrainMarkers([]);
+        setMarkers([]);
+    };
+
+    const handleAddView360Marker = (position) => {
+        setPending360Position(position);
+        setNew360Label("Vista 360");
+        setNew360File(null);
+        setIsAdd360ModalOpen(true);
+    };
+
+    const handleSave360Marker = async () => {
+        if (!new360File) {
+            alert("Por favor selecciona una imagen 360");
+            return;
+        }
+
+        setIsUploading360(true);
+        try {
+            const formData = new FormData();
+            formData.append("image", new360File);
+
+            const uploadRes = await upload360PhotoAction(idProyect, formData);
+            if (uploadRes.success) {
+                const newMarker = {
+                    id: Date.now(),
+                    position: pending360Position,
+                    photo360: uploadRes.url,
+                    label: new360Label || "Vista 360",
+                };
+
+                setView360Markers((prev) => [...prev, newMarker]);
+                setIsAdd360ModalOpen(false);
+                toast.success("Marcador 360 añadido temporalmente.");
+            } else {
+                alert("Error al subir la imagen 360: " + uploadRes.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error al guardar el marcador 360");
+        } finally {
+            setIsUploading360(false);
+        }
+    };
+
+    const getSelectedMarkerItem = () => {
+        if (!selectedMarker) return null;
+        const m360 = view360Markers.find(m => m.id === selectedMarker);
+        if (m360) return { item: m360, type: '360' };
+        
+        const mArea = currentTerrainMarkers.find(m => m.id === selectedMarker);
+        if (mArea) return { item: mArea, type: 'area' };
+
+        // Buscar en terrenos guardados
+        for (const terrain of terrains) {
+            const mTerrain = terrain.markers.find(m => m.id === selectedMarker);
+            if (mTerrain) {
+                return { item: mTerrain, type: 'terrain-marker', terrainId: terrain.id };
+            }
+        }
+        
+        return null;
+    };
+    
+    const selectedInfo = getSelectedMarkerItem();
+
+    const handleUpdateMarkerPosition = (axis, value) => {
+        if (!selectedMarker || !selectedInfo) return;
+        
+        if (axis === 'all') {
+            const newPos = value;
+            if (selectedInfo.type === '360') {
+                setView360Markers(prev => prev.map(m => m.id === selectedMarker ? { ...m, position: newPos } : m));
+            } else if (selectedInfo.type === 'area') {
+                setCurrentTerrainMarkers(prev => prev.map(m => m.id === selectedMarker ? { ...m, position: newPos } : m));
+                setMarkers(prev => prev.map(m => m.id === selectedMarker ? { ...m, position: newPos } : m));
+            } else if (selectedInfo.type === 'terrain-marker') {
+                setTerrains(prev => prev.map(t => {
+                    if (t.id === selectedInfo.terrainId) {
+                        return {
+                            ...t,
+                            markers: t.markers.map(m => m.id === selectedMarker ? { ...m, position: newPos } : m)
+                        };
+                    }
+                    return t;
+                }));
+                setAllTerrains(prev => prev.map(t => {
+                    if (t.id === selectedInfo.terrainId) {
+                        return {
+                            ...t,
+                            markers: t.markers.map(m => m.id === selectedMarker ? { ...m, position: newPos } : m)
+                        };
+                    }
+                    return t;
+                }));
+            }
+            return;
+        }
+
+        const numericValue = parseFloat(value);
+        if (isNaN(numericValue)) return;
+        
+        if (selectedInfo.type === '360') {
+            setView360Markers(prev => prev.map(m => {
+                if (m.id === selectedMarker) {
+                    const newPos = [...m.position];
+                    if (axis === 'x') newPos[0] = numericValue;
+                    if (axis === 'y') newPos[1] = numericValue;
+                    if (axis === 'z') newPos[2] = numericValue;
+                    return { ...m, position: newPos };
+                }
+                return m;
+            }));
+        } else if (selectedInfo.type === 'area') {
+            setCurrentTerrainMarkers(prev => prev.map(m => {
+                if (m.id === selectedMarker) {
+                    const newPos = [...m.position];
+                    if (axis === 'x') newPos[0] = numericValue;
+                    if (axis === 'y') newPos[1] = numericValue;
+                    if (axis === 'z') newPos[2] = numericValue;
+                    return { ...m, position: newPos };
+                }
+                return m;
+            }));
+            setMarkers(prev => prev.map(m => {
+                if (m.id === selectedMarker) {
+                    const newPos = [...m.position];
+                    if (axis === 'x') newPos[0] = numericValue;
+                    if (axis === 'y') newPos[1] = numericValue;
+                    if (axis === 'z') newPos[2] = numericValue;
+                    return { ...m, position: newPos };
+                }
+                return m;
+            }));
+        } else if (selectedInfo.type === 'terrain-marker') {
+            setTerrains(prev => prev.map(t => {
+                if (t.id === selectedInfo.terrainId) {
+                    return {
+                        ...t,
+                        markers: t.markers.map(m => {
+                            if (m.id === selectedMarker) {
+                                const newPos = [...m.position];
+                                if (axis === 'x') newPos[0] = numericValue;
+                                if (axis === 'y') newPos[1] = numericValue;
+                                if (axis === 'z') newPos[2] = numericValue;
+                                return { ...m, position: newPos };
+                            }
+                            return m;
+                        })
+                    };
+                }
+                return t;
+            }));
+            setAllTerrains(prev => prev.map(t => {
+                if (t.id === selectedInfo.terrainId) {
+                    return {
+                        ...t,
+                        markers: t.markers.map(m => {
+                            if (m.id === selectedMarker) {
+                                const newPos = [...m.position];
+                                if (axis === 'x') newPos[0] = numericValue;
+                                if (axis === 'y') newPos[1] = numericValue;
+                                if (axis === 'z') newPos[2] = numericValue;
+                                return { ...m, position: newPos };
+                            }
+                            return m;
+                        })
+                    };
+                }
+                return t;
+            }));
+        }
+    };
+
+    const handleUpdateMarkerLabel = (label) => {
+        if (!selectedMarker || !selectedInfo) return;
+        if (selectedInfo.type === '360') {
+            setView360Markers(prev => prev.map(m => m.id === selectedMarker ? { ...m, label } : m));
+        } else if (selectedInfo.type === 'area') {
+            setCurrentTerrainMarkers(prev => prev.map(m => m.id === selectedMarker ? { ...m, label } : m));
+            setMarkers(prev => prev.map(m => m.id === selectedMarker ? { ...m, label } : m));
+        } else if (selectedInfo.type === 'terrain-marker') {
+            setTerrains(prev => prev.map(t => {
+                if (t.id === selectedInfo.terrainId) {
+                    return {
+                        ...t,
+                        markers: t.markers.map(m => m.id === selectedMarker ? { ...m, label } : m)
+                    };
+                }
+                return t;
+            }));
+            setAllTerrains(prev => prev.map(t => {
+                if (t.id === selectedInfo.terrainId) {
+                    return {
+                        ...t,
+                        markers: t.markers.map(m => m.id === selectedMarker ? { ...m, label } : m)
+                    };
+                }
+                return t;
+            }));
+        }
+    };
+
+    const handleDeleteSelectedMarker = () => {
+        if (!selectedMarker || !selectedInfo) return;
+        if (window.confirm("¿Seguro que deseas eliminar este marcador?")) {
+            if (selectedInfo.type === '360') {
+                setView360Markers(prev => prev.filter(m => m.id !== selectedMarker));
+            } else if (selectedInfo.type === 'area') {
+                setCurrentTerrainMarkers(prev => prev.filter(m => m.id !== selectedMarker));
+                setMarkers(prev => prev.filter(m => m.id !== selectedMarker));
+            } else if (selectedInfo.type === 'terrain-marker') {
+                setTerrains(prev => prev.map(t => {
+                    if (t.id === selectedInfo.terrainId) {
+                        return {
+                            ...t,
+                            markers: t.markers.filter(m => m.id !== selectedMarker)
+                        };
+                    }
+                    return t;
+                }).filter(t => t.markers.length > 0));
+                setAllTerrains(prev => prev.map(t => {
+                    if (t.id === selectedInfo.terrainId) {
+                        return {
+                            ...t,
+                            markers: t.markers.filter(m => m.id !== selectedMarker)
+                        };
+                    }
+                    return t;
+                }).filter(t => t.markers.length > 0));
+            }
+            setSelectedMarker(null);
+            toast.success("Marcador eliminado.");
+        }
+    };
+
+    const handleNudgeMarkerPosition = (axis, direction) => {
+        if (!selectedMarker || !selectedInfo) return;
+        const currentVal = selectedInfo.item.position[axis === 'x' ? 0 : axis === 'y' ? 1 : 2];
+        const step = 0.5;
+        const newVal = currentVal + (direction === 'up' ? step : -step);
+        handleUpdateMarkerPosition(axis, newVal);
+    };
+
+    useEffect(() => {
+        if (!isEditingMode) return;
+
+        const handleKeyDown = (e) => {
+            const key = e.key.toLowerCase();
+            if (key === 'c' || key === 'v') {
+                const active = document.activeElement;
+                if (active && (
+                    active.tagName === 'INPUT' ||
+                    active.tagName === 'TEXTAREA' ||
+                    active.isContentEditable
+                )) {
+                    return;
+                }
+                if (key === 'c') {
+                    setEditMarkersMode(true);
+                } else if (key === 'v') {
+                    setEditMarkersMode(false);
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isEditingMode]);
 
     const handleUpdateModelNotes = (modelId, newNotes, updatedBy, updatedAt) => {
         setModels(prev => prev.map(m => (m._id === modelId || m.key === modelId) ? { ...m, version_notes: newNotes, updated_by: updatedBy, notes_updated_at: updatedAt } : m));
@@ -823,6 +1141,16 @@ const App = () => {
             });
         }
     }, [isElevationMode, isWireframe, gltf, heightBounds]);
+
+    const getSelectedMarkerPosition = () => {
+        const info = getSelectedMarkerItem();
+        if (info && info.item) {
+            return info.item.position;
+        }
+        return [0, 0, 0];
+    };
+    
+    const selectedMarkerPosition = getSelectedMarkerPosition();
 
 
 
@@ -907,6 +1235,9 @@ const App = () => {
                             onToggleWireframe={() => setIsWireframe(!isWireframe)}
                             isElevationMode={isElevationMode}
                             onToggleElevation={() => setIsElevationMode(!isElevationMode)}
+                            canEdit={!isPublish}
+                            isEditingMode={isEditingMode}
+                            onToggleEditingMode={handleToggleEditingMode}
                         />}
 
                     {/* {currentTerrainMarkers.length > 2 && (
@@ -941,6 +1272,7 @@ const App = () => {
                     <div className='flex w-full h-full'>
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
                             <Canvas
+                                style={{ cursor: editMarkersMode ? 'crosshair' : 'default' }}
                                 dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]}
                                 ref={objectRef}
                                 camera={{ position: [0, 160, 0], fov: 75 }}
@@ -965,64 +1297,141 @@ const App = () => {
                                 <CameraViewManager cameraView={cameraView} />
                                 {/* <CameraDebugger /> */}
 
-                                {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} />}
+                                {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} onAddView360Marker={handleAddView360Marker} addView360Mode={addView360Mode} />}
                                 {/* {markers.map(marker => (
                                 <Marker
                                     key={marker.id}
                                     position={marker.position}
                                     label={marker.label}
-                                    onClick={() => setSelectedMarker(marker.id)}
-                                />
-                            ))} */}
-                                {isModelLoaded && currentTerrainMarkers.map(marker => (
-                                    <Marker
-                                        key={marker.id}
-                                        position={marker.position}
-                                        label={marker.label}
-                                        onClick={() => setSelectedMarker(marker.id)}
-                                    />
-                                ))}
-                                {showTerrains && view360Markers.map(marker => (
-                                    <Marker360
-                                        key={marker.id}
-                                        position={marker.position}
-                                        label={marker.label}
-                                        color="orange" // O usa un icono diferente
-                                        hidden={isPhoto360ModalOpen}
-                                        picture={marker.lowpic}
-                                        onClick={() => {
-                                            setPhoto360Url(marker.photo360);
-                                            setIsPhoto360ModalOpen(true); // Abrir el modal
-                                        }}
-                                    />
-                                ))}
+                                ))} */}
+
+                                {isModelLoaded && currentTerrainMarkers.map(marker => {
+                                    const isSelected = isEditingMode && selectedMarker === marker.id;
+                                    if (isSelected) {
+                                        return (
+                                            <mesh
+                                                key={marker.id}
+                                                ref={selectedMarkerRef}
+                                                position={marker.position}
+                                            >
+                                                <sphereGeometry args={[0.8, 32, 32]} />
+                                                <meshStandardMaterial color="yellow" emissive="yellow" emissiveIntensity={0.3} />
+                                            </mesh>
+                                        );
+                                    }
+                                    return (
+                                        <Marker
+                                            key={marker.id}
+                                            position={marker.position}
+                                            label={marker.label}
+                                            onClick={() => setSelectedMarker(marker.id)}
+                                        />
+                                    );
+                                })}
+                                {showTerrains && view360Markers.map(marker => {
+                                    const isSelected = isEditingMode && selectedMarker === marker.id;
+                                    if (isSelected) {
+                                        return (
+                                            <group
+                                                key={marker.id}
+                                                ref={selectedMarkerRef}
+                                                position={marker.position}
+                                            >
+                                                <mesh>
+                                                    <sphereGeometry args={[0.8, 32, 32]} />
+                                                    <meshStandardMaterial color="orange" emissive="orange" emissiveIntensity={0.5} />
+                                                </mesh>
+                                                <Marker360
+                                                    position={[0, -6, 0]}
+                                                    label={marker.label}
+                                                    color="orange"
+                                                    hidden={isPhoto360ModalOpen}
+                                                    picture={marker.lowpic}
+                                                    onClick={() => setSelectedMarker(marker.id)}
+                                                />
+                                            </group>
+                                        );
+                                    }
+                                    return (
+                                        <Marker360
+                                            key={marker.id}
+                                            position={marker.position}
+                                            label={marker.label}
+                                            color="orange"
+                                            hidden={isPhoto360ModalOpen}
+                                            picture={marker.lowpic}
+                                            onClick={() => {
+                                                if (isEditingMode) {
+                                                    setSelectedMarker(marker.id);
+                                                } else {
+                                                    setPhoto360Url(marker.photo360);
+                                                    setIsPhoto360ModalOpen(true);
+                                                }
+                                            }}
+                                        />
+                                    );
+                                })}
                                 {isModelLoaded && showTerrains && terrains.map((terrain) => (
                                     <React.Fragment key={terrain.id}>
-                                        {terrain.markers.map(marker => (
-                                            <Marker
-                                                key={marker.id}
-                                                position={marker.position}
-                                                label={marker.label}
-                                                onClick={() => setSelectedMarker(marker.id)}
-                                            />
-                                        ))}
+                                        {terrain.markers.map(marker => {
+                                            const isSelected = isEditingMode && selectedMarker === marker.id;
+                                            if (isSelected) {
+                                                return (
+                                                    <mesh
+                                                        key={marker.id}
+                                                        ref={selectedMarkerRef}
+                                                        position={marker.position}
+                                                    >
+                                                        <sphereGeometry args={[0.8, 32, 32]} />
+                                                        <meshStandardMaterial color="yellow" emissive="yellow" emissiveIntensity={0.3} />
+                                                    </mesh>
+                                                );
+                                            }
+                                            return (
+                                                <Marker
+                                                    key={marker.id}
+                                                    position={marker.position}
+                                                    label={marker.label}
+                                                    onClick={() => setSelectedMarker(marker.id)}
+                                                />
+                                            );
+                                        })}
                                         {terrain.markers.length > 2 && (
                                             <AreaVisual
                                                 pjname={pjname}
                                                 terrains={terrains}
                                                 markers={terrain.markers}
                                                 areaCalculated={handleAreaCalculated}
-
                                             />
                                         )}
                                     </React.Fragment>
                                 ))}
 
+                                {isEditingMode && selectedMarker && (
+                                    <TransformControls
+                                        key={selectedMarker}
+                                        ref={transformControlsRef}
+                                        object={selectedMarkerRef}
+                                        mode="translate"
+                                        onMouseDown={() => {
+                                            if (orbitControlsRef.current) orbitControlsRef.current.enabled = false;
+                                        }}
+                                        onMouseUp={() => {
+                                            if (orbitControlsRef.current) orbitControlsRef.current.enabled = true;
+                                            const target = transformControlsRef.current?.object;
+                                            if (target) {
+                                                const newPos = [target.position.x, target.position.y, target.position.z];
+                                                handleUpdateMarkerPosition('all', newPos);
+                                            }
+                                        }}
+                                    />
+                                )}
 
                                 {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
                                 {/* <CameraPositioner /> */}
                                 {/* <CameraController terrain={selectedTerrain} /> */}
                                 <OrbitControls
+                                    makeDefault
                                     ref={orbitControlsRef}
                                     minDistance={0}
                                     minPolarAngle={0}
@@ -1156,6 +1565,238 @@ const App = () => {
                             setIsPhoto360ModalOpen(false);
                         }}
                     />
+
+                    {isEditingMode && (
+                        <div className="absolute top-[110px] right-[15px] z-[100] bg-black/80 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl flex flex-col gap-3 min-w-[320px] max-w-[350px] text-white">
+                            <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                                <span className="font-bold text-sm text-[#0CDBFF]">Gestión de Marcadores</span>
+                                <span className="text-xs text-white/50">Modo Edición Activo</span>
+                            </div>
+                            
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs text-white/60 font-semibold">Tipo de Marcador:</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant={editMarkerType === 'area' ? 'solid' : 'bordered'}
+                                        className={editMarkerType === 'area' ? 'bg-[#0CDBFF] text-black font-semibold' : 'text-white border-white/20'}
+                                        onClick={() => handleSetEditMarkerType('area')}
+                                    >
+                                        Área (Trazado)
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant={editMarkerType === '360' ? 'solid' : 'bordered'}
+                                        className={editMarkerType === '360' ? 'bg-[#0CDBFF] text-black font-semibold' : 'text-white border-white/20'}
+                                        onClick={() => handleSetEditMarkerType('360')}
+                                    >
+                                        Vista 360
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-xs text-white/60 font-semibold">Acción del Puntero:</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant={editMarkersMode ? 'solid' : 'bordered'}
+                                        className={editMarkersMode ? 'bg-green-500 text-white font-semibold' : 'text-white border-white/20'}
+                                        onClick={() => setEditMarkersMode(true)}
+                                    >
+                                        ✏️ Colocar Puntos [C]
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant={!editMarkersMode ? 'solid' : 'bordered'}
+                                        className={!editMarkersMode ? 'bg-[#0CDBFF] text-black font-semibold' : 'text-white border-white/20'}
+                                        onClick={() => setEditMarkersMode(false)}
+                                    >
+                                        🌐 Mover Cámara [V]
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {editMarkerType === 'area' && (
+                                <div className="bg-white/5 border border-white/10 rounded-lg p-2.5 flex flex-col gap-2">
+                                    <div className="flex justify-between text-xs">
+                                        <span>Puntos trazados:</span>
+                                        <span className="font-bold text-[#0CDBFF]">{currentTerrainMarkers.length}</span>
+                                    </div>
+                                    <p className="text-[11px] text-white/40 leading-normal">
+                                        Haz clic sobre la superficie del modelo 3D para trazar los vértices del área (mínimo 3 puntos).
+                                    </p>
+                                    <Button
+                                        size="sm"
+                                        color="primary"
+                                        className="w-full text-black font-semibold bg-[#0CDBFF]"
+                                        disabled={currentTerrainMarkers.length < 3}
+                                        onClick={handleAddTerrain}
+                                    >
+                                        Crear Terreno de Área
+                                    </Button>
+                                </div>
+                            )}
+
+                            {editMarkerType === '360' && (
+                                <div className="bg-white/5 border border-white/10 rounded-lg p-2.5 flex flex-col gap-1.5 text-xs">
+                                    <p className="text-white/40 text-[11px] leading-normal mb-1">
+                                        Haz clic en cualquier punto del modelo 3D para colocar un marcador de Vista 360.
+                                    </p>
+                                </div>
+                            )}
+
+                            {selectedInfo && (
+                                <div className="bg-white/5 border border-[#0CDBFF]/30 rounded-lg p-2.5 flex flex-col gap-2">
+                                    <div className="flex justify-between items-center text-xs border-b border-white/10 pb-1">
+                                        <span className="font-bold text-[#0CDBFF]">Editar Marcador</span>
+                                        <Button
+                                            size="sm"
+                                            variant="light"
+                                            className="text-white/40 hover:text-white text-[10px] h-6 min-w-0 px-2"
+                                            onClick={() => setSelectedMarker(null)}
+                                        >
+                                            Cerrar
+                                        </Button>
+                                    </div>
+
+                                    <Input
+                                        size="sm"
+                                        label="Etiqueta"
+                                        value={selectedInfo.item.label || ""}
+                                        onChange={(e) => handleUpdateMarkerLabel(e.target.value)}
+                                        variant="bordered"
+                                        className="text-white"
+                                        classNames={{
+                                            input: "text-white h-7 text-xs",
+                                            label: "text-white/70 text-[10px]"
+                                        }}
+                                    />
+
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[10px] text-white/60 font-semibold">Posición (X, Y, Z):</label>
+                                        
+                                        {['x', 'y', 'z'].map((axis, idx) => (
+                                            <div key={axis} className="flex items-center gap-1">
+                                                <span className="text-xs uppercase font-bold text-white/50 w-4">{axis}:</span>
+                                                <input
+                                                    type="number"
+                                                    step="0.1"
+                                                    value={parseFloat(selectedInfo.item.position[idx]).toFixed(2)}
+                                                    onChange={(e) => handleUpdateMarkerPosition(axis, e.target.value)}
+                                                    className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-0.5 text-xs text-white text-center focus:outline-none focus:border-[#0CDBFF]"
+                                                />
+                                                <Button
+                                                    size="sm"
+                                                    variant="flat"
+                                                    className="min-w-0 w-6 h-6 bg-white/5 hover:bg-white/10 text-white text-xs rounded"
+                                                    onClick={() => handleNudgeMarkerPosition(axis, 'down')}
+                                                >
+                                                    -
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="flat"
+                                                    className="min-w-0 w-6 h-6 bg-white/5 hover:bg-white/10 text-white text-xs rounded"
+                                                    onClick={() => handleNudgeMarkerPosition(axis, 'up')}
+                                                >
+                                                    +
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <Button
+                                        size="sm"
+                                        color="danger"
+                                        variant="flat"
+                                        className="w-full text-xs font-semibold h-7 mt-1"
+                                        onClick={handleDeleteSelectedMarker}
+                                    >
+                                        🗑️ Eliminar Marcador
+                                    </Button>
+                                </div>
+                            )}
+
+                            <div className="flex gap-2 border-t border-white/10 pt-2.5 mt-1">
+                                <Button
+                                    size="sm"
+                                    className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold"
+                                    onClick={handleSaveButtonClick}
+                                >
+                                    Guardar Cambios
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="bordered"
+                                    className="flex-1 border-white/20 text-white hover:bg-white/10 font-semibold"
+                                    onClick={handleCancelEditing}
+                                >
+                                    Cancelar
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    <Modal
+                        backdrop="blur"
+                        placement="center"
+                        isOpen={isAdd360ModalOpen}
+                        onClose={() => setIsAdd360ModalOpen(false)}
+                        className="bg-[#1A1F26]/90 text-white border border-white/10 shadow-2xl"
+                    >
+                        <ModalContent>
+                            {(onClose) => (
+                                <>
+                                    <ModalHeader className="flex flex-col gap-1 text-white border-b border-white/10">
+                                        <h2 className="font-bold text-lg">Añadir Vista 360</h2>
+                                        <p className="text-xs text-white/50">Configura la información del punto de vista 360</p>
+                                    </ModalHeader>
+                                    <ModalBody className="py-4 flex flex-col gap-4">
+                                        <Input
+                                            label="Nombre de la Vista"
+                                            placeholder="Ej. Sala de estar, Balcón principal"
+                                            value={new360Label}
+                                            onChange={(e) => setNew360Label(e.target.value)}
+                                            variant="bordered"
+                                            className="text-white"
+                                            classNames={{
+                                                input: "text-white",
+                                                label: "text-white/70"
+                                            }}
+                                        />
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-sm text-white/70">Foto Panorámica 360:</label>
+                                            <input 
+                                                type="file" 
+                                                accept="image/*"
+                                                onChange={(e) => setNew360File(e.target.files[0])}
+                                                className="text-sm text-white bg-white/5 border border-white/20 rounded-lg p-2"
+                                            />
+                                            <p className="text-[11px] text-white/40">Sube una imagen panorámica equirrectangular para la visualización 360.</p>
+                                        </div>
+                                    </ModalBody>
+                                    <ModalFooter className="border-t border-white/10">
+                                        <Button 
+                                            variant="light" 
+                                            className="text-white"
+                                            onPress={onClose}
+                                            disabled={isUploading360}
+                                        >
+                                            Cancelar
+                                        </Button>
+                                        <Button 
+                                            className="bg-[#0CDBFF] text-black font-semibold"
+                                            onPress={handleSave360Marker}
+                                            isLoading={isUploading360}
+                                        >
+                                            Agregar
+                                        </Button>
+                                    </ModalFooter>
+                                </>
+                            )}
+                        </ModalContent>
+                    </Modal>
                 </div>)}
 
 

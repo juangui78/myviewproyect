@@ -9,6 +9,7 @@ import MapMarkerDistance from '@/web/global_components/icons/MapMarkerDistance';
 import DeleteIcon from '@/web/global_components/icons/DeleteIcon';
 import { WireframeIcon } from '@/web/global_components/icons/WireframeIcon';
 import { ElevationIcon } from '@/web/global_components/icons/ElevationIcon';
+import { EditIcon } from "@/web/global_components/icons/EditIcon";
 
 const Toolbar = ({
   onToggleLight,
@@ -21,7 +22,10 @@ const Toolbar = ({
   isWireframe,
   onToggleWireframe,
   isElevationMode,
-  onToggleElevation
+  onToggleElevation,
+  canEdit,
+  isEditingMode,
+  onToggleEditingMode
 }) => {
   const [isMeasuringDistance, setIsMeasuringDistance] = useState(false);
 
@@ -103,6 +107,21 @@ const Toolbar = ({
           <ElevationIcon className="w-5 h-5 drop-shadow-sm" />
         </Button>
       </Tooltip>
+
+      {canEdit && (
+        <Tooltip content="Gestionar Marcadores" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
+          <Button
+            isIconOnly
+            size="md"
+            variant="light"
+            aria-label="Gestionar Marcadores"
+            onClick={onToggleEditingMode}
+            className={`text-white hover:bg-white/20 rounded-full transition-colors h-8 w-8 ${isEditingMode ? 'bg-[#0CDBFF] text-black hover:bg-[#0CDBFF]/80' : ''}`}
+          >
+            <EditIcon className="w-5 h-5 drop-shadow-sm" />
+          </Button>
+        </Tooltip>
+      )}
     </div>
 
 

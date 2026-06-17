@@ -43,6 +43,7 @@ export async function PUT(request, { params }) {
             name: z.string().max(100).optional(),
             address: z.string().max(300).optional(),
             description: z.string().max(500).optional(),
+            urlImage: z.string().max(1000).optional(),
         });
 
         const resultUpdate = updateSchema.safeParse(body);

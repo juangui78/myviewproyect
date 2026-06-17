@@ -1,17 +1,8 @@
-import React, { useMemo, useEffect, useRef, useState } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import * as THREE from 'three';
-import { Html } from '@react-three/drei';
+import { Html, Line } from '@react-three/drei';
 
 const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5, onClick }) => {
-  const lineRef = useRef();
-  const geometry = useRef(new THREE.BufferGeometry());
-  const material = useRef(new THREE.LineDashedMaterial({
-    color: 0xffff00,
-    dashSize: 0.5,
-    gapSize: 0.3,
-    linewidth: 2,
-    depthTest: false,
-  }));
   const [area, setArea] = useState(0);
 
   // Puntos originales para cálculo
@@ -34,23 +25,13 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5, o
     );
   }, [originalPoints, lineHeightOffset]);
 
- // Actualizar geometría
-  useEffect(() => {
+  // Cerrar el bucle de puntos
+  const closedPoints = useMemo(() => {
     if (elevatedPoints.length > 1) {
-      // Agregar el primer punto al final para cerrar el área
-      const closedPoints = [...elevatedPoints, elevatedPoints[0]];
-      const positions = new Float32Array(closedPoints.flatMap(p => [p.x, p.y, p.z]));
-      geometry.current.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geometry.current.computeBoundingSphere(); // Recalcula la geometría
+      return [...elevatedPoints, elevatedPoints[0]];
     }
+    return elevatedPoints;
   }, [elevatedPoints]);
-
-  // Calcular distancias para LineDashedMaterial
-  useEffect(() => {
-    if (lineRef.current) {
-      lineRef.current.computeLineDistances(); // Necesario para LineDashedMaterial
-    }
-  }, [geometry]);
 
   // Cálculo del área
   useEffect(() => {
@@ -69,7 +50,14 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5, o
 
   return (
     <>
-      <line ref={lineRef} geometry={geometry.current} material={material.current} />
+      {closedPoints.length > 1 && (
+        <Line
+          points={closedPoints}
+          color="#FF5F1F"   // Naranja neón de alta visibilidad
+          lineWidth={4}     // Grosor óptimo de 4px para resaltar
+          depthTest={false} // Evita la oclusión por parte del relieve del terreno
+        />
+      )}
       {markers.length > 0 && (
         <Html
           position={[
@@ -92,7 +80,6 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0.5, o
           }}
           onClick={onClick}
           >
-            
             <span>Área: {(pjname === "Concepcion" ? 3.333 : area).toFixed(3)} m²</span>
           </div>
         </Html>

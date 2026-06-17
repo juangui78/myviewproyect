@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
 import { Tooltip, Input, Textarea, Button, Link, Avatar, AvatarGroup, Image } from "@nextui-org/react";
 import { getTodoList, updateProject } from "../js/todo";
@@ -6,6 +6,7 @@ import ChevronDoubleLeft from "@/web/global_components/icons/ChevronDoubleLeft";
 import { EditIcon } from "@/web/global_components/icons/EditIcon";
 import CheckIcon from "@/web/global_components/icons/CheckIcon";
 import { Ban } from "@/web/global_components/icons/Ban";
+import { uploadProjectImageAction } from "../actions/uploadImage";
 
 const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
 
@@ -19,6 +20,9 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
         description: ""
     })
     const [isSaving, setIsSaving] = useState(false)
+    const fileInputRef = useRef(null)
+    const [imageFile, setImageFile] = useState(null)
+    const [imagePreview, setImagePreview] = useState(null)
 
     useEffect(() => {
 
@@ -55,6 +59,11 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                 address: data.address || "",
                 description: data.description || ""
             })
+            setImageFile(null)
+            if (imagePreview) {
+                URL.revokeObjectURL(imagePreview)
+                setImagePreview(null)
+            }
         }
         setIsEditing(!isEditing)
     }
@@ -64,20 +73,43 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
         setEditForm(prev => ({ ...prev, [name]: value }))
     }
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0]
+        if (file) {
+            setImageFile(file)
+            const previewUrl = URL.createObjectURL(file)
+            setImagePreview(previewUrl)
+        }
+    }
+
     const handleSave = async () => {
         if (!window.confirm("¿Estás seguro de que deseas guardar los cambios?")) return
 
         setIsSaving(true)
-        const [status, updatedData] = await updateProject(_id, editForm)
+        let finalEditForm = { ...editForm }
+
+        if (imageFile) {
+            const formData = new FormData()
+            formData.append("image", imageFile)
+            const uploadRes = await uploadProjectImageAction(_id, formData)
+            if (uploadRes.success) {
+                finalEditForm.urlImage = uploadRes.url
+            } else {
+                alert("Error al subir la imagen: " + uploadRes.message)
+                setIsSaving(false)
+                return
+            }
+        }
+
+        const [status, updatedData] = await updateProject(_id, finalEditForm)
         
         if (status === "success") {
             setData(updatedData)
             setIsEditing(false)
+            setImageFile(null)
+            setImagePreview(null)
             alert("Proyecto actualizado correctamente")
-            // Reload if name changed to update the title in the Cards list
-            if (updatedData.name !== data.name) {
-                window.location.reload() 
-            }
+            window.location.reload() 
         } else {
             alert("Error al actualizar el proyecto")
         }
@@ -147,15 +179,43 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                        </div>
                      </DrawerHeader>
                     <DrawerBody className="pt-16 scrollbar-hide">
-                      <div className="flex w-full justify-center items-center pt-4">
-                        <Image
-                          isBlurred
-                          isZoomed
-                          alt="Event image"
-                          className="aspect-square w-full hover:scale-110 object-cover rounded-xl"
-                          height={300}
-                          src={data?.urlImage || "/images/parcela.jpg"}
-                        />
+                      <div className="flex w-full flex-col justify-center items-center pt-4">
+                        <div className="relative w-full aspect-square rounded-xl overflow-hidden group/img border border-white/10">
+                          <Image
+                            removeWrapper
+                            alt="Event image"
+                            className="w-full h-full object-cover rounded-xl hover:scale-105 transition-transform duration-500"
+                            src={imagePreview || data?.urlImage || "/images/parcela.jpg"}
+                          />
+                          {isEditing && (
+                            <div 
+                              onClick={() => fileInputRef.current?.click()}
+                              className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 cursor-pointer z-20"
+                            >
+                              <EditIcon className="w-8 h-8 text-[#0CDBFF] mb-2" />
+                              <span className="text-[#0CDBFF] font-semibold text-sm">Cambiar Imagen</span>
+                            </div>
+                          )}
+                        </div>
+                        {isEditing && (
+                          <>
+                            <input 
+                              type="file"
+                              ref={fileInputRef}
+                              className="hidden"
+                              accept="image/*"
+                              onChange={handleFileChange}
+                            />
+                            <Button
+                              size="sm"
+                              variant="light"
+                              className="text-white/60 hover:text-white mt-2 text-xs"
+                              onPress={() => fileInputRef.current?.click()}
+                            >
+                              Seleccionar nueva imagen
+                            </Button>
+                          </>
+                        )}
                       </div>
                       <div className="flex flex-col gap-4 py-4">
                         {isEditing ? (
