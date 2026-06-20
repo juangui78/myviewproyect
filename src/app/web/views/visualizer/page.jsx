@@ -471,15 +471,28 @@ const App = () => {
 
                 if (response.data && response.data.length > 0) {
                     setModels(response.data);
-                    setCurrentIndexModel(0); // Empieza con el modelo más reciente
-                    setcurrentModel(response.data[0]); // Modelo más reciente
+                    
+                    const queryIndexStr = searchParams.get("modelIndex");
+                    const queryIndex = queryIndexStr ? parseInt(queryIndexStr, 10) : 0;
+                    const safeIndex = (isNaN(queryIndex) || queryIndex < 0 || queryIndex >= response.data.length) ? 0 : queryIndex;
 
-                    // Inicializa photo360Url con la URL del primer marcador 360 si existe
-                    if (response.data[0]?.markers?.length > 0) {
-                        setView360Markers(response.data[0].markers);
+                    setCurrentIndexModel(safeIndex);
+                    setcurrentModel(response.data[safeIndex]);
+
+                    if (response.data[safeIndex]?.terrains) {
+                        setTerrains(response.data[safeIndex].terrains);
+                        setAllTerrains(response.data[safeIndex].terrains);
+                    } else {
+                        setTerrains([]);
+                        setAllTerrains([]);
                     }
 
-
+                    // Inicializa photo360Url con la URL del primer marcador 360 si existe
+                    if (response.data[safeIndex]?.markers?.length > 0) {
+                        setView360Markers(response.data[safeIndex].markers);
+                    } else {
+                        setView360Markers([]);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching models:", error);
@@ -528,19 +541,10 @@ const App = () => {
             try {
                 const response = await axios.get(`/api/controllers/visualizer/${idProyect}`)
 
-                if (response.data != undefined && response.data.model !== undefined) {
-                    setcurrentModel(response.data.model)
-                    console.log('aqui hay: ', response.data.model);
-
-
-                    if (response.data.terrains) {
-                        setTerrains(response.data.terrains);
-                        setAllTerrains(response.data.terrains);
+                if (response.data != undefined) {
+                    if (response.data.proyect) {
+                        setProjectInfo(response.data.proyect)
                     }
-
-
-                    setProjectInfo(response.data.proyect)
-
                 }
             } catch (error) {
                 console.log(error);
@@ -570,7 +574,7 @@ const App = () => {
         getModel();
         saveAnalyticsPerView();
 
-    }, [])
+    }, [idProyect])
 
     // useEffect para cargar el modelo inicial con proyecto actual
 
@@ -851,7 +855,7 @@ const App = () => {
         if (!selectedMarker) return null;
         const m360 = view360Markers.find(m => m.id === selectedMarker);
         if (m360) return { item: m360, type: '360' };
-        
+
         const mArea = currentTerrainMarkers.find(m => m.id === selectedMarker);
         if (mArea) return { item: mArea, type: 'area' };
 
@@ -862,15 +866,15 @@ const App = () => {
                 return { item: mTerrain, type: 'terrain-marker', terrainId: terrain.id };
             }
         }
-        
+
         return null;
     };
-    
+
     const selectedInfo = getSelectedMarkerItem();
 
     const handleUpdateMarkerPosition = (axis, value) => {
         if (!selectedMarker || !selectedInfo) return;
-        
+
         if (axis === 'all') {
             const newPos = value;
             if (selectedInfo.type === '360') {
@@ -903,7 +907,7 @@ const App = () => {
 
         const numericValue = parseFloat(value);
         if (isNaN(numericValue)) return;
-        
+
         if (selectedInfo.type === '360') {
             setView360Markers(prev => prev.map(m => {
                 if (m.id === selectedMarker) {
@@ -1154,7 +1158,7 @@ const App = () => {
         }
         return [0, 0, 0];
     };
-    
+
     const selectedMarkerPosition = getSelectedMarkerPosition();
 
 
@@ -1577,7 +1581,7 @@ const App = () => {
                                 <span className="font-bold text-sm text-[#0CDBFF]">Gestión de Marcadores</span>
                                 <span className="text-xs text-white/50">Modo Edición Activo</span>
                             </div>
-                            
+
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-xs text-white/60 font-semibold">Tipo de Marcador:</label>
                                 <div className="grid grid-cols-2 gap-2">
@@ -1680,7 +1684,7 @@ const App = () => {
 
                                     <div className="flex flex-col gap-1">
                                         <label className="text-[10px] text-white/60 font-semibold">Posición (X, Y, Z):</label>
-                                        
+
                                         {['x', 'y', 'z'].map((axis, idx) => (
                                             <div key={axis} className="flex items-center gap-1">
                                                 <span className="text-xs uppercase font-bold text-white/50 w-4">{axis}:</span>
@@ -1772,8 +1776,8 @@ const App = () => {
                                         />
                                         <div className="flex flex-col gap-2">
                                             <label className="text-sm text-white/70">Foto Panorámica 360:</label>
-                                            <input 
-                                                type="file" 
+                                            <input
+                                                type="file"
                                                 accept="image/*"
                                                 onChange={(e) => setNew360File(e.target.files[0])}
                                                 className="text-sm text-white bg-white/5 border border-white/20 rounded-lg p-2"
@@ -1782,15 +1786,15 @@ const App = () => {
                                         </div>
                                     </ModalBody>
                                     <ModalFooter className="border-t border-white/10">
-                                        <Button 
-                                            variant="light" 
+                                        <Button
+                                            variant="light"
                                             className="text-white"
                                             onPress={onClose}
                                             disabled={isUploading360}
                                         >
                                             Cancelar
                                         </Button>
-                                        <Button 
+                                        <Button
                                             className="bg-[#0CDBFF] text-black font-semibold"
                                             onPress={handleSave360Marker}
                                             isLoading={isUploading360}
@@ -1806,23 +1810,25 @@ const App = () => {
 
 
             {isSafariMobile && (
-                <div className='bg-white text-black w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+                <div className='bg-white text-black w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[24px] px-6'>
                     <div>
                         <BlocksShuffle3 className="text-6xl text-black" />
                     </div>
-                    <div className='w-full text-center text-black px-4'>
-                        <p>Estamos trabajando para que disfrutes de la experiencia en este dispositivo.</p>
-                        <p className="text-sm text-gray-500 mt-2">Por favor intenta en Chrome o desde un ordenador.</p>
+                    <div className='w-full text-center text-black px-4 flex flex-col gap-2 max-w-md'>
+                        <p className="font-semibold text-lg">Estamos trabajando para mejorar tu experiencia en este dispositivo.</p>
+                        <p className="text-sm text-gray-500">Para una mejor compatibilidad, te sugerimos utilizar Google Chrome o acceder desde un ordenador.</p>
                     </div>
-                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 flex flex-col items-end gap-3">
+                    <div>
                         <Link
                             href={`/web/views/visualizer/easyview?id=${searchParams.get("id")}&modelIndex=${currentIndexModel}`}
-                            className="flex items-center justify-center gap-2 px-4 h-12 bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-white"
-                            title="¿Problemas de rendimiento en el móvil? Visualizar con EasyView"
+                            className="flex items-center justify-center gap-2 px-8 h-12 bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-white font-semibold"
+                            title="Visualizar en EasyView"
                         >
-                            <span className="text-sm font-semibold">Visualizar con EasyView</span>
-                            <span className="text-xl">💡</span>
+                            <span>Visualizar</span>
+
                         </Link>
+                    </div>
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
                         <a
                             href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                             target="_blank"
@@ -1830,30 +1836,31 @@ const App = () => {
                             className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
                         >
                             <Whatsapp className="text-white text-1xl" />
-
                         </a>
                     </div>
                 </div>
             )}
 
             {isInstagramBrowser && (
-                <div className='bg-white text-black w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[20px]'>
+                <div className='bg-white text-black w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[24px] px-6'>
                     <div>
                         <BlocksShuffle3 className="text-6xl text-black" />
                     </div>
-                    <div className='w-full text-center text-black px-4'>
-                        <p>Estamos trabajando para que disfrutes de la experiencia en este dispositivo.</p>
-                        <p className="text-sm text-gray-500 mt-2">Por favor intenta en Chrome o desde un ordenador.</p>
+                    <div className='w-full text-center text-black px-4 flex flex-col gap-2 max-w-md'>
+                        <p className="font-semibold text-lg">Estamos trabajando para mejorar tu experiencia en este dispositivo.</p>
+                        <p className="text-sm text-gray-500">Para una mejor compatibilidad, te sugerimos utilizar Google Chrome o acceder desde un ordenador.</p>
                     </div>
-                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 flex flex-col items-end gap-3">
+                    <div>
                         <Link
                             href={`/web/views/visualizer/easyview?id=${searchParams.get("id")}&modelIndex=${currentIndexModel}`}
-                            className="flex items-center justify-center gap-2 px-4 h-12 bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-white"
-                            title="¿Problemas de rendimiento en el móvil? Visualizar con EasyView"
+                            className="flex items-center justify-center gap-2 px-8 h-12 bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-white font-semibold"
+                            title="Visualizar en EasyView"
                         >
-                            <span className="text-sm font-semibold">Visualizar con EasyView</span>
+                            <span>Visualizar</span>
                             <span className="text-xl">💡</span>
                         </Link>
+                    </div>
+                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
                         <a
                             href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                             target="_blank"
@@ -1861,7 +1868,6 @@ const App = () => {
                             className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
                         >
                             <Whatsapp className="text-white text-1xl" />
-
                         </a>
                     </div>
                 </div>

@@ -6,11 +6,14 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import InformationCard from '../components/information/InformationCard';
 import Whatsapp from '@/web/global_components/icons/Whatsapp';
 import Link from 'next/link';
+import Photo360Modal from '../components/viewer360/PhotoSphereModal';
 
 export default function EasyView({ modelUrl, currentModel, projectInfo }) {
   const mountRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [photo360Url, setPhoto360Url] = useState(null);
+  const [isPhoto360ModalOpen, setIsPhoto360ModalOpen] = useState(false);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -47,6 +50,8 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(10, 10, 10);
     scene.add(directionalLight);
+
+    const tempV = new THREE.Vector3();
 
     // 3. Carga del Modelo
     const loader = new GLTFLoader();
@@ -99,6 +104,41 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
         controls.minDistance = Math.max(0.2, radius / 10);
         controls.maxDistance = distance * 4;
         controls.update();
+
+        // --- RENDER MARKERS ---
+        const markersGroup = new THREE.Group();
+        scene.add(markersGroup);
+
+        const sphereGeoTerrain = new THREE.SphereGeometry(radius * 0.015 || 0.6, 16, 16);
+        const sphereMatTerrain = new THREE.MeshBasicMaterial({ color: 0xffff00 }); // Yellow for terrains
+
+        // Terrain Markers and lines
+        if (currentModel?.terrains && currentModel.terrains.length > 0) {
+          currentModel.terrains.forEach(terrain => {
+            if (terrain.markers && terrain.markers.length > 0) {
+              const terrainPoints = [];
+
+              terrain.markers.forEach(marker => {
+                if (marker.position) {
+                  const mesh = new THREE.Mesh(sphereGeoTerrain, sphereMatTerrain);
+                  mesh.position.set(marker.position[0], marker.position[1], marker.position[2]);
+                  mesh.userData = { type: 'terrain', data: marker };
+                  markersGroup.add(mesh);
+
+                  terrainPoints.push(new THREE.Vector3(marker.position[0], marker.position[1], marker.position[2]));
+                }
+              });
+
+              if (terrainPoints.length > 2) {
+                terrainPoints.push(terrainPoints[0].clone());
+                const lineGeo = new THREE.BufferGeometry().setFromPoints(terrainPoints);
+                const lineMat = new THREE.LineBasicMaterial({ color: 0xffff00 });
+                const line = new THREE.Line(lineGeo, lineMat);
+                markersGroup.add(line);
+              }
+            }
+          });
+        }
         
         setIsLoading(false);
       }, (xhr) => {
@@ -121,6 +161,30 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
       animationId = requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
+
+      // Update HTML marker positions
+      if (currentModel?.markers && currentModel.markers.length > 0) {
+        const width = mountRef.current.clientWidth || window.innerWidth;
+        const height = mountRef.current.clientHeight || window.innerHeight;
+
+        currentModel.markers.forEach(marker => {
+          const domElement = document.getElementById(`marker-360-${marker.id}`);
+          if (domElement) {
+            tempV.set(marker.position[0], marker.position[1] + 6, marker.position[2]);
+            tempV.project(camera);
+
+            // Check if behind the camera
+            if (tempV.z > 1) {
+              domElement.style.display = 'none';
+            } else {
+              const x = (tempV.x * 0.5 + 0.5) * width;
+              const y = (tempV.y * -0.5 + 0.5) * height;
+              domElement.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+              domElement.style.display = 'flex';
+            }
+          }
+        });
+      }
     };
     animate();
 
@@ -249,6 +313,101 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
       )}
 
       <div ref={mountRef} style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }} />
+
+      {/* HTML Markers Overlay */}
+      {!isLoading && currentModel?.markers && (
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 5 }}>
+          <style>{`
+            .marker360-group:hover .marker360-preview {
+                transform: scale(1.4);
+                z-index: 10;
+                box-shadow: 0 0 12px #0008;
+            }
+            .marker360-group:hover .marker360-label {
+                transform: scale(1.1);
+                z-index: 10;
+            }
+          `}</style>
+          {currentModel.markers.map((marker) => {
+            const finalImage = marker.lowpic || '/images/lowprev.jpg';
+            return (
+              <div
+                key={marker.id}
+                id={`marker-360-${marker.id}`}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  display: 'none', // Managed by ThreeJS animate loop
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  pointerEvents: 'auto',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <div
+                  className="marker360-group"
+                  onClick={() => {
+                    setPhoto360Url(marker.photo360);
+                    setIsPhoto360ModalOpen(true);
+                  }}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                  }}
+                >
+                  <img
+                    src={finalImage}
+                    alt="preview"
+                    className="marker360-preview"
+                    style={{
+                      width: 62,
+                      height: 32,
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                      marginBottom: 4,
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+                      border: '1px solid rgba(255,255,255,0.5)',
+                      transition: 'all 0.2s cubic-bezier(.4,2,.3,1)',
+                    }}
+                  />
+                  <span
+                    className="marker360-label"
+                    style={{
+                      color: 'white',
+                      background: 'rgba(0, 0, 0, 0.6)',
+                      backdropFilter: 'blur(4px)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: 11,
+                      fontWeight: '500',
+                      marginTop: 2,
+                      whiteSpace: 'nowrap',
+                      transition: 'transform 0.2s cubic-bezier(.4,2,.3,1)',
+                    }}
+                  >
+                    {marker.label || "Vista 360"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <Photo360Modal
+        url={photo360Url}
+        isOpen={isPhoto360ModalOpen}
+        onClose={() => {
+          setPhoto360Url(null);
+          setIsPhoto360ModalOpen(false);
+        }}
+      />
     </div>
   );
 }

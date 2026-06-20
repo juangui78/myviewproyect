@@ -390,15 +390,28 @@ const App = () => {
 
                 if (response.data && response.data.length > 0) {
                     setModels(response.data);
-                    setCurrentIndexModel(0); // Empieza con el modelo más reciente
-                    setcurrentModel(response.data[0]); // Modelo más reciente
+                    
+                    const queryIndexStr = searchParams.get("modelIndex");
+                    const queryIndex = queryIndexStr ? parseInt(queryIndexStr, 10) : 0;
+                    const safeIndex = (isNaN(queryIndex) || queryIndex < 0 || queryIndex >= response.data.length) ? 0 : queryIndex;
 
-                    // Inicializa photo360Url con la URL del primer marcador 360 si existe
-                    if (response.data[0]?.markers?.length > 0) {
-                        setView360Markers(response.data[0].markers);
+                    setCurrentIndexModel(safeIndex);
+                    setcurrentModel(response.data[safeIndex]);
+
+                    if (response.data[safeIndex]?.terrains) {
+                        setTerrains(response.data[safeIndex].terrains);
+                        setAllTerrains(response.data[safeIndex].terrains);
+                    } else {
+                        setTerrains([]);
+                        setAllTerrains([]);
                     }
 
-
+                    // Inicializa photo360Url con la URL del primer marcador 360 si existe
+                    if (response.data[safeIndex]?.markers?.length > 0) {
+                        setView360Markers(response.data[safeIndex].markers);
+                    } else {
+                        setView360Markers([]);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching models:", error);
@@ -441,19 +454,10 @@ const App = () => {
             try {
                 const response = await axios.get(`/api/controllers/visualizer/${idProyect}`)
 
-                if (response.data != undefined && response.data.model !== undefined) {
-                    setcurrentModel(response.data.model)
-                    console.log('aqui hay: ', response.data.model);
-
-
-                    if (response.data.terrains) {
-                        setTerrains(response.data.terrains);
-                        setAllTerrains(response.data.terrains);
+                if (response.data != undefined) {
+                    if (response.data.proyect) {
+                        setProjectInfo(response.data.proyect)
                     }
-
-
-                    setProjectInfo(response.data.proyect)
-
                 }
             } catch (error) {
                 console.log(error);
@@ -483,7 +487,7 @@ const App = () => {
         getModel();
         saveAnalyticsPerView();
 
-    }, [])
+    }, [idProyect])
 
     // useEffect para cargar el modelo inicial con proyecto actual
     useEffect(() => {

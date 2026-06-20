@@ -7,6 +7,8 @@ import { EditIcon } from "@/web/global_components/icons/EditIcon";
 import CheckIcon from "@/web/global_components/icons/CheckIcon";
 import { Ban } from "@/web/global_components/icons/Ban";
 import { uploadProjectImageAction } from "../actions/uploadImage";
+import { encrypt } from "@/api/libs/crypto";
+import axios from "axios";
 
 const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
 
@@ -23,6 +25,7 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
     const fileInputRef = useRef(null)
     const [imageFile, setImageFile] = useState(null)
     const [imagePreview, setImagePreview] = useState(null)
+    const [versions, setVersions] = useState([])
 
     useEffect(() => {
 
@@ -38,13 +41,25 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
           }
 
           setError(false)
-          setLoading(false)
           setData(data_)
           setEditForm({
               name: data_.name || "",
               address: data_.address || "",
               description: data_.description || ""
           })
+
+          try {
+              const versionsRes = await axios.get(`/api/controllers/models_/${_id}/allmodels`);
+              if (versionsRes.status === 200 && Array.isArray(versionsRes.data)) {
+                  setVersions(versionsRes.data);
+              } else {
+                  setVersions([]);
+              }
+          } catch (err) {
+              console.error("Error fetching project versions:", err);
+              setVersions([]);
+          }
+          setLoading(false)
         }
 
         if (_id) fetchData()
@@ -261,12 +276,12 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                             <>
                                 <h1 className="text-2xl font-bold leading-7">{data?.name}</h1>
                                 <p className="text-sm text-default-500 text-white/70">{data?.department}, {data?.city}, {data?.address}</p>
-                                <div className="mt-2 flex flex-col gap-3">
-                                  <div className="flex flex-col mt-2 gap-1 items-start">
+                                <div className="mt-2 flex flex-col gap-3 text-left items-start w-full">
+                                  <div className="flex flex-col mt-2 gap-1 items-start w-full text-left">
                                     <span className="text-medium text-white font-bold">Descripción</span>
                                     <p className="text-medium text-white/80 leading-relaxed">{data?.description}</p>
                                   </div>
-                                  <div className="flex flex-col mt-2 gap-1 items-start">
+                                  <div className="flex flex-col mt-2 gap-1 items-start w-full text-left">
                                     <span className="text-medium text-white font-bold">Información adicional</span>
                                     <div className="grid grid-cols-2 gap-4 w-full">
                                         <div className="bg-white/5 p-3 rounded-lg border border-white/10">
@@ -277,6 +292,36 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                                             <p className="text-xs text-white/50 uppercase">M2</p>
                                             <p className="text-lg font-semibold text-white">{data?.m2 || 0}</p>
                                         </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-col mt-4 gap-2 items-start w-full text-left">
+                                    <span className="text-medium text-white font-bold">Versiones del Escaneo ({versions.length})</span>
+                                    <div className="flex flex-col gap-2 w-full">
+                                      {versions.length > 0 ? (
+                                        versions.map((ver, idx) => (
+                                          <div key={ver._id || idx} className="bg-white/5 p-3 rounded-[16px] border border-white/10 hover:border-cyan-500/30 flex justify-between items-center gap-4 transition-all w-full">
+                                            <div className="flex flex-col gap-0.5 text-left">
+                                              <p className="text-sm font-semibold text-white">{ver.name || `Versión ${versions.length - idx}`}</p>
+                                              <p className="text-xs text-white/40">
+                                                {ver.creation_date 
+                                                  ? new Date(ver.creation_date).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+                                                  : "Sin fecha"}
+                                              </p>
+                                            </div>
+                                            <Button
+                                              as={Link}
+                                              href={`/web/views/visualizer?id=${encrypt(_id)}&modelIndex=${idx}`}
+                                              target="_blank"
+                                              size="sm"
+                                              className="bg-[#0CDBFF] text-black font-bold hover:bg-cyan-400 min-w-0 px-4 rounded-full h-8"
+                                            >
+                                              Acceder
+                                            </Button>
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <p className="text-sm text-white/50 italic">No hay escaneos disponibles.</p>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
