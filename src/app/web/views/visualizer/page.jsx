@@ -143,7 +143,7 @@ const App = () => {
     const [lastCameraView, setLastCameraView] = useState(0);
     const orbitControlsRef = React.useRef();
     const transformControlsRef = React.useRef();
-    const selectedMarkerRef = React.useRef();
+    const [selectedMarkerObj, setSelectedMarkerObj] = useState(null);
     const [background360, setBackground360] = useState(null);
     const [isSwitchingModel, setIsSwitchingModel] = useState(false);
     const [isWireframe, setIsWireframe] = useState(false);
@@ -361,6 +361,7 @@ const App = () => {
 
     const toggleTerrains = () => {
         setShowTerrains((prev) => !prev);
+        setSelectedMarker(null);
     }
 
     const handleAddTerrain = () => {
@@ -632,6 +633,7 @@ const App = () => {
             setTerrains([]);
             setAllTerrains([]);
             setView360Markers([]);
+            setSelectedMarker(null);
             setIsSwitchingModel(true);
 
             // 1. Limpiar el modelo actual en memoria RAM / CPU y Tarjeta Gráfica VRAM
@@ -749,6 +751,7 @@ const App = () => {
             console.log('Terrenos guardados:', response.data);
             setOriginalTerrains(allTerrains);
             setOriginalView360Markers(view360Markers);
+            setSelectedMarker(null);
             setIsEditingMode(false);
             setEditMarkersMode(false);
             return response.data;
@@ -789,6 +792,7 @@ const App = () => {
             setView360Markers(originalView360Markers);
             setCurrentTerrainMarkers([]);
             setMarkers([]);
+            setSelectedMarker(null);
             setIsEditingMode(false);
             setEditMarkersMode(false);
         }
@@ -799,6 +803,7 @@ const App = () => {
         setAddView360Mode(type === '360');
         setCurrentTerrainMarkers([]);
         setMarkers([]);
+        setSelectedMarker(null);
     };
 
     const handleAddView360Marker = (position) => {
@@ -1311,7 +1316,7 @@ const App = () => {
                                         return (
                                             <mesh
                                                 key={marker.id}
-                                                ref={selectedMarkerRef}
+                                                ref={setSelectedMarkerObj}
                                                 position={marker.position}
                                             >
                                                 <sphereGeometry args={[0.8, 32, 32]} />
@@ -1334,7 +1339,7 @@ const App = () => {
                                         return (
                                             <group
                                                 key={marker.id}
-                                                ref={selectedMarkerRef}
+                                                ref={setSelectedMarkerObj}
                                                 position={marker.position}
                                             >
                                                 <mesh>
@@ -1379,7 +1384,7 @@ const App = () => {
                                                 return (
                                                     <mesh
                                                         key={marker.id}
-                                                        ref={selectedMarkerRef}
+                                                        ref={setSelectedMarkerObj}
                                                         position={marker.position}
                                                     >
                                                         <sphereGeometry args={[0.8, 32, 32]} />
@@ -1407,11 +1412,11 @@ const App = () => {
                                     </React.Fragment>
                                 ))}
 
-                                {isEditingMode && selectedMarker && (
+                                {isEditingMode && selectedMarker && selectedMarkerObj && (
                                     <TransformControls
                                         key={selectedMarker}
                                         ref={transformControlsRef}
-                                        object={selectedMarkerRef}
+                                        object={selectedMarkerObj}
                                         mode="translate"
                                         onMouseDown={() => {
                                             if (orbitControlsRef.current) orbitControlsRef.current.enabled = false;

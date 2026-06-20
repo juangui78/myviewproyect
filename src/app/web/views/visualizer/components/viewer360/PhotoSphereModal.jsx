@@ -44,7 +44,7 @@ const Photo360Modal = ({ url, isOpen, onClose }) => {
     }
   }, [url, isOpen]);
 
-  console.log('vista actual: ', url);
+  // console.log('vista actual: ', url);
 
   return (
     <div

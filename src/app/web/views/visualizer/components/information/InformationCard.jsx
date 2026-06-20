@@ -136,33 +136,6 @@ export const InformationCard = ({ info, currentModel, canEdit, onUpdateModelNote
         </CardFooter>
       </Card>
 
-      {!isEasyView && (
-        <Card className="w-full max-w-[90vw] md:max-w-[70vh] border border-cyan-500/20 bg-[#061626]/90 backdrop-blur-md text-white shadow-2xl overflow-hidden relative" shadow="none">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 blur-xl rounded-full pointer-events-none"></div>
-          <CardBody className="p-4 flex flex-col gap-3">
-            <div className="flex items-start gap-3">
-              <span className="text-xl">⚡</span>
-              <div>
-                <h4 className="text-sm font-bold text-cyan-400 mb-1">
-                  ¿Tienes problemas de rendimiento?
-                </h4>
-                <p className="text-xs text-gray-300 leading-relaxed">
-                  Prueba <strong>EasyView</strong>, nuestro visualizador optimizado para dispositivos móviles y conexiones lentas.
-                </p>
-              </div>
-            </div>
-            <Button
-              as="a"
-              href={`/web/views/visualizer/easyview?id=${searchParams.get("id") || ""}&modelIndex=${searchParams.get("modelIndex") || "0"}`}
-              size="sm"
-              className="w-full bg-cyan-500 text-black font-bold hover:bg-cyan-400 transition-colors shadow-[0_0_10px_rgba(6,182,212,0.3)] mt-1"
-            >
-              Abrir EasyView Optimizado
-            </Button>
-          </CardBody>
-        </Card>
-      )}
-
       {(currentModel?.version_notes || isEditing || canEdit) && (
         <Card className="w-full max-w-[90vw] md:max-w-[70vh] border border-cyan-500/30 bg-black/80 backdrop-blur-md text-white shadow-2xl" shadow="none">
            <CardHeader className="justify-between border-b border-white/10 pb-2">
@@ -241,6 +214,33 @@ export const InformationCard = ({ info, currentModel, canEdit, onUpdateModelNote
                   )}
                 </div>
             )}
+          </CardBody>
+        </Card>
+      )}
+
+      {!isEasyView && (
+        <Card className="w-full max-w-[90vw] md:max-w-[70vh] border border-cyan-500/20 bg-[#061626]/90 backdrop-blur-md text-white shadow-2xl overflow-hidden relative" shadow="none">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 blur-xl rounded-full pointer-events-none"></div>
+          <CardBody className="p-4 flex flex-col gap-3">
+            <div className="flex items-start gap-3">
+              <span className="text-xl">⚡</span>
+              <div>
+                <h4 className="text-sm font-bold text-cyan-400 mb-1">
+                  ¿Tienes problemas de rendimiento?
+                </h4>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  Prueba <strong>EasyView</strong>, nuestro visualizador optimizado para dispositivos móviles y conexiones lentas.
+                </p>
+              </div>
+            </div>
+            <Button
+              as="a"
+              href={`/web/views/visualizer/easyview?id=${searchParams.get("id") || ""}&modelIndex=${searchParams.get("modelIndex") || "0"}`}
+              size="sm"
+              className="w-full bg-cyan-500 text-black font-bold hover:bg-cyan-400 transition-colors shadow-[0_0_10px_rgba(6,182,212,0.3)] mt-1"
+            >
+              Abrir EasyView Optimizado
+            </Button>
           </CardBody>
         </Card>
       )}
