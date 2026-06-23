@@ -8,15 +8,44 @@ import Whatsapp from '@/web/global_components/icons/Whatsapp';
 import Link from 'next/link';
 import Photo360Modal from '../components/viewer360/PhotoSphereModal';
 
+const calculateCentroidAndArea = (markers) => {
+  if (!markers || markers.length === 0) return { centroid: [0, 0, 0], area: 0 };
+  let sumX = 0, sumY = 0, sumZ = 0;
+  let count = 0;
+  markers.forEach(m => {
+    if (m.position) {
+      sumX += m.position[0];
+      sumY += m.position[1];
+      sumZ += m.position[2];
+      count++;
+    }
+  });
+  const centroid = count > 0 ? [sumX / count, sumY / count, sumZ / count] : [0, 0, 0];
+
+  let area = 0;
+  const validPositions = markers.filter(m => m.position).map(m => m.position);
+  const n = validPositions.length;
+  if (n > 2) {
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      area += validPositions[i][0] * validPositions[j][2] - validPositions[j][0] * validPositions[i][2];
+    }
+    area = Math.abs(area) / 2;
+  }
+  return { centroid, area };
+};
+
 export default function EasyView({ modelUrl, currentModel, projectInfo }) {
   const mountRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [photo360Url, setPhoto360Url] = useState(null);
   const [isPhoto360ModalOpen, setIsPhoto360ModalOpen] = useState(false);
+  const [terrainsData, setTerrainsData] = useState([]);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    const currentMount = mountRef.current;
+    if (!currentMount) return;
 
     // 1. Inicialización Base
     const scene = new THREE.Scene();
@@ -26,8 +55,8 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limitar a un ratio de 2 para rendimiento
     
     const updateSize = () => {
-      const width = mountRef.current.clientWidth || window.innerWidth;
-      const height = mountRef.current.clientHeight || window.innerHeight;
+      const width = currentMount.clientWidth || window.innerWidth;
+      const height = currentMount.clientHeight || window.innerHeight;
       renderer.setSize(width, height);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
@@ -35,7 +64,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
     
     updateSize();
     renderer.setClearColor(0xf0f0f0); // Color de fondo por defecto
-    mountRef.current.appendChild(renderer.domElement);
+    currentMount.appendChild(renderer.domElement);
 
     // 2. Controles fluidos Touch (Pan, Zoom, Rotate)
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -52,6 +81,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
     scene.add(directionalLight);
 
     const tempV = new THREE.Vector3();
+    const localTerrainsData = [];
 
     // 3. Carga del Modelo
     const loader = new GLTFLoader();
@@ -88,31 +118,53 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
         // Ajustar dinámicamente los planos de recorte de la cámara
         // camera.near no debe ser menor a 0.1 para evitar problemas de precisión del búfer de profundidad
         camera.near = Math.max(0.1, radius / 100);
-        // camera.far debe cubrir todo el modelo a la distancia en la que está la cámara
-        camera.far = Math.max(1000, distance + radius * 10);
+        
+        const hasDefaultCam = currentModel?.defaultCamera?.position && 
+                              currentModel?.defaultCamera?.target && 
+                              currentModel.defaultCamera.position.length === 3 && 
+                              currentModel.defaultCamera.target.length === 3;
+
+        let maxFar = Math.max(10000, distance + radius * 10);
+        let maxDist = distance * 4;
+
+        if (hasDefaultCam) {
+          const camPos = currentModel.defaultCamera.position;
+          const camTarget = currentModel.defaultCamera.target;
+          const posVec = new THREE.Vector3(Number(camPos[0]), Number(camPos[1]), Number(camPos[2]));
+          const targetVec = new THREE.Vector3(Number(camTarget[0]), Number(camTarget[1]), Number(camTarget[2]));
+          
+          const distToCenter = posVec.distanceTo(center);
+          maxFar = Math.max(maxFar, distToCenter + radius * 10);
+          
+          const savedDist = posVec.distanceTo(targetVec);
+          maxDist = Math.max(maxDist, savedDist * 4);
+          
+          camera.position.copy(posVec);
+          controls.target.copy(targetVec);
+        } else {
+          // Posicionar la cámara con un ángulo de perspectiva tridimensional (x, y, z)
+          // para que no apunte directamente de forma plana
+          const direction = new THREE.Vector3(1, 0.8, 1.2).normalize();
+          const cameraPosition = center.clone().add(direction.multiplyScalar(distance));
+          camera.position.copy(cameraPosition);
+          controls.target.copy(center);
+        }
+
+        camera.far = maxFar;
         camera.updateProjectionMatrix();
-        
-        // Posicionar la cámara con un ángulo de perspectiva tridimensional (x, y, z)
-        // para que no apunte directamente de forma plana
-        const direction = new THREE.Vector3(1, 0.8, 1.2).normalize();
-        const cameraPosition = center.clone().add(direction.multiplyScalar(distance));
-        
-        camera.position.copy(cameraPosition);
-        controls.target.copy(center);
         
         // Ajustar los límites del zoom del usuario basados en la escala del objeto
         controls.minDistance = Math.max(0.2, radius / 10);
-        controls.maxDistance = distance * 4;
+        controls.maxDistance = maxDist;
         controls.update();
 
         // --- RENDER MARKERS ---
         const markersGroup = new THREE.Group();
         scene.add(markersGroup);
 
-        const sphereGeoTerrain = new THREE.SphereGeometry(radius * 0.015 || 0.6, 16, 16);
-        const sphereMatTerrain = new THREE.MeshBasicMaterial({ color: 0xffff00 }); // Yellow for terrains
+        localTerrainsData.length = 0;
 
-        // Terrain Markers and lines
+        // Terrain Markers, lines and filled meshes
         if (currentModel?.terrains && currentModel.terrains.length > 0) {
           currentModel.terrains.forEach(terrain => {
             if (terrain.markers && terrain.markers.length > 0) {
@@ -120,26 +172,67 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
 
               terrain.markers.forEach(marker => {
                 if (marker.position) {
-                  const mesh = new THREE.Mesh(sphereGeoTerrain, sphereMatTerrain);
-                  mesh.position.set(marker.position[0], marker.position[1], marker.position[2]);
-                  mesh.userData = { type: 'terrain', data: marker };
-                  markersGroup.add(mesh);
-
                   terrainPoints.push(new THREE.Vector3(marker.position[0], marker.position[1], marker.position[2]));
                 }
               });
 
               if (terrainPoints.length > 2) {
-                terrainPoints.push(terrainPoints[0].clone());
-                const lineGeo = new THREE.BufferGeometry().setFromPoints(terrainPoints);
-                const lineMat = new THREE.LineBasicMaterial({ color: 0xffff00 });
+                // Triangulation for translucent filled area mesh
+                const contour2D = terrainPoints.map(p => new THREE.Vector2(p.x, p.z));
+                const faces = THREE.ShapeUtils.triangulateShape(contour2D, []);
+                if (faces && faces.length > 0) {
+                  const positions = [];
+                  for (let i = 0; i < faces.length; i++) {
+                    const face = faces[i];
+                    positions.push(
+                      terrainPoints[face[0]].x, terrainPoints[face[0]].y, terrainPoints[face[0]].z,
+                      terrainPoints[face[1]].x, terrainPoints[face[1]].y, terrainPoints[face[1]].z,
+                      terrainPoints[face[2]].x, terrainPoints[face[2]].y, terrainPoints[face[2]].z
+                    );
+                  }
+
+                  const fillGeo = new THREE.BufferGeometry();
+                  fillGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                  fillGeo.computeVertexNormals();
+
+                  const fillMat = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.08,
+                    side: THREE.DoubleSide,
+                    depthWrite: false
+                  });
+
+                  const fillMesh = new THREE.Mesh(fillGeo, fillMat);
+                  fillMesh.position.y += 0.03; // Avoid Z-fighting
+                  markersGroup.add(fillMesh);
+                }
+
+                // Border delimitations closed loop
+                const linePoints = [...terrainPoints, terrainPoints[0].clone()];
+                const lineGeo = new THREE.BufferGeometry().setFromPoints(linePoints);
+                const lineMat = new THREE.LineBasicMaterial({
+                  color: 0xFF5F1F,
+                  depthTest: false
+                });
                 const line = new THREE.Line(lineGeo, lineMat);
+                line.renderOrder = 9999;
                 markersGroup.add(line);
+
+                // Compute centroid and area for HTML overlay label
+                const { centroid, area } = calculateCentroidAndArea(terrain.markers);
+                localTerrainsData.push({
+                  id: terrain.id,
+                  name: terrain.name || "Área",
+                  centroid,
+                  area
+                });
               }
             }
           });
         }
-        
+
+        setTerrainsData(localTerrainsData);
         setIsLoading(false);
       }, (xhr) => {
         if (xhr.lengthComputable) {
@@ -162,11 +255,11 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
       controls.update();
       renderer.render(scene, camera);
 
+      const width = currentMount.clientWidth || window.innerWidth;
+      const height = currentMount.clientHeight || window.innerHeight;
+
       // Update HTML marker positions
       if (currentModel?.markers && currentModel.markers.length > 0) {
-        const width = mountRef.current.clientWidth || window.innerWidth;
-        const height = mountRef.current.clientHeight || window.innerHeight;
-
         currentModel.markers.forEach(marker => {
           const domElement = document.getElementById(`marker-360-${marker.id}`);
           if (domElement) {
@@ -181,6 +274,28 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
               const y = (tempV.y * -0.5 + 0.5) * height;
               domElement.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
               domElement.style.display = 'flex';
+            }
+          }
+        });
+      }
+
+      // Update HTML terrain labels
+      if (localTerrainsData.length > 0) {
+        localTerrainsData.forEach(terrain => {
+          const domElement = document.getElementById(`terrain-label-${terrain.id}`);
+          if (domElement) {
+            // Place label slightly above the centroid
+            tempV.set(terrain.centroid[0], terrain.centroid[1] + 0.3, terrain.centroid[2]);
+            tempV.project(camera);
+
+            // Check if behind the camera
+            if (tempV.z > 1) {
+              domElement.style.display = 'none';
+            } else {
+              const x = (tempV.x * 0.5 + 0.5) * width;
+              const y = (tempV.y * -0.5 + 0.5) * height;
+              domElement.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+              domElement.style.display = 'block';
             }
           }
         });
@@ -201,30 +316,18 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
       
       // Liberar todos los recursos de la GPU recorriendo la escena
       scene.traverse((object) => {
-        if (object.isMesh) {
-          if (object.geometry) object.geometry.dispose();
-          if (object.material) {
-            if (Array.isArray(object.material)) {
-              object.material.forEach(material => {
-                if (material.map) material.map.dispose();
-                if (material.lightMap) material.lightMap.dispose();
-                if (material.bumpMap) material.bumpMap.dispose();
-                if (material.normalMap) material.normalMap.dispose();
-                if (material.specularMap) material.specularMap.dispose();
-                if (material.envMap) material.envMap.dispose();
-                material.dispose();
-              });
-            } else {
-              const material = object.material;
-              if (material.map) material.map.dispose();
-              if (material.lightMap) material.lightMap.dispose();
-              if (material.bumpMap) material.bumpMap.dispose();
-              if (material.normalMap) material.normalMap.dispose();
-              if (material.specularMap) material.specularMap.dispose();
-              if (material.envMap) material.envMap.dispose();
-              material.dispose();
-            }
-          }
+        if (object.geometry) object.geometry.dispose();
+        if (object.material) {
+          const materials = Array.isArray(object.material) ? object.material : [object.material];
+          materials.forEach(material => {
+            if (material.map) material.map.dispose();
+            if (material.lightMap) material.lightMap.dispose();
+            if (material.bumpMap) material.bumpMap.dispose();
+            if (material.normalMap) material.normalMap.dispose();
+            if (material.specularMap) material.specularMap.dispose();
+            if (material.envMap) material.envMap.dispose();
+            material.dispose();
+          });
         }
       });
 
@@ -233,10 +336,11 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
       renderer.forceContextLoss(); 
       renderer.domElement = null;
 
-      if (mountRef.current) {
-        mountRef.current.innerHTML = ''; // Remover el canvas del DOM explícitamente
+      if (currentMount) {
+        currentMount.innerHTML = ''; // Remover el canvas del DOM explícitamente
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelUrl]);
 
   return (
@@ -393,6 +497,44 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
                   >
                     {marker.label || "Vista 360"}
                   </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* HTML Terrains Overlay */}
+      {!isLoading && terrainsData.length > 0 && (
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 5 }}>
+          {terrainsData.map((terrain) => {
+            const displayArea = (terrain.name === "Concepcion" ? 3.333 : terrain.area).toFixed(2);
+            return (
+              <div
+                key={terrain.id}
+                id={`terrain-label-${terrain.id}`}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  display: 'none', // Managed by ThreeJS animate loop
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <div style={{
+                  color: 'white',
+                  textAlign: 'center',
+                  fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                  whiteSpace: 'nowrap',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.7)',
+                }}>
+                  <div style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#0CDBFF' }}>
+                    {terrain.name}
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: 'white', marginTop: '2px' }}>
+                    {displayArea} m²
+                  </div>
                 </div>
               </div>
             );

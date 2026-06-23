@@ -61,6 +61,16 @@ const models_schema = new Schema({
     type: Date,
     required: false,
   },
+  defaultCamera: {
+    position: {
+      type: [Number],
+      required: false
+    },
+    target: {
+      type: [Number],
+      required: false
+    }
+  },
 
 });
 

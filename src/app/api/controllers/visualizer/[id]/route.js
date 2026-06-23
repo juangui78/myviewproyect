@@ -36,12 +36,13 @@ export async function POST(request, { params }) {
     try {
         
         
-        const { terrains, modelID, view360Markers, version_notes, updated_by } = await request.json();
+        const { terrains, modelID, view360Markers, version_notes, updated_by, defaultCamera } = await request.json();
         console.log('aqui llega el ID: ', modelID);
         console.log('Terrains received:', terrains);
         console.log('aqui llegan los markers 360: ', view360Markers);
         console.log('Version notes received:', version_notes);
         console.log('Updated by:', updated_by);
+        console.log('Default camera received:', defaultCamera);
         
         // Encuentra el proyecto y actualiza los terrenos
         const model = await Model.findById(modelID);
@@ -52,6 +53,10 @@ export async function POST(request, { params }) {
 
         if (terrains) model.terrains = terrains;
         if (view360Markers) model.markers = view360Markers; // Guarda los markers 360 en el campo markers del modelo
+        if (defaultCamera) {
+            model.defaultCamera = defaultCamera;
+            model.markModified('defaultCamera');
+        }
         if (version_notes !== undefined) {
             model.version_notes = version_notes;
             if (updated_by) model.updated_by = updated_by;

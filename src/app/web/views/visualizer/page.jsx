@@ -15,6 +15,7 @@ import Marker360 from './components/markers/Marker360';
 import ClickHandler from "./components/clickhandler/ClickHandler";
 import * as THREE from 'three';
 import AreaVisual from "./components/areaVisualizer/AreaVisual";
+import DistanceVisual from "./components/areaVisualizer/DistanceVisual";
 import Toolbar from "./components/toolbar/Toolbar";
 import Terrains from "./components/tables/terrains/Terrains.jsx"
 import History from "./components/tables/history/History.jsx"
@@ -151,6 +152,7 @@ const App = () => {
     const [heightBounds, setHeightBounds] = useState({ min: 0, max: 1 });
     const [isEditingMode, setIsEditingMode] = useState(false);
     const [editMarkerType, setEditMarkerType] = useState('area');
+    const [distanceMarkers, setDistanceMarkers] = useState([]);
     const [originalTerrains, setOriginalTerrains] = useState([]);
     const [originalView360Markers, setOriginalView360Markers] = useState([]);
     const [isAdd360ModalOpen, setIsAdd360ModalOpen] = useState(false);
@@ -158,6 +160,8 @@ const App = () => {
     const [new360Label, setNew360Label] = useState("");
     const [new360File, setNew360File] = useState(null);
     const [isUploading360, setIsUploading360] = useState(false);
+    const [defaultCamera, setDefaultCamera] = useState(null);
+    const [originalDefaultCamera, setOriginalDefaultCamera] = useState(null);
 
     // Función profunda para liberar RAM / VRAM de ThreeJS
     const disposeGLTF = (currentGltf) => {
@@ -362,6 +366,7 @@ const App = () => {
     const toggleTerrains = () => {
         setShowTerrains((prev) => !prev);
         setSelectedMarker(null);
+        setSelectedTerrain(null);
     }
 
     const handleAddTerrain = () => {
@@ -379,6 +384,9 @@ const App = () => {
 
             // Llamar a handleResetMarkers
             handleResetMarkers();
+
+            // Desactivar colocación de puntos por error
+            setEditMarkersMode(false);
         }
     };
 
@@ -416,6 +424,26 @@ const App = () => {
 
         // Añadir el nuevo marcador al estado
         setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
+    };
+
+    const handleAddDistanceMarker = (position) => {
+        const newMarker = {
+            id: distanceMarkers.length + 1,
+            position,
+            label: `M ${distanceMarkers.length + 1}`,
+        };
+
+        if (distanceMarkers.length >= 2) {
+            setDistanceMarkers([newMarker]);
+        } else {
+            setDistanceMarkers(prev => {
+                const updated = [...prev, newMarker];
+                if (updated.length === 2) {
+                    setEditMarkersMode(false);
+                }
+                return updated;
+            });
+        }
     };
 
     const changeLight = () => {
@@ -471,7 +499,7 @@ const App = () => {
 
                 if (response.data && response.data.length > 0) {
                     setModels(response.data);
-                    
+
                     const queryIndexStr = searchParams.get("modelIndex");
                     const queryIndex = queryIndexStr ? parseInt(queryIndexStr, 10) : 0;
                     const safeIndex = (isNaN(queryIndex) || queryIndex < 0 || queryIndex >= response.data.length) ? 0 : queryIndex;
@@ -485,6 +513,14 @@ const App = () => {
                     } else {
                         setTerrains([]);
                         setAllTerrains([]);
+                    }
+
+                    if (response.data[safeIndex]?.defaultCamera) {
+                        setDefaultCamera(response.data[safeIndex].defaultCamera);
+                        setOriginalDefaultCamera(response.data[safeIndex].defaultCamera);
+                    } else {
+                        setDefaultCamera(null);
+                        setOriginalDefaultCamera(null);
                     }
 
                     // Inicializa photo360Url con la URL del primer marcador 360 si existe
@@ -612,6 +648,14 @@ const App = () => {
                         setAllTerrains(currentModel.terrains);
                         setView360Markers(currentModel.markers || []);
                     }
+
+                    if (currentModel.defaultCamera) {
+                        setDefaultCamera(currentModel.defaultCamera);
+                        setOriginalDefaultCamera(currentModel.defaultCamera);
+                    } else {
+                        setDefaultCamera(null);
+                        setOriginalDefaultCamera(null);
+                    }
                 });
             } else {
                 alert("No existe modelo");
@@ -620,6 +664,32 @@ const App = () => {
 
         if (session !== null && session !== undefined) setIsPublish(false);
     }, [currentModel, isModelLoaded, isSafariMobile, isInstagramBrowser]);
+
+    // Aplicar cámara por defecto una vez cargado el modelo y los controles listos
+    useEffect(() => {
+        if (isModelLoaded && currentModel?.defaultCamera) {
+            let attempts = 0;
+            const applyCamera = () => {
+                if (orbitControlsRef.current) {
+                    const controls = orbitControlsRef.current;
+                    const camera = controls.object;
+                    const { position, target } = currentModel.defaultCamera;
+                    if (position && position.length === 3) {
+                        camera.position.set(position[0], position[1], position[2]);
+                    }
+                    if (target && target.length === 3) {
+                        controls.target.set(target[0], target[1], target[2]);
+                    }
+                    camera.updateProjectionMatrix();
+                    controls.update();
+                } else if (attempts < 15) {
+                    attempts++;
+                    setTimeout(applyCamera, 100);
+                }
+            };
+            setTimeout(applyCamera, 100);
+        }
+    }, [isModelLoaded, currentModel]);
 
     // Función para cargar un modelo específico
     const loadModel = (model) => {
@@ -664,6 +734,14 @@ const App = () => {
                 if (model.terrains && model.terrains.length > 0) {
                     setTerrains(model.terrains);
                     setAllTerrains(model.terrains);
+                }
+
+                if (model.defaultCamera) {
+                    setDefaultCamera(model.defaultCamera);
+                    setOriginalDefaultCamera(model.defaultCamera);
+                } else {
+                    setDefaultCamera(null);
+                    setOriginalDefaultCamera(null);
                 }
 
                 if (model.markers && model.markers.length > 0) {
@@ -751,11 +829,14 @@ const App = () => {
                 modelID: modelID,
                 terrains: allTerrains,
                 view360Markers: view360Markers,
+                defaultCamera: defaultCamera,
             });
             console.log('Terrenos guardados:', response.data);
             setOriginalTerrains(allTerrains);
             setOriginalView360Markers(view360Markers);
+            setOriginalDefaultCamera(defaultCamera);
             setSelectedMarker(null);
+            setSelectedTerrain(null);
             setIsEditingMode(false);
             setEditMarkersMode(false);
             return response.data;
@@ -769,9 +850,9 @@ const App = () => {
         toast.promise(
             saveTerrainsToDB(), // Ejecutamos la promesa
             {
-                loading: "Guardando terrenos...",
-                success: (data) => `Terrenos guardados!`, // Ajusta según tu respuesta
-                error: (err) => `Error!`
+                loading: "Guardando cambios en el proyecto...",
+                success: (data) => "¡Cambios guardados con éxito!",
+                error: (err) => "Error al guardar los cambios."
             }
         );
     };
@@ -794,9 +875,11 @@ const App = () => {
             setTerrains(originalTerrains);
             setAllTerrains(originalTerrains);
             setView360Markers(originalView360Markers);
+            setDefaultCamera(originalDefaultCamera);
             setCurrentTerrainMarkers([]);
             setMarkers([]);
             setSelectedMarker(null);
+            setSelectedTerrain(null);
             setIsEditingMode(false);
             setEditMarkersMode(false);
         }
@@ -806,8 +889,10 @@ const App = () => {
         setEditMarkerType(type);
         setAddView360Mode(type === '360');
         setCurrentTerrainMarkers([]);
+        setDistanceMarkers([]);
         setMarkers([]);
         setSelectedMarker(null);
+        setSelectedTerrain(null);
     };
 
     const handleAddView360Marker = (position) => {
@@ -868,6 +953,86 @@ const App = () => {
         }
 
         return null;
+    };
+
+    const handleUpdateTerrainName = (newName) => {
+        if (!selectedTerrain) return;
+
+        setSelectedTerrain(prev => prev ? { ...prev, name: newName } : null);
+
+        setTerrains(prev => prev.map(t =>
+            t.id === selectedTerrain.id ? { ...t, name: newName } : t
+        ));
+
+        setAllTerrains(prev => prev.map(t =>
+            t.id === selectedTerrain.id ? { ...t, name: newName } : t
+        ));
+    };
+
+    const handleDeleteMarkerFromTerrain = (markerId) => {
+        if (!selectedTerrain) return;
+
+        if (window.confirm("¿Seguro que deseas eliminar este punto del terreno?")) {
+            if (selectedMarker === markerId) {
+                setSelectedMarker(null);
+            }
+
+            const updatedMarkers = selectedTerrain.markers.filter(m => m.id !== markerId);
+
+            if (updatedMarkers.length === 0) {
+                setTerrains(prev => prev.filter(t => t.id !== selectedTerrain.id));
+                setAllTerrains(prev => prev.filter(t => t.id !== selectedTerrain.id));
+                setSelectedTerrain(null);
+                toast.success("Terreno eliminado ya que no tiene puntos.");
+            } else {
+                setSelectedTerrain(prev => prev ? { ...prev, markers: updatedMarkers } : null);
+
+                setTerrains(prev => prev.map(t =>
+                    t.id === selectedTerrain.id ? { ...t, markers: updatedMarkers } : t
+                ));
+
+                setAllTerrains(prev => prev.map(t =>
+                    t.id === selectedTerrain.id ? { ...t, markers: updatedMarkers } : t
+                ));
+                toast.success("Punto eliminado del terreno.");
+            }
+        }
+    };
+
+    const handleAddMarkerToSelectedTerrain = (position) => {
+        if (!selectedTerrain) return;
+
+        const newMarker = {
+            id: Date.now(),
+            position,
+            label: `Punto ${selectedTerrain.markers.length + 1}`,
+        };
+
+        const updatedMarkers = [...selectedTerrain.markers, newMarker];
+
+        setSelectedTerrain(prev => prev ? { ...prev, markers: updatedMarkers } : null);
+
+        setTerrains(prev => prev.map(t =>
+            t.id === selectedTerrain.id ? { ...t, markers: updatedMarkers } : t
+        ));
+
+        setAllTerrains(prev => prev.map(t =>
+            t.id === selectedTerrain.id ? { ...t, markers: updatedMarkers } : t
+        ));
+
+        toast.success("Punto añadido al terreno.");
+    };
+
+    const handleSetDefaultCamera = () => {
+        if (!orbitControlsRef.current) return;
+        const controls = orbitControlsRef.current;
+        const camera = controls.object;
+
+        const position = [camera.position.x, camera.position.y, camera.position.z];
+        const target = [controls.target.x, controls.target.y, controls.target.z];
+
+        setDefaultCamera({ position, target });
+        toast.success("Posición de cámara capturada localmente. Haz clic en 'Guardar Cambios' para persistir.");
     };
 
     const selectedInfo = getSelectedMarkerItem();
@@ -1159,6 +1324,10 @@ const App = () => {
         return [0, 0, 0];
     };
 
+    const hasChanges = JSON.stringify(allTerrains) !== JSON.stringify(originalTerrains) ||
+        JSON.stringify(view360Markers) !== JSON.stringify(originalView360Markers) ||
+        JSON.stringify(defaultCamera) !== JSON.stringify(originalDefaultCamera);
+
     const selectedMarkerPosition = getSelectedMarkerPosition();
 
 
@@ -1170,6 +1339,7 @@ const App = () => {
 
     return (
         <div className="flex flex-col items-center h-[100vh] overflow-hidden relative select-none">
+            <Toaster richColors closeButton position="bottom-right" duration={10000} />
 
             {/* div de carga inicial */}
 
@@ -1306,7 +1476,18 @@ const App = () => {
                                 <CameraViewManager cameraView={cameraView} />
                                 {/* <CameraDebugger /> */}
 
-                                {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} onAddView360Marker={handleAddView360Marker} addView360Mode={addView360Mode} />}
+                                {editMarkersMode && (
+                                    <ClickHandler
+                                        onAddMarker={
+                                            editMarkerType === 'distance'
+                                                ? handleAddDistanceMarker
+                                                : (selectedTerrain ? handleAddMarkerToSelectedTerrain : handleAddMarker)
+                                        }
+                                        objectRef={objectRef}
+                                        onAddView360Marker={handleAddView360Marker}
+                                        addView360Mode={addView360Mode}
+                                    />
+                                )}
                                 {/* {markers.map(marker => (
                                 <Marker
                                     key={marker.id}
@@ -1401,20 +1582,35 @@ const App = () => {
                                                     key={marker.id}
                                                     position={marker.position}
                                                     label={marker.label}
-                                                    onClick={() => setSelectedMarker(marker.id)}
+                                                    onClick={() => {
+                                                        setSelectedMarker(marker.id);
+                                                        setSelectedTerrain(terrain);
+                                                    }}
                                                 />
                                             );
                                         })}
                                         {terrain.markers.length > 2 && (
                                             <AreaVisual
-                                                pjname={pjname}
+                                                pjname={terrain.name || "Área"}
                                                 terrains={terrains}
                                                 markers={terrain.markers}
                                                 areaCalculated={handleAreaCalculated}
+                                                onClick={() => {
+                                                    if (isEditingMode) {
+                                                        setSelectedTerrain(terrain);
+                                                        setSelectedMarker(null);
+                                                    }
+                                                }}
                                             />
                                         )}
                                     </React.Fragment>
                                 ))}
+
+                                {editMarkerType === 'distance' && (
+                                    <DistanceVisual
+                                        markers={distanceMarkers}
+                                    />
+                                )}
 
                                 {isEditingMode && selectedMarker && selectedMarkerObj && (
                                     <TransformControls
@@ -1584,22 +1780,30 @@ const App = () => {
 
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-xs text-white/60 font-semibold">Tipo de Marcador:</label>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-3 gap-2">
                                     <Button
                                         size="sm"
                                         variant={editMarkerType === 'area' ? 'solid' : 'bordered'}
-                                        className={editMarkerType === 'area' ? 'bg-[#0CDBFF] text-black font-semibold' : 'text-white border-white/20'}
+                                        className={editMarkerType === 'area' ? 'bg-[#0CDBFF] text-black font-semibold text-xs' : 'text-white border-white/20 text-xs'}
                                         onClick={() => handleSetEditMarkerType('area')}
                                     >
-                                        Área (Trazado)
+                                        Área
                                     </Button>
                                     <Button
                                         size="sm"
                                         variant={editMarkerType === '360' ? 'solid' : 'bordered'}
-                                        className={editMarkerType === '360' ? 'bg-[#0CDBFF] text-black font-semibold' : 'text-white border-white/20'}
+                                        className={editMarkerType === '360' ? 'bg-[#0CDBFF] text-black font-semibold text-xs' : 'text-white border-white/20 text-xs'}
                                         onClick={() => handleSetEditMarkerType('360')}
                                     >
                                         Vista 360
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant={editMarkerType === 'distance' ? 'solid' : 'bordered'}
+                                        className={editMarkerType === 'distance' ? 'bg-[#0CDBFF] text-black font-semibold text-xs' : 'text-white border-white/20 text-xs'}
+                                        onClick={() => handleSetEditMarkerType('distance')}
+                                    >
+                                        Distancia
                                     </Button>
                                 </div>
                             </div>
@@ -1625,6 +1829,7 @@ const App = () => {
                                     </Button>
                                 </div>
                             </div>
+
 
                             {editMarkerType === 'area' && (
                                 <div className="bg-white/5 border border-white/10 rounded-lg p-2.5 flex flex-col gap-2">
@@ -1655,6 +1860,129 @@ const App = () => {
                                 </div>
                             )}
 
+                            {editMarkerType === 'distance' && (
+                                <div className="bg-white/5 border border-white/10 rounded-lg p-2.5 flex flex-col gap-2">
+                                    <div className="flex justify-between text-xs">
+                                        <span>Puntos medidos:</span>
+                                        <span className="font-bold text-[#0CDBFF]">{distanceMarkers.length} / 2</span>
+                                    </div>
+                                    <p className="text-[11px] text-white/40 leading-normal">
+                                        Haz clic sobre dos puntos en el relieve del modelo 3D para calcular la distancia lineal entre ellos.
+                                    </p>
+                                    {distanceMarkers.length === 2 && (
+                                        <Button
+                                            size="sm"
+                                            color="danger"
+                                            variant="flat"
+                                            className="w-full text-white font-semibold"
+                                            onClick={() => setDistanceMarkers([])}
+                                        >
+                                            Limpiar Medición
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="flex flex-col gap-1.5 border-t border-white/10 pt-2.5">
+                                <label className="text-xs text-white/60 font-semibold">Cámara por Defecto:</label>
+                                <Button
+                                    size="sm"
+                                    variant="bordered"
+                                    className="text-white border-white/20 hover:bg-white/10 text-xs font-semibold"
+                                    onClick={handleSetDefaultCamera}
+                                >
+                                    📸 Guardar Vista Actual por Defecto
+                                </Button>
+                            </div>
+
+
+                            {selectedTerrain && (
+                                <div className="bg-white/5 border border-[#0CDBFF]/30 rounded-lg p-2.5 flex flex-col gap-2">
+                                    <div className="flex justify-between items-center text-xs border-b border-white/10 pb-1">
+                                        <span className="font-bold text-[#0CDBFF]">Editar Terreno</span>
+                                        <Button
+                                            size="sm"
+                                            variant="light"
+                                            className="text-white/40 hover:text-white text-[10px] h-6 min-w-0 px-2"
+                                            onClick={() => {
+                                                setSelectedTerrain(null);
+                                                setSelectedMarker(null);
+                                            }}
+                                        >
+                                            Cerrar
+                                        </Button>
+                                    </div>
+
+                                    <Input
+                                        size="sm"
+                                        label="Nombre del Relleno"
+                                        labelPlacement="outside"
+                                        value={selectedTerrain.name || ""}
+                                        placeholder={`Terreno ${selectedTerrain.id}`}
+                                        onChange={(e) => handleUpdateTerrainName(e.target.value)}
+                                        variant="bordered"
+                                        className="text-white mt-4"
+                                        classNames={{
+                                            input: "text-white text-xs",
+                                            label: "text-white/70 text-[10px]"
+                                        }}
+                                    />
+
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex justify-between items-center">
+                                            <label className="text-[10px] text-white/60 font-semibold">Puntos del Terreno:</label>
+                                            <span className="text-[10px] text-white/40 font-mono">{selectedTerrain.markers.length} puntos</span>
+                                        </div>
+
+                                        <div className="max-h-[120px] overflow-y-auto border border-white/10 rounded bg-black/40 flex flex-col gap-0.5 p-1">
+                                            {selectedTerrain.markers.map((marker, index) => {
+                                                const isSelected = selectedMarker === marker.id;
+                                                return (
+                                                    <div
+                                                        key={marker.id}
+                                                        className={`flex justify-between items-center px-2 py-1 rounded text-xs transition-colors ${isSelected ? 'bg-[#0CDBFF]/20 border border-[#0CDBFF]/40 text-white' : 'hover:bg-white/5 text-white/70'
+                                                            }`}
+                                                    >
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSelectedMarker(marker.id)}
+                                                            className="flex-1 text-left font-mono truncate font-semibold"
+                                                        >
+                                                            {marker.label || `Punto ${index + 1}`}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteMarkerFromTerrain(marker.id)}
+                                                            className="text-red-400 hover:text-red-500 font-bold px-1.5 py-0.5"
+                                                            title="Eliminar punto"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-1.5 mt-1">
+                                        {editMarkersMode ? (
+                                            <div className="flex items-center justify-center gap-1.5 py-1 px-2.5 bg-green-500/10 border border-green-500/30 rounded text-[11px] text-green-400 font-medium animate-pulse">
+                                                <span>●</span> Modo añadir puntos activo. Clic en el 3D para añadir.
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                variant="bordered"
+                                                className="w-full text-xs font-semibold h-7 border-[#0CDBFF]/30 text-[#0CDBFF] hover:bg-[#0CDBFF]/10"
+                                                onClick={() => setEditMarkersMode(true)}
+                                            >
+                                                ✏️ Añadir Puntos al Terreno
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             {selectedInfo && (
                                 <div className="bg-white/5 border border-[#0CDBFF]/30 rounded-lg p-2.5 flex flex-col gap-2">
                                     <div className="flex justify-between items-center text-xs border-b border-white/10 pb-1">
@@ -1672,12 +2000,13 @@ const App = () => {
                                     <Input
                                         size="sm"
                                         label="Etiqueta"
+                                        labelPlacement="outside"
                                         value={selectedInfo.item.label || ""}
                                         onChange={(e) => handleUpdateMarkerLabel(e.target.value)}
                                         variant="bordered"
-                                        className="text-white"
+                                        className="text-white mt-4"
                                         classNames={{
-                                            input: "text-white h-7 text-xs",
+                                            input: "text-white text-xs",
                                             label: "text-white/70 text-[10px]"
                                         }}
                                     />
@@ -1730,8 +2059,10 @@ const App = () => {
                             <div className="flex gap-2 border-t border-white/10 pt-2.5 mt-1">
                                 <Button
                                     size="sm"
-                                    className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold"
+                                    className={`flex-1 font-semibold ${hasChanges ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed opacity-50'}`}
                                     onClick={handleSaveButtonClick}
+                                    isDisabled={!hasChanges}
+                                    disabled={!hasChanges}
                                 >
                                     Guardar Cambios
                                 </Button>

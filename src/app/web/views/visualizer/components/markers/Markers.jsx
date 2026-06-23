@@ -3,23 +3,24 @@ import { Html } from '@react-three/drei';
 
 function Marker({ position, label, onClick }) {
     return (
-        <mesh position={position} onClick={onClick}>
-            <sphereGeometry args={[0.6, 32, 32]} />
-            <meshStandardMaterial color="red" />
-            {/* <Html position={[0, 0.5, 0]} style={{ pointerEvents: 'none' }}>
-                <div style={{
-                    color: 'white',
-                    background: 'black',
-                    padding: '2px 7px',
-                    borderRadius: '5px',
-                    display: 'flex',        // Usamos flex para alinear el texto y el número
-                    alignItems: 'center',
-                    whiteSpace: 'nowrap',
-                }}>
-                    <span>{label}</span>
-                </div>
-            </Html> */}
-        </mesh>
+        <group position={position} onClick={onClick}>
+            {/* Inner solid glowing core (Neon Orange) */}
+            <mesh>
+                <sphereGeometry args={[0.2, 16, 16]} />
+                <meshBasicMaterial color="#FF5F1F" />
+            </mesh>
+            
+            {/* Outer holographic shell (Neon Orange) */}
+            <mesh>
+                <sphereGeometry args={[0.4, 16, 16]} />
+                <meshStandardMaterial 
+                    color="#FF5F1F" 
+                    transparent={true} 
+                    opacity={0.3} 
+                    wireframe={true}
+                />
+            </mesh>
+        </group>
     );
 }
 

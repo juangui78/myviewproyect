@@ -6,9 +6,11 @@ import ChevronDoubleLeft from "@/web/global_components/icons/ChevronDoubleLeft";
 import { EditIcon } from "@/web/global_components/icons/EditIcon";
 import CheckIcon from "@/web/global_components/icons/CheckIcon";
 import { Ban } from "@/web/global_components/icons/Ban";
+import ShareIcon from "@/web/global_components/icons/Share";
 import { uploadProjectImageAction } from "../actions/uploadImage";
 import { encrypt } from "@/api/libs/crypto";
 import axios from "axios";
+import { toast, Toaster } from "sonner";
 
 const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
 
@@ -131,8 +133,21 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
         setIsSaving(false)
     }
 
+    const copyToClipboard = (idx) => {
+        const link = `${window.location.origin}/web/views/visualizer?id=${encrypt(_id)}&modelIndex=${idx}`;
+        navigator.clipboard.writeText(link)
+            .then(() => {
+                toast.success("Enlace de la versión copiado al portapapeles");
+            })
+            .catch((err) => {
+                console.error("Error al copiar el enlace:", err);
+                toast.error("No se pudo copiar el enlace");
+            });
+    };
+
     return (
         <>
+            <Toaster richColors position="top-right" />
             <Drawer
                isOpen={isOpen}
                placement={"left"}
@@ -181,17 +196,17 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                           )}
                         </div>
                         <div className="flex gap-1 items-center">
-                         <Tooltip content="Cerrar">
-                           <Button  
-                           isIconOnly
-                           className="text-default-400"
-                           size="sm"
-                           variant="light"
-                           onPress={onClose}>
-                             <ChevronDoubleLeft />
-                           </Button>
-                         </Tooltip>
-                       </div>
+                          <Tooltip content="Cerrar">
+                            <Button  
+                            isIconOnly
+                            className="text-default-400"
+                            size="sm"
+                            variant="light"
+                            onPress={onClose}>
+                              <ChevronDoubleLeft />
+                            </Button>
+                          </Tooltip>
+                        </div>
                      </DrawerHeader>
                     <DrawerBody className="pt-16 scrollbar-hide">
                       <div className="flex w-full flex-col justify-center items-center pt-4">
@@ -308,15 +323,27 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                                                   : "Sin fecha"}
                                               </p>
                                             </div>
-                                            <Button
-                                              as={Link}
-                                              href={`/web/views/visualizer?id=${encrypt(_id)}&modelIndex=${idx}`}
-                                              target="_blank"
-                                              size="sm"
-                                              className="bg-[#0CDBFF] text-black font-bold hover:bg-cyan-400 min-w-0 px-4 rounded-full h-8"
-                                            >
-                                              Acceder
-                                            </Button>
+                                            <div className="flex items-center gap-2">
+                                              <Button
+                                                as={Link}
+                                                href={`/web/views/visualizer?id=${encrypt(_id)}&modelIndex=${idx}`}
+                                                target="_blank"
+                                                size="sm"
+                                                className="bg-[#0CDBFF] text-black font-bold hover:bg-cyan-400 min-w-0 px-4 rounded-full h-8"
+                                              >
+                                                Acceder
+                                              </Button>
+                                              <Button
+                                                isIconOnly
+                                                size="sm"
+                                                variant="flat"
+                                                onClick={() => copyToClipboard(idx)}
+                                                className="bg-white/10 hover:bg-white/20 text-[#0CDBFF] hover:text-cyan-400 rounded-full h-8 w-8 min-w-8 flex items-center justify-center border border-white/5"
+                                                title="Compartir versión"
+                                              >
+                                                <ShareIcon className="w-4 h-4" />
+                                              </Button>
+                                            </div>
                                           </div>
                                         ))
                                       ) : (
@@ -327,8 +354,8 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                                 </div>
                             </>
                         )}
-                    </div>
-                  </DrawerBody>
+                      </div>
+                    </DrawerBody>
                     <DrawerFooter className="border-t border-white/10">
                       <Button color="danger" variant="light" onPress={onClose}>
                         Cerrar
