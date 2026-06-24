@@ -59,13 +59,24 @@ export default function Login() {
 
                 const { email, password } = values
 
-                const response = await signIn('credentials', {
+                let response = await signIn('credentials', {
                   email : email,
                   password: password,
                   redirect : false
                 })
 
-                if (!response.ok) { // if response is not ok
+                // Auto-retry once on failure (handles database cold start timeouts)
+                if (!response || !response.ok) {
+                  console.warn("Intento de login fallido/timed out por posible cold start. Reintentando...");
+                  await new Promise(resolve => setTimeout(resolve, 800));
+                  response = await signIn('credentials', {
+                    email : email,
+                    password: password,
+                    redirect : false
+                  });
+                }
+
+                if (!response || !response.ok) { // if response is not ok
                   setError(true)
                   return
                 }
@@ -74,7 +85,7 @@ export default function Login() {
               }}
             >
             {({ handleSubmit, isSubmitting}) => (
-              <Form onSubmit={handleSubmit} className="flex flex-col ">
+              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col ">
                 <Field name="email">
                   {({ field, meta }) => (
                      <>
@@ -151,7 +162,7 @@ export default function Login() {
                 >
                   {isSubmitting ? 'Verificando...' : 'Entrar'}
                 </Button>
-              </Form>
+              </form>
             )}
           </Formik>
         </CardBody>
