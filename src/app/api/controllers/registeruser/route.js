@@ -29,6 +29,7 @@ const loginSchema = z
 
 export async function POST(request) {
   try {
+    await dbConnected();
     const data = await request.json();
     const result = loginSchema.safeParse(data);
 

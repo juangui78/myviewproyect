@@ -9,6 +9,7 @@ dbConnected();
 
 export async function POST(request) {
     try {
+        await dbConnected();
         //====================================================
         //get data from request and validate
         const requestData = await request.json();

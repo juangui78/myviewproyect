@@ -13,6 +13,7 @@ dbConnected();
 
 export async function POST(request) { // send data to share model to user at email
     try {
+        await dbConnected();
 
         //get data from request and validate
         //=======================================================================================
