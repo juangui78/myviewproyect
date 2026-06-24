@@ -125,7 +125,7 @@ export default function Cards({ proyects, totalProyects }) {
                           <div className="bg-white/5 p-2.5 rounded-[14px] border border-white/10 group-hover/item:bg-white/10 transition-all">
                             <EditIconV2 className="w-5 h-5 text-white/70" />
                           </div>
-                          <span className="text-white/80 font-semibold text-sm">Editar Proyecto</span>
+                          <span className="text-white/80 font-semibold text-sm">Informacion del Proyecto</span>
                         </div>
 
                         <div
