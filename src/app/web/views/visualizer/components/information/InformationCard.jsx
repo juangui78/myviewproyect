@@ -235,7 +235,7 @@ export const InformationCard = ({ info, currentModel, canEdit, onUpdateModelNote
             </div>
             <Button
               as="a"
-              href={`/web/views/visualizer/easyview?id=${searchParams.get("id") || ""}&modelIndex=${searchParams.get("modelIndex") || "0"}`}
+              href={`/web/views/visualizer/easyview?id=${encodeURIComponent(searchParams.get("id") || "")}&modelIndex=${searchParams.get("modelIndex") || "0"}`}
               size="sm"
               className="w-full bg-cyan-500 text-black font-bold hover:bg-cyan-400 transition-colors shadow-[0_0_10px_rgba(6,182,212,0.3)] mt-1"
             >

@@ -1356,7 +1356,7 @@ const App = () => {
                     </div>
                     <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 flex flex-col items-end gap-3">
                         <Link
-                            href={`/web/views/visualizer/easyview?id=${searchParams.get("id")}&modelIndex=${currentIndexModel}`}
+                            href={`/web/views/visualizer/easyview?id=${encodeURIComponent(searchParams.get("id") || "")}&modelIndex=${currentIndexModel}`}
                             className="flex items-center justify-center gap-2 px-4 h-10 bg-black/60 backdrop-blur-md border border-white/20 rounded-full shadow-lg hover:bg-white/20 transition-all text-white"
                             title="¿Problemas de rendimiento en el móvil? Visualizar con EasyView"
                         >
@@ -2151,7 +2151,7 @@ const App = () => {
                     </div>
                     <div>
                         <Link
-                            href={`/web/views/visualizer/easyview?id=${searchParams.get("id")}&modelIndex=${currentIndexModel}`}
+                            href={`/web/views/visualizer/easyview?id=${encodeURIComponent(searchParams.get("id") || "")}&modelIndex=${currentIndexModel}`}
                             className="flex items-center justify-center gap-2 px-8 h-12 bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-white font-semibold"
                             title="Visualizar en EasyView"
                         >
@@ -2183,7 +2183,7 @@ const App = () => {
                     </div>
                     <div>
                         <Link
-                            href={`/web/views/visualizer/easyview?id=${searchParams.get("id")}&modelIndex=${currentIndexModel}`}
+                            href={`/web/views/visualizer/easyview?id=${encodeURIComponent(searchParams.get("id") || "")}&modelIndex=${currentIndexModel}`}
                             className="flex items-center justify-center gap-2 px-8 h-12 bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-white font-semibold"
                             title="Visualizar en EasyView"
                         >

@@ -18,12 +18,21 @@ function EasyViewContent() {
     useEffect(() => {
         const fetchModel = async () => {
             if (!encryptedId) {
-                setLoading(false);
+                if (typeof window !== 'undefined') {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (!urlParams.get("id")) {
+                        setLoading(false);
+                    }
+                }
                 return;
             }
 
             try {
+                setLoading(true);
                 const idProyect = decrypt(encryptedId);
+                if (!idProyect) {
+                    throw new Error("ID de proyecto inválido");
+                }
 
                 // Traer info del proyecto
                 const projectResponse = await axios.get(`/api/controllers/visualizer/${idProyect}`);
