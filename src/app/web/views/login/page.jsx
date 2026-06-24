@@ -70,8 +70,7 @@ export default function Login() {
                   return
                 }
 
-                router.refresh();
-                router.push('/web/views/user/feed');
+                window.location.href = '/web/views/user/feed';
               }}
             >
             {({ handleSubmit, isSubmitting}) => (
