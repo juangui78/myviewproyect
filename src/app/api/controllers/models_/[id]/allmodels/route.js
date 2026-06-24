@@ -9,6 +9,7 @@ export async function GET(request, { params }) {
     const { id } = await params;
     
     try {
+        await dbConnected();
         console.log('entro al endpoint de modelos');
         
         // Encuentra todos los modelos que coincidan con el idProyect

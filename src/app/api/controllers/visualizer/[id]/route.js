@@ -9,6 +9,7 @@ dbConnected();
 export async function GET(request, {params}) {
     const { id } = params;
     try {
+        await dbConnected();
         const findProyect = await Proyect.findById(id);
 
         if (findProyect) {
@@ -24,8 +25,10 @@ export async function GET(request, {params}) {
             return NextResponse.json(data, { status: 200 });
         } else {
             console.log('no ha encontrado proyecto del query');
+            return NextResponse.json({ message: 'Project not found' }, { status: 404 });
         }
     } catch (error) {
+        console.error("Error en GET /api/controllers/visualizer/[id]:", error);
         return NextResponse.json({message: 'Invalid Id'}, { status: 500 })
     }
 }
@@ -34,7 +37,7 @@ export async function GET(request, {params}) {
 export async function POST(request, { params }) {
     const { id } = params;
     try {
-        
+        await dbConnected();
         
         const { terrains, modelID, view360Markers, version_notes, updated_by, defaultCamera } = await request.json();
         console.log('aqui llega el ID: ', modelID);
