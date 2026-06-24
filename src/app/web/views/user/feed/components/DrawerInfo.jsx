@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
-import { Tooltip, Input, Textarea, Button, Link, Avatar, AvatarGroup, Image } from "@nextui-org/react";
+import { Tooltip, Input, Textarea, Button, Link, Avatar, AvatarGroup, Image, Spinner } from "@nextui-org/react";
 import { getTodoList, updateProject } from "../js/todo";
 import ChevronDoubleLeft from "@/web/global_components/icons/ChevronDoubleLeft";
 import { EditIcon } from "@/web/global_components/icons/EditIcon";
@@ -30,8 +30,25 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
     const [versions, setVersions] = useState([])
 
     useEffect(() => {
+        if (!isOpen) {
+            setIsEditing(false);
+            setImageFile(null);
+            if (imagePreview) {
+                URL.revokeObjectURL(imagePreview);
+                setImagePreview(null);
+            }
+            setData({});
+            setEditForm({
+                name: "",
+                address: "",
+                description: ""
+            });
+            setVersions([]);
+            return;
+        }
 
         const fetchData = async () => {
+          setLoading(true);
           const response = await getTodoList(_id); //get data from api
           const status_ = response[0]
           const data_ = response[1]
@@ -66,7 +83,7 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
 
         if (_id) fetchData()
 
-    }, [_id])
+    }, [_id, isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleEditToggle = () => {
         if (isEditing) {
@@ -209,7 +226,13 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                         </div>
                      </DrawerHeader>
                     <DrawerBody className="pt-16 scrollbar-hide">
-                      <div className="flex w-full flex-col justify-center items-center pt-4">
+                      {loading ? (
+                        <div className="flex justify-center items-center h-full min-h-[300px]">
+                          <Spinner color="primary" label="Cargando información..." />
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex w-full flex-col justify-center items-center pt-4">
                         <div className="relative w-full aspect-square rounded-xl overflow-hidden group/img border border-white/10">
                           <Image
                             removeWrapper
@@ -355,6 +378,8 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                             </>
                         )}
                       </div>
+                        </>
+                      )}
                     </DrawerBody>
                     <DrawerFooter className="border-t border-white/10">
                       <Button color="danger" variant="light" onPress={onClose}>
