@@ -117,9 +117,20 @@ export const InformationCard = ({ info, currentModel, canEdit, onUpdateModelNote
             <h2 className="text-lg font-bold tracking-wide">{info?.name}</h2>
           </div>
         </CardHeader>
-        <CardBody className="px-4 py-4 max-h-[50vh] overflow-y-auto scrollbar-hide">
-          <p className="text-sm text-gray-200 mb-2"><strong>Ubicación:</strong> {info?.department}, {info?.city}, {info?.address}</p>
+        <CardBody className="px-4 py-4 max-h-[50vh] overflow-y-auto scrollbar-hide flex flex-col gap-2">
+          <p className="text-sm text-gray-200"><strong>Ubicación:</strong> {info?.department}, {info?.city}, {info?.address}</p>
           <p className="text-sm text-gray-200 mb-2"><strong>Área:</strong> {info?.areaOfThisproyect} m²</p>
+          {idProyect && (
+            <Button
+              as="a"
+              href={`/proyectos/${idProyect}`}
+              size="sm"
+              variant="flat"
+              className="bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors w-full"
+            >
+              📄 Ver Página de Presentación
+            </Button>
+          )}
         </CardBody>
         <CardFooter className="flex-col items-start justify-start text-left px-4 py-3 max-h-[30vh] overflow-y-auto border-t border-white/10 bg-black/20">
 

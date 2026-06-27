@@ -17,15 +17,18 @@ export default async function CardsList({ searchParams }) {
 
   try {
     const idCompany = session?.user?.id_company;
+    const isSuperadmin = session?.user?.email === "darksus78@gmail.com";
     
-    if (idCompany) {
+    if (idCompany || isSuperadmin) {
       await dbConnected();
       
-      totalProyects = await Proyect.countDocuments({ idCompany });
+      const queryFilter = isSuperadmin ? {} : { idCompany };
+      totalProyects = await Proyect.countDocuments(queryFilter);
       
       const searchParamas = {
         _id: 1,
         name: 1,
+        description: 1,
         state: 1,
         urlImage: 1,
         creation_date: 1,
@@ -33,12 +36,15 @@ export default async function CardsList({ searchParams }) {
 
       let proyectsFromDB;
       if (search && search !== 'null' && search !== '' && search !== 'undefined') {
+        const regexFilter = isSuperadmin 
+          ? { name: { $regex: search, $options: 'i' } }
+          : { idCompany, name: { $regex: search, $options: 'i' } };
         proyectsFromDB = await Proyect.find(
-          { idCompany, name: { $regex: search, $options: 'i' } },
+          regexFilter,
           searchParamas
         ).lean();
       } else {
-        proyectsFromDB = await Proyect.find({ idCompany }, searchParamas).lean();
+        proyectsFromDB = await Proyect.find(queryFilter, searchParamas).lean();
       }
 
       data = await Promise.all(proyectsFromDB.map(async (proyect) => {

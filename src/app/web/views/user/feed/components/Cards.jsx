@@ -72,11 +72,7 @@ export default function Cards({ proyects, totalProyects }) {
                     <div className="w-full lg:w-[55%] flex flex-col">
                       <div className="relative h-full min-h-[250px] rounded-[24px] overflow-hidden border border-white/10 shadow-inner group-hover:shadow-[0_0_30px_rgba(0,0,0,0.3)] transition-all duration-500">
                         <Link
-                          href={{
-                            pathname: `/web/views/visualizer`,
-                            query: { id: encrypt(item._id) },
-                          }}
-                          target="_blank"
+                          href={`/proyectos/${item._id}`}
                           className="w-full h-full block"
                         >
                           <Image
@@ -97,7 +93,7 @@ export default function Cards({ proyects, totalProyects }) {
                           {item.name}
                         </h4>
                         <p className="text-white/40 text-xs font-semibold uppercase tracking-[3px]">
-                          {item.description?.substring(0, 30) || "PROYECTO RESIDENCIAL"}
+                          PROYECTO
                         </p>
                       </div>
 
