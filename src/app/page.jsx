@@ -22,7 +22,7 @@ import InteractiveBlobs from "./InteractiveBlobs.client";
 import ContactSection from "./ContactSection.client";
 import Footer from "./web/global_components/footer/Footer";
 
-axios.defaults.baseURL = "http://localhost:3000/";
+// Axios defaults.baseURL removido para soportar deploy de producción con rutas relativas
 
 const words = ["parcelas", "terrenos", "obras"];
 
