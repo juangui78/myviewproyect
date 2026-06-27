@@ -14,8 +14,7 @@ import CheckIcon from "../../web/global_components/icons/CheckIcon";
 import { Ban } from "../../web/global_components/icons/Ban";
 import { encrypt } from "@/api/libs/crypto";
 
-// Configuración básica de axios por si acaso
-axios.defaults.baseURL = "http://localhost:3000/";
+// Las peticiones usarán rutas relativas para soportar tanto localhost como producción
 
 export default function ProyectoPresentationPage() {
   const { id } = useParams();
