@@ -1,6 +1,7 @@
 import { dbConnected } from '@/api/libs/mongoose';
 import Model from '@/api/models/models'
 import Proyect from "@/api/models/proyect";
+import Company from "@/api/models/company";
 import { NextResponse } from 'next/server';
 
 dbConnected();
@@ -15,7 +16,7 @@ export async function GET(request, {params}) {
         if (findProyect) {
             const idProyect = findProyect?._id;
             const getModel = await Model.findOne({idProyect: idProyect},  { __v : 0, idProyect: 0}).sort({ creation_date : -1 });
-            const getProject = await Proyect.findById(idProyect, { __v : 0, _id: 0, state: 0, creation_date: 0});
+            const getProject = await Proyect.findById(idProyect, { __v : 0, _id: 0, state: 0, creation_date: 0}).populate("idCompany", "name cell email");
             
             const data = {
                 model: getModel,
@@ -70,6 +71,7 @@ export async function POST(request, { params }) {
             if (updated_by) model.updated_by = updated_by;
             model.notes_updated_at = new Date();
         }
+        model.updated_at = new Date();
         await model.save();
 
         console.log('Terrains saved successfully');

@@ -390,6 +390,40 @@ export default function ProyectoPresentationPage() {
                 </CardBody>
               </Card>
 
+              {/* Contact card */}
+              <Card className="bg-white/5 border border-white/10 backdrop-blur-md overflow-hidden">
+                <CardBody className="p-6 space-y-4">
+                  <h3 className="text-xl font-bold text-white">¿Te interesa este proyecto?</h3>
+                  <p className="text-white/70 text-sm">
+                    Ponte en contacto con nuestro equipo de asesores de {proyect?.idCompany?.name ? <strong>{proyect.idCompany.name}</strong> : "la inmobiliaria"} para obtener más detalles, agendar una visita o resolver tus dudas.
+                  </p>
+                  
+                  <div className="flex flex-col gap-3 pt-1">
+                    {proyect?.idCompany?.cell && (
+                      <Button
+                        as="a"
+                        href={`https://wa.me/${proyect.idCompany.cell.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, estoy interesado en obtener más información sobre el proyecto/terreno "${proyect.name}" que vi en MyView.`)}`}
+                        target="_blank"
+                        className="w-full bg-[#25D366] text-white font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                        size="md"
+                      >
+                        <span className="text-lg">💬</span> Contactar por WhatsApp
+                      </Button>
+                    )}
+                    {proyect?.idCompany?.email && (
+                      <Button
+                        as="a"
+                        href={`mailto:${proyect.idCompany.email}?subject=${encodeURIComponent(`Interés en Proyecto: ${proyect.name}`)}&body=${encodeURIComponent(`Hola,\n\nMe gustaría recibir más información sobre el proyecto/terreno "${proyect.name}".\n\nQuedo atento.`)}`}
+                        className="w-full bg-white/10 text-white font-bold hover:bg-white/20 transition-all border border-white/10 flex items-center justify-center gap-2"
+                        size="md"
+                      >
+                        <span className="text-lg">✉️</span> Enviar Correo Electrónico
+                      </Button>
+                    )}
+                  </div>
+                </CardBody>
+              </Card>
+
               {/* Google Maps / Ubicación Geográfica */}
               <div className="space-y-3">
                 <h3 className="text-lg font-bold text-white/90">Ubicación Geográfica</h3>
