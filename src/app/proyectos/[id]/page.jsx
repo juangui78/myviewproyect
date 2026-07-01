@@ -2,9 +2,19 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import axios from "axios";
 import { Spinner, Button, Card, CardBody, Input, Textarea, Table, TableHeader, TableBody, TableColumn, TableRow, TableCell } from "@heroui/react";
-import LightViewer360 from "../components/LightViewer360";
+
+const LightViewer360 = dynamic(() => import("../components/LightViewer360"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[300px] md:h-[450px] flex items-center justify-center bg-white/5 rounded-2xl border border-white/10 glass-card">
+      <Spinner color="success" size="lg" />
+    </div>
+  )
+});
+
 import InteractiveBlobs from "../../InteractiveBlobs.client";
 import Footer from "../../web/global_components/footer/Footer";
 import { useSession } from "next-auth/react";

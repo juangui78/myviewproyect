@@ -1,9 +1,26 @@
 'use client'
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from "next/navigation";
+import dynamic from 'next/dynamic';
 import axios from "axios";
 import { decrypt } from '@/api/libs/crypto';
-import EasyView from './EasyView';
+
+const EasyView = dynamic(() => import('./EasyView'), {
+    ssr: false,
+    loading: () => (
+        <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0', color: '#333', fontFamily: 'sans-serif' }}>
+            <div style={{
+                width: '50px', height: '50px', border: '4px solid #ccc',
+                borderTop: '4px solid #333', borderRadius: '50%',
+                animation: 'spin 1s linear infinite', marginBottom: '16px'
+            }} />
+            <p>Iniciando componentes gráficos...</p>
+            <style>{`
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            `}</style>
+        </div>
+    )
+});
 
 function EasyViewContent() {
     const searchParams = useSearchParams();
@@ -76,7 +93,7 @@ function EasyViewContent() {
         );
     }
 
-    return <EasyView modelUrl={modelUrl} currentModel={currentModel} projectInfo={projectInfo} />;
+    return <EasyView key={encryptedId} modelUrl={modelUrl} currentModel={currentModel} projectInfo={projectInfo} />;
 }
 
 export default function EasyViewPage() {

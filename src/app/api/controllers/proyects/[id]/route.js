@@ -21,7 +21,12 @@ export async function GET(request, {params}) {
 
         //all its right
         const proyect = await Proyect.findById(id, { __v: 0, idCompany: 0 })
-        return NextResponse.json(proyect, { status: 200 })
+        return NextResponse.json(proyect, { 
+            status: 200,
+            headers: {
+                'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600'
+            }
+        });
 
     } catch (error) {
         return NextResponse.json({message: 'Error'}, { status: 500 })

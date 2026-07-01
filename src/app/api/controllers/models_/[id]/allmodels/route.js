@@ -16,7 +16,11 @@ export async function GET(request, { params }) {
         const models = await Model.find({ idProyect: id }).sort({ creation_date: -1 });
         
         if (models && models.length > 0) {
-            return NextResponse.json(models);
+            return NextResponse.json(models, {
+                headers: {
+                    'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600'
+                }
+            });
         } else {
             return NextResponse.json({ message: 'No models found for this project' }, { status: 404 });
         }

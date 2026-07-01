@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import InformationCard from '../components/information/InformationCard';
 import Whatsapp from '@/web/global_components/icons/Whatsapp';
 import Link from 'next/link';
@@ -35,8 +36,68 @@ const calculateCentroidAndArea = (markers) => {
   return { centroid, area };
 };
 
+// Reusable instance of GLTFLoader to optimize memory usage, avoid garbage collection overhead,
+// and reuse the same instance/workers across multiple loads.
+let globalGltfLoader = null;
+const getGltfLoader = () => {
+    if (typeof window === 'undefined') return null;
+    if (!globalGltfLoader) {
+        globalGltfLoader = new GLTFLoader();
+        globalGltfLoader.setMeshoptDecoder(MeshoptDecoder);
+    }
+    return globalGltfLoader;
+};
+
+const preprocessLoadedGltf = (gltfLoaded) => {
+    if (typeof window === 'undefined') return gltfLoaded;
+    const ua = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    const isSafari = /Safari/.test(ua) && !/Chrome/.test(ua) && !/CriOS/.test(ua);
+    const isInstagramBrowser = /Instagram/.test(ua);
+    const isMobile = (isIOS && isSafari) || (isIOS && isInstagramBrowser) || /Mobi|Android/i.test(ua);
+
+    console.log("Applying visualizer optimizations to loaded GLTF...");
+    gltfLoaded.scene.traverse((node) => {
+        if (node.isMesh) {
+            node.frustumCulled = true;
+            node.castShadow = false;
+            node.receiveShadow = false;
+            
+            // Deshabilitar actualización automática de matriz para objetos estáticos
+            node.matrixAutoUpdate = false;
+            node.updateMatrix();
+
+            if (node.material) {
+                const materials = Array.isArray(node.material) ? node.material : [node.material];
+                materials.forEach(material => {
+                    material.shadowSide = null;
+
+                    const optimizeTexture = (tex) => {
+                        if (tex) {
+                            tex.anisotropy = isMobile ? 1 : 2;
+                            tex.minFilter = THREE.LinearFilter;
+                            tex.magFilter = THREE.LinearFilter;
+                            if (isMobile) {
+                                tex.generateMipmaps = false;
+                            }
+                        }
+                    };
+                    optimizeTexture(material.map);
+                    optimizeTexture(material.emissiveMap);
+                    optimizeTexture(material.normalMap);
+                    optimizeTexture(material.roughnessMap);
+                    optimizeTexture(material.metalnessMap);
+                    optimizeTexture(material.aoMap);
+                });
+            }
+        }
+    });
+    return gltfLoaded;
+};
+
 export default function EasyView({ modelUrl, currentModel, projectInfo }) {
   const mountRef = useRef(null);
+  const savedCameraStateRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [photo360Url, setPhoto360Url] = useState(null);
@@ -51,7 +112,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
     // powerPreference: "low-power" ayuda en móviles, antialias en false reduce consumo de VRAM y GPU
-    const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "low-power" }); 
+    const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "low-power", alpha: false }); 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limitar a un ratio de 2 para rendimiento
     
     const updateSize = () => {
@@ -84,15 +145,16 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
     const localTerrainsData = [];
 
     // 3. Carga del Modelo
-    const loader = new GLTFLoader();
+    const loader = getGltfLoader();
     
     if (modelUrl) {
       setIsLoading(true);
-      loader.load(modelUrl, (gltf) => {
-        scene.add(gltf.scene);
+      loader.load(modelUrl, (gltfLoaded) => {
+        const optimizedGltf = preprocessLoadedGltf(gltfLoaded);
+        scene.add(optimizedGltf.scene);
         
         // Centrar el modelo y ajustar la cámara dinámicamente sin que quede recortada o muy lejos
-        const box = new THREE.Box3().setFromObject(gltf.scene);
+        const box = new THREE.Box3().setFromObject(optimizedGltf.scene);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
@@ -127,7 +189,14 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
         let maxFar = Math.max(10000, distance + radius * 10);
         let maxDist = distance * 4;
 
-        if (hasDefaultCam) {
+        if (savedCameraStateRef.current) {
+          camera.position.copy(savedCameraStateRef.current.position);
+          controls.target.copy(savedCameraStateRef.current.target);
+          if (savedCameraStateRef.current.zoom) {
+            camera.zoom = savedCameraStateRef.current.zoom;
+          }
+          savedCameraStateRef.current = null; // Limpiar después de usar
+        } else if (hasDefaultCam) {
           const camPos = currentModel.defaultCamera.position;
           const camTarget = currentModel.defaultCamera.target;
           const posVec = new THREE.Vector3(Number(camPos[0]), Number(camPos[1]), Number(camPos[2]));
@@ -311,6 +380,13 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
 
     // 6. LIMPIEZA ESTRICTA (GARBAGE COLLECTION PARA EVITAR CRASHEOS EN IOS)
     return () => {
+      if (camera && controls) {
+        savedCameraStateRef.current = {
+          position: camera.position.clone(),
+          target: controls.target.clone(),
+          zoom: camera.zoom
+        };
+      }
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationId);
       

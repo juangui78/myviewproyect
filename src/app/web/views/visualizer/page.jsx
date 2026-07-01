@@ -107,6 +107,18 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
 
 
 
+// Reusable instance of GLTFLoader to optimize memory usage, avoid garbage collection overhead,
+// and reuse the same instance/workers across multiple loads.
+let globalGltfLoader = null;
+const getGltfLoader = () => {
+    if (typeof window === 'undefined') return null;
+    if (!globalGltfLoader) {
+        globalGltfLoader = new GLTFLoader();
+        globalGltfLoader.setMeshoptDecoder(MeshoptDecoder);
+    }
+    return globalGltfLoader;
+};
+
 const App = () => {
     const [light, setLight] = useState('lobby')
     const [currentModel, setcurrentModel] = useState(null);
@@ -143,6 +155,7 @@ const App = () => {
     const [isUserControlling, setIsUserControlling] = useState(false);
     const [lastCameraView, setLastCameraView] = useState(0);
     const orbitControlsRef = React.useRef();
+    const isInitialLoadRef = React.useRef(true);
     const transformControlsRef = React.useRef();
     const [selectedMarkerObj, setSelectedMarkerObj] = useState(null);
     const [background360, setBackground360] = useState(null);
@@ -198,29 +211,36 @@ const App = () => {
         }
     };
 
-    // Función para aplicar optimizaciones de memoria en móviles (Safari/Instagram)
+    // Función para aplicar optimizaciones de renderizado
     const preprocessLoadedGltf = (gltfLoaded) => {
-        if (!isSafariMobile && !isInstagramBrowser) return gltfLoaded;
+        const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+        const isMobile = isSafariMobile || isInstagramBrowser || /Mobi|Android/i.test(ua);
 
-        console.log("Applying mobile optimizations to loaded GLTF...");
+        console.log("Applying visualizer optimizations to loaded GLTF...");
         gltfLoaded.scene.traverse((node) => {
             if (node.isMesh) {
                 node.frustumCulled = true;
                 node.castShadow = false;
                 node.receiveShadow = false;
-                // Deshabilitar computación de sombras
+                
+                // Deshabilitar actualización automática de matriz para objetos estáticos
                 node.matrixAutoUpdate = false;
                 node.updateMatrix();
 
                 if (node.material) {
                     const materials = Array.isArray(node.material) ? node.material : [node.material];
                     materials.forEach(material => {
+                        material.shadowSide = null;
+
                         const optimizeTexture = (tex) => {
                             if (tex) {
-                                tex.anisotropy = 1;
+                                // Limitar anisotropía en móviles para ahorrar fillrate, usar 2 en desktop para buena nitidez sin penalización
+                                tex.anisotropy = isMobile ? 1 : 2;
                                 tex.minFilter = THREE.LinearFilter;
                                 tex.magFilter = THREE.LinearFilter;
-                                tex.generateMipmaps = false; // Ahorra mucha VRAM
+                                if (isMobile) {
+                                    tex.generateMipmaps = false; // Ahorra mucha VRAM en móviles
+                                }
                             }
                         };
                         optimizeTexture(material.map);
@@ -336,29 +356,23 @@ const App = () => {
             const controls = orbitControlsRef.current;
             const camera = controls.object;
 
-            // Si el usuario estaba controlando la cámara, restaurar su posición
-            if (state.isUserControlling) {
-                // Restaurar posición manual del usuario
-                camera.position.copy(state.position);
-                controls.target.copy(state.target);
+            // Restaurar siempre la posición y el target exactos de la cámara
+            camera.position.copy(state.position);
+            controls.target.copy(state.target);
 
-                if (state.zoom) camera.zoom = state.zoom;
-                if (state.fov && camera.isPerspectiveCamera) {
-                    camera.fov = state.fov;
-                    camera.near = state.near;
-                    camera.far = state.far;
-                }
-
-                camera.updateProjectionMatrix();
-                controls.update();
-
-                // Mantener el estado de control del usuario
-                setIsUserControlling(true);
-            } else {
-                // Si estaba en una vista predefinida, restaurar esa vista
-                setCameraView(state.cameraView);
-                setIsUserControlling(false);
+            if (state.zoom) camera.zoom = state.zoom;
+            if (state.fov && camera.isPerspectiveCamera) {
+                camera.fov = state.fov;
+                camera.near = state.near;
+                camera.far = state.far;
             }
+
+            camera.updateProjectionMatrix();
+            controls.update();
+
+            // Mantener los estados de control y vista previos
+            setIsUserControlling(state.isUserControlling);
+            setCameraView(state.cameraView);
         }
     };
 
@@ -612,6 +626,10 @@ const App = () => {
 
     }, [idProyect])
 
+    useEffect(() => {
+        isInitialLoadRef.current = true;
+    }, [idProyect]);
+
     // useEffect para cargar el modelo inicial con proyecto actual
 
     useEffect(() => {
@@ -622,8 +640,7 @@ const App = () => {
             const modelLocation = currentModel?.model;
 
             if (modelLocation !== "") {
-                const loader = new GLTFLoader();
-                loader.setMeshoptDecoder(MeshoptDecoder);
+                const loader = getGltfLoader();
 
                 // Guarda el ID antes de iniciar la carga asíncrona
                 const projectId = currentModel._id;
@@ -667,27 +684,33 @@ const App = () => {
 
     // Aplicar cámara por defecto una vez cargado el modelo y los controles listos
     useEffect(() => {
-        if (isModelLoaded && currentModel?.defaultCamera) {
-            let attempts = 0;
-            const applyCamera = () => {
-                if (orbitControlsRef.current) {
-                    const controls = orbitControlsRef.current;
-                    const camera = controls.object;
-                    const { position, target } = currentModel.defaultCamera;
-                    if (position && position.length === 3) {
-                        camera.position.set(position[0], position[1], position[2]);
+        if (isModelLoaded) {
+            if (!isInitialLoadRef.current) {
+                return;
+            }
+            if (currentModel?.defaultCamera) {
+                let attempts = 0;
+                const applyCamera = () => {
+                    if (orbitControlsRef.current) {
+                        const controls = orbitControlsRef.current;
+                        const camera = controls.object;
+                        const { position, target } = currentModel.defaultCamera;
+                        if (position && position.length === 3) {
+                            camera.position.set(position[0], position[1], position[2]);
+                        }
+                        if (target && target.length === 3) {
+                            controls.target.set(target[0], target[1], target[2]);
+                        }
+                        camera.updateProjectionMatrix();
+                        controls.update();
+                    } else if (attempts < 15) {
+                        attempts++;
+                        setTimeout(applyCamera, 100);
                     }
-                    if (target && target.length === 3) {
-                        controls.target.set(target[0], target[1], target[2]);
-                    }
-                    camera.updateProjectionMatrix();
-                    controls.update();
-                } else if (attempts < 15) {
-                    attempts++;
-                    setTimeout(applyCamera, 100);
-                }
-            };
-            setTimeout(applyCamera, 100);
+                };
+                setTimeout(applyCamera, 100);
+            }
+            isInitialLoadRef.current = false;
         }
     }, [isModelLoaded, currentModel]);
 
@@ -716,8 +739,7 @@ const App = () => {
                 setGltf(null); // Desrenderiza el componente GLTF antiguo de inmediato
             }
 
-            const loader = new GLTFLoader();
-            loader.setMeshoptDecoder(MeshoptDecoder); // Asegurar decodificación consistente
+            const loader = getGltfLoader();
 
             loader.load(modelUrl, (gltfLoaded) => {
                 const optimizedGltf = preprocessLoadedGltf(gltfLoaded);
@@ -1452,7 +1474,7 @@ const App = () => {
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
                             <Canvas
                                 style={{ cursor: editMarkersMode ? 'crosshair' : 'default' }}
-                                dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]}
+                                dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 1.5]}
                                 ref={objectRef}
                                 camera={{ position: [0, 160, 0], fov: 75 }}
                                 performance={{ min: 0.5 }}
@@ -1460,6 +1482,7 @@ const App = () => {
                                     antialias: !(isSafariMobile || isInstagramBrowser),
                                     powerPreference: "high-performance",
                                     precision: isSafariMobile || isInstagramBrowser ? "mediump" : "highp",
+                                    alpha: false,
                                 }}
                                 onCreated={({ gl }) => {
                                     gl.toneMapping = THREE.LinearToneMapping
