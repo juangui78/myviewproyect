@@ -168,7 +168,7 @@ export default function NavBar({children}) {
                       </div>
                       {notif.versionNotes && (
                         <p className="text-[11px] text-white/70 line-clamp-2 italic bg-white/[0.02] p-1.5 rounded-lg border border-white/5">
-                          "{notif.versionNotes}"
+                          &quot;{notif.versionNotes}&quot;
                         </p>
                       )}
                     </div>
