@@ -42,9 +42,9 @@ export default async function CardsList({ searchParams }) {
         proyectsFromDB = await Proyect.find(
           regexFilter,
           searchParamas
-        ).lean();
+        ).sort({ creation_date: -1 }).lean();
       } else {
-        proyectsFromDB = await Proyect.find(queryFilter, searchParamas).lean();
+        proyectsFromDB = await Proyect.find(queryFilter, searchParamas).sort({ creation_date: -1 }).lean();
       }
 
       data = await Promise.all(proyectsFromDB.map(async (proyect) => {

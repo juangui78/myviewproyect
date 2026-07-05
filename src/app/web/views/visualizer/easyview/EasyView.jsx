@@ -95,7 +95,7 @@ const preprocessLoadedGltf = (gltfLoaded) => {
     return gltfLoaded;
 };
 
-export default function EasyView({ modelUrl, currentModel, projectInfo }) {
+export default function EasyView({ modelUrl, currentModel, projectInfo, projectId }) {
   const mountRef = useRef(null);
   const savedCameraStateRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -443,7 +443,16 @@ export default function EasyView({ modelUrl, currentModel, projectInfo }) {
       {!isLoading && (
         <>
           <div className="flex justify-between w-full pt-[15px] px-[15px] bg-transparent z-[10] absolute items-center gap-2 md:gap-4 pointer-events-none">
-            <div className="pointer-events-auto"></div>
+            <div className="pointer-events-auto">
+              {projectId && (
+                <Link
+                  href={`/proyectos/${projectId}`}
+                  className="border border-white/20 bg-black/60 backdrop-blur-md text-white h-10 gap-x-2 rounded-full hover:bg-black/80 transition-all font-medium px-4 shadow-lg flex items-center justify-center select-none text-sm"
+                >
+                  <span>← Volver</span>
+                </Link>
+              )}
+            </div>
             <div className="pointer-events-auto"></div>
             <div className="pointer-events-auto">
               <InformationCard

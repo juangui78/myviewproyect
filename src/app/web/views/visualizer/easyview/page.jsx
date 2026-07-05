@@ -26,6 +26,7 @@ function EasyViewContent() {
     const searchParams = useSearchParams();
     const encryptedId = searchParams.get("id");
     const modelIndex = parseInt(searchParams.get("modelIndex") ?? "0", 10);
+    const decryptedId = encryptedId ? decrypt(encryptedId) : null;
     
     const [modelUrl, setModelUrl] = useState(null);
     const [currentModel, setCurrentModel] = useState(null);
@@ -93,7 +94,7 @@ function EasyViewContent() {
         );
     }
 
-    return <EasyView key={encryptedId} modelUrl={modelUrl} currentModel={currentModel} projectInfo={projectInfo} />;
+    return <EasyView key={encryptedId} modelUrl={modelUrl} currentModel={currentModel} projectInfo={projectInfo} projectId={decryptedId} />;
 }
 
 export default function EasyViewPage() {

@@ -42,6 +42,7 @@ export const config = {
     "/web/views/admin/Projects",
     "/web/views/admin/allCompanies",
     "/web/views/admin/analytics",
+    "/web/views/admin/leads",
     "/web/views/superadmin/:path*",
   ],
 };
