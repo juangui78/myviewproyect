@@ -22,7 +22,16 @@ export async function middleware(request) {
     if (path === "/web/views/login" || path === "/web/views/signup") {
       const urlRedirect_ = new URL("/web/views/user/feed", request.url);
       return NextResponse.redirect(urlRedirect_);
-    } else NextResponse.next();
+    }
+    
+    if (path.startsWith("/web/views/superadmin")) {
+      if (session.user?.email !== "darksus78@gmail.com") {
+        const urlRedirect_ = new URL("/web/views/user/feed", request.url);
+        return NextResponse.redirect(urlRedirect_);
+      }
+    }
+    
+    return NextResponse.next();
   }
 }
 
@@ -31,7 +40,8 @@ export const config = {
     "/web/views/login",
     "/web/views/user/feed",
     "/web/views/admin/Projects",
-    "/web/wiews/admin/allCompanies",
+    "/web/views/admin/allCompanies",
     "/web/views/admin/analytics",
+    "/web/views/superadmin/:path*",
   ],
 };

@@ -14,6 +14,9 @@ import {
   DropdownItem,
   Image,
   NavbarMenu,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
 } from "@nextui-org/react";
 import { Account } from "@/web/global_components/icons/UserAccount";
 import { Bell } from "@/web/global_components/icons/Bell";
@@ -24,6 +27,7 @@ export default function NavBar({children}) {
   const { data: session } = useSession();
   const idUser = session?.user._id;
   const rol = session?.user.rol;
+  const isSuperadmin = session?.user?.email === "darksus78@gmail.com";
 
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -80,6 +84,14 @@ export default function NavBar({children}) {
             <Image className="object-cover" src="/logos/completo-fullblanco.png" alt="logo" width={150} height={65} />
           </Link>
           
+        {isSuperadmin && (
+          <NavbarItem>
+            <Link className="text-white hover:text-[#0CDBFF] font-bold" href="/web/views/superadmin/dashboard">
+              Superadmin
+            </Link>
+          </NavbarItem>
+        )}
+          
         {rol === "company" ? ( 
           <>
           {/* company => this is my view */}     
@@ -117,15 +129,15 @@ export default function NavBar({children}) {
 
       <NavbarContent justify="end">
         <NavbarItem>
-          <Dropdown 
+          <Popover 
             placement="bottom-end" 
             onOpenChange={handleDropdownOpen}
             classNames={{
-              content: "max-h-[380px] overflow-y-auto w-[320px] bg-[#1A1F26]/95 backdrop-blur-xl border border-white/10"
+              content: "max-h-[380px] overflow-y-auto w-[320px] bg-[#1A1F26]/95 backdrop-blur-xl border border-white/10 p-0 text-white rounded-xl shadow-2xl"
             }}
           >
-            <DropdownTrigger>
-              <div className="flex gap-4 items-center cursor-pointer">
+            <PopoverTrigger>
+              <button className="flex gap-4 items-center justify-center p-2 focus:outline-none cursor-pointer bg-transparent border-0 select-none">
                 {unreadCount > 0 ? (
                   <Badge color="danger" content={unreadCount} shape="circle" size="sm">
                     <Bell className="cursor-pointer text-white" />
@@ -133,54 +145,56 @@ export default function NavBar({children}) {
                 ) : (
                   <Bell className="cursor-pointer text-white" />
                 )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <div className="w-full flex flex-col p-3">
+                <div className="border-b border-white/10 pb-2 mb-2 w-full text-center">
+                  <span className="font-bold text-sm text-[#0CDBFF] uppercase tracking-wider block">
+                    Notificaciones
+                  </span>
+                </div>
+                
+                <div className="flex flex-col gap-1 w-full max-h-[290px] overflow-y-auto scrollbar">
+                  {notifications.length > 0 ? (
+                    notifications.map((notif) => (
+                      <Link 
+                        key={notif.id} 
+                        href={`/proyectos/${notif.projectId}`}
+                        className="py-2 px-3 border-b border-white/5 last:border-0 hover:bg-white/5 transition-all text-white flex flex-col gap-1 text-left rounded-lg w-full"
+                      >
+                        <div className="flex justify-between items-center w-full">
+                          <span className="font-bold text-xs text-[#0CDBFF] truncate max-w-[170px] uppercase tracking-wider">
+                            {notif.projectName}
+                          </span>
+                          <span className="text-[10px] text-white/40">
+                            {new Date(notif.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-medium text-white/60 mb-0.5">
+                            {notif.label}
+                          </span>
+                          <span className="font-bold text-xs text-white">
+                            {notif.modelName}
+                          </span>
+                        </div>
+                        {notif.versionNotes && (
+                          <p className="text-[11px] text-white/70 line-clamp-2 italic bg-white/[0.02] p-1.5 rounded-lg border border-white/5">
+                            &quot;{notif.versionNotes}&quot;
+                          </p>
+                        )}
+                      </Link>
+                    ))
+                  ) : (
+                    <p className="font-semibold text-center py-4 text-white/60 text-sm">
+                      No hay notificaciones
+                    </p>
+                  )}
+                </div>
               </div>
-            </DropdownTrigger>
-            <DropdownMenu aria-label="Notifications" variant="flat" className="w-full">
-              <DropdownItem key="header" isReadOnly className="opacity-100 cursor-default border-b border-white/10 pb-2 mb-1 pointer-events-none hover:bg-transparent focus:bg-transparent">
-                <span className="font-bold text-sm text-[#0CDBFF] uppercase tracking-wider block text-center">
-                  Notificaciones
-                </span>
-              </DropdownItem>
-              {notifications.length > 0 ? (
-                notifications.map((notif) => (
-                  <DropdownItem 
-                    key={notif.id} 
-                    as={Link}
-                    href={`/proyectos/${notif.projectId}`}
-                    className="py-2 border-b border-white/5 last:border-0 hover:bg-white/5 transition-all text-white"
-                  >
-                    <div className="flex flex-col gap-1 w-full text-left">
-                      <div className="flex justify-between items-center w-full">
-                        <span className="font-bold text-xs text-[#0CDBFF] truncate max-w-[170px] uppercase tracking-wider">
-                          {notif.projectName}
-                        </span>
-                        <span className="text-[10px] text-white/40">
-                          {new Date(notif.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-medium text-white/60 mb-0.5">
-                          {notif.label}
-                        </span>
-                        <span className="font-bold text-xs text-white">
-                          {notif.modelName}
-                        </span>
-                      </div>
-                      {notif.versionNotes && (
-                        <p className="text-[11px] text-white/70 line-clamp-2 italic bg-white/[0.02] p-1.5 rounded-lg border border-white/5">
-                          &quot;{notif.versionNotes}&quot;
-                        </p>
-                      )}
-                    </div>
-                  </DropdownItem>
-                ))
-              ) : (
-                <DropdownItem key="no-notifications" showDivider={false}>
-                  <p className="font-semibold text-center py-2 text-white/60">No hay notificaciones</p>
-                </DropdownItem>
-              )}
-            </DropdownMenu> 
-          </Dropdown>
+            </PopoverContent>
+          </Popover>
         </NavbarItem>
 
         <NavbarItem>
@@ -212,6 +226,13 @@ export default function NavBar({children}) {
 
       {/* menu when its a small screen, often a mobile's screen */}
       <NavbarMenu>
+        {isSuperadmin && (
+          <NavbarItem>
+            <Link className="text-[#0CDBFF] font-bold" href="/web/views/superadmin/dashboard">
+              Superadmin
+            </Link>
+          </NavbarItem>
+        )}
                 
         {rol === "company" ? (
           <>
