@@ -21,19 +21,61 @@ ChartJS.register(
 
 const ChartDeviceType = ({ data }) => {
   const infoChart = {
-    labels: data.deviceType.labels,
+    labels: data?.deviceType?.labels || [],
     datasets: [
       {
-        label: "# de tipos de dispositivos",
-        data: data.deviceType.values,
-        backgroundColor: "rgba(255, 99, 132, 0.2)",
-        borderColor: "rgba(255, 99, 132, 1)",
-        borderWidth: 1,
+        label: "Dispositivos",
+        data: data?.deviceType?.values || [],
+        backgroundColor: "rgba(12, 219, 255, 0.2)",
+        borderColor: "rgba(12, 219, 255, 1)",
+        pointBackgroundColor: "rgba(12, 219, 255, 1)",
+        pointBorderColor: "#fff",
+        pointHoverBackgroundColor: "#fff",
+        pointHoverBorderColor: "rgba(12, 219, 255, 1)",
+        borderWidth: 2,
       },
     ],
   };
 
-  return <Radar data={infoChart} />;
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false, // Since there's only one dataset ("Dispositivos"), we can hide the legend to maximize chart space
+      },
+      tooltip: {
+        enabled: true,
+      }
+    },
+    scales: {
+      r: {
+        grid: {
+          color: "rgba(255, 255, 255, 0.08)",
+        },
+        angleLines: {
+          color: "rgba(255, 255, 255, 0.08)",
+        },
+        pointLabels: {
+          color: "rgba(255, 255, 255, 0.7)",
+          font: {
+            size: 11,
+            family: "Outfit, Inter, sans-serif",
+            weight: "bold"
+          }
+        },
+        ticks: {
+          backdropColor: "transparent",
+          color: "rgba(255, 255, 255, 0.4)",
+          font: {
+            size: 9
+          }
+        }
+      }
+    }
+  };
+
+  return <Radar data={infoChart} options={options} />;
 };
 
 export default ChartDeviceType;

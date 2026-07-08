@@ -2,38 +2,43 @@ import mongoose, { mongo } from "mongoose";
 
 const { MOONGODB_URI } = process.env;
 
-const conn = {
-  isConnected: false,
-};
+if (!MOONGODB_URI) {
+  throw new Error("Por favor define la variable de entorno MOONGODB_URI");
+}
+
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 export async function dbConnected() {
-
-  if (conn.isConnected) {
-    console.log("Ya está conectado a la base de datos");
-    return;
+  if (cached.conn) {
+    return cached.conn;
   }
 
-  if (mongoose.connections.length > 0) {
-    conn.isConnected = mongoose.connections[0].readyState === 1;
-    if (conn.isConnected) {
-      console.log("Usando conexión existente");
-      return;
-    }
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+    };
 
-    await mongoose.disconnect();
+    cached.promise = mongoose.connect(MOONGODB_URI, opts).then((mongooseInstance) => {
+      console.log("Conectado a la base de datos:", mongooseInstance.connection.db?.databaseName || "default");
+      return mongooseInstance;
+    });
   }
-
 
   try {
-    const db = await mongoose.connect(MOONGODB_URI);
-    conn.isConnected = db.connections[0].readyState === 1;
-
-    console.log("Conectado a la base de datos:", db.connection.db.databaseName);
-
+    cached.conn = await cached.promise;
   } catch (error) {
+    cached.promise = null;
     console.error("Error al conectar a MongoDB:", error);
+    throw error;
   }
+
+  return cached.conn;
 }
+
 
 // Escuchar eventos de conexión
 if (mongoose.connection.listeners("connected").length === 0) {

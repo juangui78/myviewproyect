@@ -94,6 +94,149 @@ export default function LeadsAdminPage() {
     return matchesSearch && matchesStatus && matchesCompany;
   });
 
+  const columns = [
+    { key: "date_client", label: "FECHA / CLIENTE", isRowHeader: true, className: "w-[150px] min-w-[150px]" },
+    { key: "contact", label: "CONTACTO", className: "w-[240px] min-w-[240px]" },
+    ...(isPlatformAdmin ? [{ key: "company", label: "INMOBILIARIA", className: "w-[150px] min-w-[150px]" }] : []),
+    { key: "project", label: "PROYECTO / INTERÉS", className: "w-[150px] min-w-[150px]" },
+    { key: "message", label: "MENSAJE ADICIONAL", className: "w-[240px] min-w-[240px]" },
+    { key: "crm", label: "ESTADO CRM", className: "w-[120px] min-w-[120px]" },
+    { key: "actions", label: "ACCIONES RÁPIDAS", className: "w-[180px] min-w-[180px]" }
+  ];
+
+  const renderCell = (lead, columnKey) => {
+    const formattedDate = new Date(lead.creation_date).toLocaleDateString('es-ES', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    switch (columnKey) {
+      case "date_client":
+        return (
+          <div>
+            <span className="text-[10px] text-white/40 block font-mono">{formattedDate}</span>
+            <span className="font-bold text-white text-sm block mt-0.5">{lead.name}</span>
+          </div>
+        );
+      case "contact":
+        return (
+          <div className="flex flex-col gap-1.5 select-text">
+            <div className="flex items-center gap-1.5 text-white/95 font-bold text-sm select-text whitespace-nowrap">
+              <span className="text-emerald-400 text-xs select-none">📞</span>
+              <span className="select-text cursor-text whitespace-nowrap">{lead.phone}</span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(lead.phone);
+                  toast.success("Teléfono copiado al portapapeles");
+                }}
+                className="px-2.5 py-0.5 rounded-full bg-[#0CDBFF]/10 hover:bg-[#0CDBFF]/20 text-[#0CDBFF] border border-[#0CDBFF]/20 text-[9px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ml-2 select-none active:scale-95"
+                title="Copiar teléfono"
+              >
+                Copiar
+              </button>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs select-text whitespace-nowrap">
+              <span className="text-[#0CDBFF]/80 text-xs select-none">✉️</span>
+              <span className="text-white/60 select-text cursor-text whitespace-nowrap">
+                {lead.email}
+              </span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(lead.email);
+                  toast.success("Correo copiado al portapapeles");
+                }}
+                className="px-2.5 py-0.5 rounded-full bg-[#0CDBFF]/10 hover:bg-[#0CDBFF]/20 text-[#0CDBFF] border border-[#0CDBFF]/20 text-[9px] font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ml-2 select-none active:scale-95"
+                title="Copiar correo"
+              >
+                Copiar
+              </button>
+            </div>
+          </div>
+        );
+      case "company":
+        return (
+          <span className="text-xs font-medium text-emerald-400">
+            {lead.idCompany?.name || "N/A"}
+          </span>
+        );
+      case "project":
+        return (
+          <div>
+            <span className="text-xs font-bold text-white block">{lead.idProyect?.name || "N/A"}</span>
+            {lead.terrainName ? (
+              <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-black bg-[#0CDBFF]/15 text-[#0CDBFF] border border-[#0CDBFF]/20">
+                Lote: {lead.terrainName}
+              </span>
+            ) : (
+              <span className="text-[10px] text-white/30 block mt-0.5">Información general</span>
+            )}
+          </div>
+        );
+      case "message":
+        return (
+          <p className="text-xs text-white/70 truncate hover:whitespace-normal transition-all" title={lead.message}>
+            {lead.message || "Sin comentarios."}
+          </p>
+        );
+      case "crm":
+        return (
+          <Dropdown placement="bottom-start" className="dark">
+            <DropdownTrigger>
+              <Button 
+                size="sm" 
+                variant="light" 
+                className="p-0 bg-transparent min-w-0"
+              >
+                <Chip 
+                  color={getStatusColor(lead.status)} 
+                  size="sm" 
+                  variant="flat" 
+                  className="cursor-pointer font-bold hover:scale-105 transition-transform"
+                >
+                  {lead.status} ▾
+                </Chip>
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu 
+              aria-label="Cambiar Estado del Lead" 
+              onAction={(key) => handleStatusChange(lead._id, key)}
+            >
+              <DropdownItem key="Nuevo" className="text-warning">🟡 Nuevo</DropdownItem>
+              <DropdownItem key="Contactado" className="text-primary">🔵 Contactado</DropdownItem>
+              <DropdownItem key="Ganado" className="text-success">🟢 Ganado (Cerrado)</DropdownItem>
+              <DropdownItem key="Perdido" className="text-danger">🔴 Perdido (Descartado)</DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
+        );
+      case "actions":
+        return (
+          <div className="flex gap-2">
+            <Button
+              as="a"
+              href={`https://wa.me/${lead.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${lead.name}, nos dejas tus datos en MyView sobre el proyecto "${lead.idProyect?.name || ""}". ¿En qué te podemos ayudar?`)}`}
+              target="_blank"
+              size="sm"
+              className="bg-[#25D366]/10 text-[#25D366] font-bold hover:bg-[#25D366]/20 border border-[#25D366]/20 cursor-pointer"
+            >
+              WhatsApp
+            </Button>
+            <Button
+              onClick={() => {
+                navigator.clipboard.writeText(lead.email);
+                toast.success("¡Correo copiado con éxito!");
+              }}
+              size="sm"
+              variant="bordered"
+              className="text-white/80 hover:text-white border-white/10 hover:border-white/20 font-semibold cursor-pointer"
+            >
+              Copiar Correo
+            </Button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-[85vh] text-white p-6 md:p-12 max-w-7xl mx-auto space-y-8 relative z-10 font-sans">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -202,127 +345,24 @@ export default function LeadsAdminPage() {
         </div>
       ) : filteredLeads.length > 0 ? (
         <Card className="bg-[#0B151F]/60 border border-white/10 overflow-hidden shadow-2xl">
-          <Table aria-label="Tabla de Leads" className="dark" isHeaderSticky>
-            <TableHeader>
-              <TableColumn>FECHA / CLIENTE</TableColumn>
-              <TableColumn>CONTACTO</TableColumn>
-              {isPlatformAdmin && <TableColumn>INMOBILIARIA</TableColumn>}
-              <TableColumn>PROYECTO / INTERÉS</TableColumn>
-              <TableColumn>MENSAJE ADICIONAL</TableColumn>
-              <TableColumn>ESTADO CRM</TableColumn>
-              <TableColumn>ACCIONES RÁPIDAS</TableColumn>
+          <Table aria-label="Tabla de Leads" className="dark" isHeaderSticky layout="fixed">
+            <TableHeader columns={columns}>
+              {(column) => (
+                <TableColumn key={column.key} isRowHeader={column.isRowHeader} className={column.className}>
+                  {column.label}
+                </TableColumn>
+              )}
             </TableHeader>
-            <TableBody>
-              {filteredLeads.map((lead) => {
-                const formattedDate = new Date(lead.creation_date).toLocaleDateString('es-ES', {
-                  year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                });
-
-                return (
-                  <TableRow key={lead._id} className="hover:bg-white/5 transition-colors border-b border-white/5">
-                    {/* Fecha y Nombre */}
+            <TableBody items={filteredLeads}>
+              {(lead) => (
+                <TableRow key={lead._id}>
+                  {(columnKey) => (
                     <TableCell>
-                      <div>
-                        <span className="text-[10px] text-white/40 block font-mono">{formattedDate}</span>
-                        <span className="font-bold text-white text-sm block mt-0.5">{lead.name}</span>
-                      </div>
+                      {renderCell(lead, columnKey)}
                     </TableCell>
-
-                    {/* Teléfono / Email */}
-                    <TableCell>
-                      <div className="space-y-0.5">
-                        <span className="text-white/80 text-xs font-semibold block">{lead.phone}</span>
-                        <span className="text-white/40 text-[11px] block">{lead.email}</span>
-                      </div>
-                    </TableCell>
-
-                    {/* Inmobiliaria (solo para Platform Admins) */}
-                    {isPlatformAdmin && (
-                      <TableCell>
-                        <span className="text-xs font-medium text-emerald-400">
-                          {lead.idCompany?.name || "N/A"}
-                        </span>
-                      </TableCell>
-                    )}
-
-                    {/* Proyecto / Lote */}
-                    <TableCell>
-                      <div>
-                        <span className="text-xs font-bold text-white block">{lead.idProyect?.name || "N/A"}</span>
-                        {lead.terrainName ? (
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-black bg-[#0CDBFF]/15 text-[#0CDBFF] border border-[#0CDBFF]/20">
-                            Lote: {lead.terrainName}
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-white/30 block mt-0.5">Información general</span>
-                        )}
-                      </div>
-                    </TableCell>
-
-                    {/* Mensaje */}
-                    <TableCell className="max-w-[200px]">
-                      <p className="text-xs text-white/70 truncate hover:whitespace-normal transition-all" title={lead.message}>
-                        {lead.message || "Sin comentarios."}
-                      </p>
-                    </TableCell>
-
-                    {/* Estado CRM (Chips interactivos con Dropdown) */}
-                    <TableCell>
-                      <Dropdown placement="bottom-start" className="dark">
-                        <DropdownTrigger>
-                          <Button 
-                            size="sm" 
-                            variant="light" 
-                            className="p-0 bg-transparent min-w-0"
-                          >
-                            <Chip 
-                              color={getStatusColor(lead.status)} 
-                              size="sm" 
-                              variant="flat" 
-                              className="cursor-pointer font-bold hover:scale-105 transition-transform"
-                            >
-                              {lead.status} ▾
-                            </Chip>
-                          </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu 
-                          aria-label="Cambiar Estado del Lead" 
-                          onAction={(key) => handleStatusChange(lead._id, key)}
-                        >
-                          <DropdownItem key="Nuevo" className="text-warning">🟡 Nuevo</DropdownItem>
-                          <DropdownItem key="Contactado" className="text-primary">🔵 Contactado</DropdownItem>
-                          <DropdownItem key="Ganado" className="text-success">🟢 Ganado (Cerrado)</DropdownItem>
-                          <DropdownItem key="Perdido" className="text-danger">🔴 Perdido (Descartado)</DropdownItem>
-                        </DropdownMenu>
-                      </Dropdown>
-                    </TableCell>
-
-                    {/* Acciones Rápidas */}
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          as="a"
-                          href={`https://wa.me/${lead.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${lead.name}, nos dejas tus datos en MyView sobre el proyecto "${lead.idProyect?.name || ""}". ¿En qué te podemos ayudar?`)}`}
-                          target="_blank"
-                          size="sm"
-                          className="bg-[#25D366]/10 text-[#25D366] font-bold hover:bg-[#25D366]/20 border border-[#25D366]/20"
-                        >
-                          WhatsApp
-                        </Button>
-                        <Button
-                          as="a"
-                          href={`mailto:${lead.email}?subject=Interés en proyecto ${lead.idProyect?.name || ""}`}
-                          size="sm"
-                          variant="bordered"
-                          className="text-white/60 hover:text-white border-white/10 hover:border-white/20"
-                        >
-                          Correo
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+                  )}
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </Card>

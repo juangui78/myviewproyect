@@ -32,6 +32,7 @@ import { useSession, signOut } from "next-auth/react";
 import style from './styles/navbar.module.css';
 import { Toaster, toast } from "sonner";
 import { updateUserProfile } from "./actions/profileActions";
+import { encrypt } from "@/api/libs/crypto";
 
 export default function NavBar({children}) {
   const { data: session } = useSession();
@@ -152,16 +153,20 @@ export default function NavBar({children}) {
               Inmobiliarias
               </Link>
             </NavbarItem>
-            <NavbarItem>
-              <Link className="text-white" href="/web/views/admin/analytics">
-                Analiticas
-              </Link>
-            </NavbarItem>
-            <NavbarItem>
-              <Link className="text-white" href="/web/views/admin/leads">
-                Prospectos
-              </Link>
-            </NavbarItem>
+            {!isSuperadmin && (
+              <NavbarItem>
+                <Link className="text-white" href="/web/views/admin/analytics">
+                  Analiticas
+                </Link>
+              </NavbarItem>
+            )}
+            {!isSuperadmin && (
+              <NavbarItem>
+                <Link className="text-white" href="/web/views/admin/leads">
+                  Prospectos
+                </Link>
+              </NavbarItem>
+            )}
           </>
         ) :
 
@@ -175,15 +180,17 @@ export default function NavBar({children}) {
             </NavbarItem>
 
             <NavbarItem>
-              <Link className="text-white" href={`/web/views/admin/Projects?id=${session?.user?.id_company}&name=Dashboard`}>
+              <Link className="text-white" href={`/web/views/admin/Projects?id=${session?.user?.id_company ? encrypt(session.user.id_company) : ""}&name=Dashboard`}>
                 Dashboard
               </Link>
             </NavbarItem>
-            <NavbarItem>
-              <Link className="text-white" href="/web/views/admin/leads">
-                Prospectos
-              </Link>
-            </NavbarItem>   
+            {!isSuperadmin && (
+              <NavbarItem>
+                <Link className="text-white" href="/web/views/admin/leads">
+                  Prospectos
+                </Link>
+              </NavbarItem>
+            )}   
           </>
         ) : null
         }
@@ -310,16 +317,20 @@ export default function NavBar({children}) {
                 Inmobiliarias
               </Link>
             </NavbarItem>
-            <NavbarItem>
-              <Link className="text-white" href="/web/views/admin/analytics">
-                Analiticas
-              </Link>
-            </NavbarItem>
-            <NavbarItem>
-              <Link className="text-white" href="/web/views/admin/leads">
-                Prospectos
-              </Link>
-            </NavbarItem>
+            {!isSuperadmin && (
+              <NavbarItem>
+                <Link className="text-white" href="/web/views/admin/analytics">
+                  Analiticas
+                </Link>
+              </NavbarItem>
+            )}
+            {!isSuperadmin && (
+              <NavbarItem>
+                <Link className="text-white" href="/web/views/admin/leads">
+                  Prospectos
+                </Link>
+              </NavbarItem>
+            )}
           </>
         ) :
 
@@ -332,15 +343,17 @@ export default function NavBar({children}) {
             </NavbarItem>
 
             <NavbarItem>
-              <Link className="text-white" href={`/web/views/admin/Projects?id=${session?.user?.id_company}&name=Dashboard`}>
+              <Link className="text-white" href={`/web/views/admin/Projects?id=${session?.user?.id_company ? encrypt(session.user.id_company) : ""}&name=Dashboard`}>
                 Dashboard
               </Link>
             </NavbarItem>
-            <NavbarItem>
-              <Link className="text-white" href="/web/views/admin/leads">
-                Prospectos
-              </Link>
-            </NavbarItem>   
+            {!isSuperadmin && (
+              <NavbarItem>
+                <Link className="text-white" href="/web/views/admin/leads">
+                  Prospectos
+                </Link>
+              </NavbarItem>
+            )}   
           </>
         ) : null
         }
