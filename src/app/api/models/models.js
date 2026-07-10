@@ -44,6 +44,16 @@ const models_schema = new Schema({
     type : String,
     required : false
   },
+  background360Rotation: {
+    type: Number,
+    required: false,
+    default: 0
+  },
+  background360RotationX: {
+    type: Number,
+    required: false,
+    default: 0
+  },
   creation_date: {
     type: Date,
     default: Date.now

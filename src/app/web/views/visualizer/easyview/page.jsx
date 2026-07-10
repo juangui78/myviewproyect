@@ -53,13 +53,13 @@ function EasyViewContent() {
                 }
 
                 // Traer info del proyecto
-                const projectResponse = await axios.get(`/api/controllers/visualizer/${idProyect}`);
+                const projectResponse = await axios.get(`/api/controllers/visualizer/${idProyect}?t=${Date.now()}`);
                 if (projectResponse.data) {
                     setProjectInfo(projectResponse.data.proyect);
                 }
 
                 // Traer todos los modelos y seleccionar el índice correcto
-                const modelsResponse = await axios.get(`/api/controllers/models_/${idProyect}/allmodels`);
+                const modelsResponse = await axios.get(`/api/controllers/models_/${idProyect}/allmodels?t=${Date.now()}`);
                 if (modelsResponse.data && modelsResponse.data.length > 0) {
                     const safeIndex = Math.min(modelIndex, modelsResponse.data.length - 1);
                     const selectedModel = modelsResponse.data[safeIndex];

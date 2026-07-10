@@ -83,6 +83,40 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
     return [sumX / n, sumY / n, sumZ / n];
   }, [originalPoints]);
 
+  // Calcular la distancia entre cada par de puntos consecutivos
+  const segments = useMemo(() => {
+    if (originalPoints.length < 3) return [];
+    
+    const list = [];
+    const n = originalPoints.length;
+    
+    for (let i = 0; i < n; i++) {
+      const nextIdx = (i + 1) % n;
+      
+      const p1 = originalPoints[i];
+      const p2 = originalPoints[nextIdx];
+      
+      const ep1 = elevatedPoints[i];
+      const ep2 = elevatedPoints[nextIdx];
+      
+      const distance = p1.distanceTo(p2);
+      
+      // Calcular punto medio elevado para situar la etiqueta
+      const midpoint = new THREE.Vector3(
+        (ep1.x + ep2.x) / 2,
+        (ep1.y + ep2.y) / 2 + 0.15,
+        (ep1.z + ep2.z) / 2
+      );
+      
+      list.push({
+        id: `${i}-${nextIdx}`,
+        distance: distance,
+        position: [midpoint.x, midpoint.y, midpoint.z]
+      });
+    }
+    return list;
+  }, [originalPoints, elevatedPoints]);
+
   // Cálculo del área
   useEffect(() => {
     if (originalPoints.length < 3) return;
@@ -161,6 +195,32 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
           </div>
         </Html>
       )}
+
+      {/* Renderizar etiquetas de distancia entre cada punto */}
+      {segments.map((seg) => (
+        <Html
+          key={seg.id}
+          position={seg.position}
+          style={{ pointerEvents: 'none' }}
+          zIndexRange={[0, 5000]}
+        >
+          <div style={{
+            color: 'white',
+            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+            border: '1.5px solid rgba(255, 95, 31, 0.85)', // Naranja neón a juego
+            padding: '3px 8px',
+            borderRadius: '12px',
+            fontSize: '11px',
+            fontWeight: '700',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+            transform: 'translate(-50%, -50%)',
+          }}>
+            {seg.distance.toFixed(2)} m
+          </div>
+        </Html>
+      ))}
     </>
   );
 };

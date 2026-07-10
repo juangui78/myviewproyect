@@ -15,16 +15,6 @@ const DistanceVisual = ({ markers, lineHeightOffset = 0 }) => {
             <sphereGeometry args={[0.2, 16, 16]} />
             <meshBasicMaterial color="#0CDBFF" />
           </mesh>
-          {/* Outer futuristic holographic shell */}
-          <mesh>
-            <sphereGeometry args={[0.4, 16, 16]} />
-            <meshStandardMaterial 
-              color="#0CDBFF" 
-              transparent={true} 
-              opacity={0.3} 
-              wireframe={true}
-            />
-          </mesh>
         </group>
       ))}
 

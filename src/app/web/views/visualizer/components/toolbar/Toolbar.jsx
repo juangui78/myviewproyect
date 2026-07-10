@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react';
-import { Button, Tooltip } from "@nextui-org/react";
+import { Button, Tooltip, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@nextui-org/react";
 import styles from './Toolbar.module.css';
 import RulerIcon from "@/web/global_components/icons/RulerIcon.jsx";
 import MoonIcon from '@/web/global_components/icons/MoonIcon.jsx';
@@ -10,6 +10,22 @@ import DeleteIcon from '@/web/global_components/icons/DeleteIcon';
 import { WireframeIcon } from '@/web/global_components/icons/WireframeIcon';
 import { ElevationIcon } from '@/web/global_components/icons/ElevationIcon';
 import { EditIcon } from "@/web/global_components/icons/EditIcon";
+
+const CameraIcon = ({ className }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+    <circle cx="12" cy="13" r="4" />
+  </svg>
+);
 
 const Toolbar = ({
   onToggleLight,
@@ -23,6 +39,8 @@ const Toolbar = ({
   onToggleWireframe,
   isElevationMode,
   onToggleElevation,
+  currentView,
+  onChangeView,
   canEdit,
   isEditingMode,
   onToggleEditingMode
@@ -106,6 +124,40 @@ const Toolbar = ({
         >
           <ElevationIcon className="w-5 h-5 drop-shadow-sm" />
         </Button>
+      </Tooltip>
+
+      <Tooltip content="Cambiar Vista" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
+        <div>
+          <Dropdown placement="bottom-end" className="bg-black/90 backdrop-blur-md border border-white/10 text-white rounded-xl shadow-xl">
+            <DropdownTrigger>
+              <Button
+                isIconOnly
+                size="md"
+                variant="light"
+                aria-label="Cambiar Vista"
+                className={`text-white hover:bg-white/20 rounded-full transition-colors h-8 w-8 ${currentView !== '3d' ? 'bg-[#0CDBFF] text-black hover:bg-[#0CDBFF]/80' : ''}`}
+              >
+                <CameraIcon className="w-5 h-5 drop-shadow-sm" />
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu 
+              aria-label="Opciones de Vista"
+              variant="flat"
+              onAction={(key) => onChangeView(key)}
+              className="p-1.5"
+            >
+              <DropdownItem key="3d" className={`text-white hover:bg-white/15 rounded-lg text-xs ${currentView === '3d' ? 'bg-white/10 text-[#0CDBFF]' : ''}`}>
+                🌐 Vista 3D Libre
+              </DropdownItem>
+              <DropdownItem key="plant" className={`text-white hover:bg-white/15 rounded-lg text-xs ${currentView === 'plant' ? 'bg-white/10 text-[#0CDBFF]' : ''}`}>
+                🔲 Vista de Planta (2D)
+              </DropdownItem>
+              <DropdownItem key="isometric" className={`text-white hover:bg-white/15 rounded-lg text-xs ${currentView === 'isometric' ? 'bg-white/10 text-[#0CDBFF]' : ''}`}>
+                📐 Vista Isométrica
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
+        </div>
       </Tooltip>
 
       {canEdit && (

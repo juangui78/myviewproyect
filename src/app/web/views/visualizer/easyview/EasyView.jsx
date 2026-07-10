@@ -629,6 +629,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
 
       <Photo360Modal
         url={photo360Url}
+        markers={currentModel?.markers || []}
         isOpen={isPhoto360ModalOpen}
         onClose={() => {
           setPhoto360Url(null);

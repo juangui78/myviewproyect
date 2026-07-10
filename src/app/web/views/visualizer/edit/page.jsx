@@ -158,6 +158,9 @@ const App = () => {
     const [lastCameraView, setLastCameraView] = useState(0);
     const orbitControlsRef = React.useRef();
     const [background360, setBackground360] = useState(null);
+    const [background360Rotation, setBackground360Rotation] = useState(0);
+    const [background360RotationX, setBackground360RotationX] = useState(0);
+    const [currentView, setCurrentView] = useState('3d');
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
     //search Params to validate info
@@ -225,6 +228,184 @@ const App = () => {
                 camera.updateProjectionMatrix();
             }
         }, [cameraView, camera, onUserControlChange, onLastCameraViewChange, orbitControlsRef]);
+
+        return null;
+    };
+
+    const ViewManager = ({ viewType, orbitControlsRef }) => {
+        const { camera } = useThree();
+
+        useEffect(() => {
+            if (!orbitControlsRef || !orbitControlsRef.current) return;
+            const controls = orbitControlsRef.current;
+
+            // Mantener el vector superior constante para evitar rotaciones y volteos extraños
+            camera.up.set(0, 1, 0);
+
+            if (viewType === 'plant') {
+                // Deshabilitar rotación en los controles (solo permitir paneo y zoom)
+                controls.enableRotate = false;
+                controls.minPolarAngle = 0;
+                controls.maxPolarAngle = Math.PI;
+
+                // Cambiar el click izquierdo para realizar desplazamiento (pan)
+                controls.mouseButtons = {
+                    LEFT: THREE.MOUSE.PAN,
+                    MIDDLE: THREE.MOUSE.DOLLY,
+                    RIGHT: THREE.MOUSE.PAN
+                };
+
+                const target = controls.target;
+                const distance = camera.position.distanceTo(target);
+                const currentFov = camera.fov || 75;
+                const targetFov = 45;
+
+                // Compensar distancia para mantener el mismo tamaño visual
+                const fovFactor = Math.tan((currentFov * Math.PI) / 360) / Math.tan((targetFov * Math.PI) / 360);
+                const targetDistance = distance * fovFactor;
+                const targetY = target.y + (targetDistance > 10 ? targetDistance : 100);
+
+                controls.enabled = false;
+
+                gsap.to(camera, {
+                    fov: targetFov,
+                    duration: 1.2,
+                    ease: "power2.inOut",
+                    onUpdate: () => {
+                        camera.updateProjectionMatrix();
+                    }
+                });
+
+                // Posicionamos con un offset mínimo en Z de 0.001 para que la cámara no quede perfectamente vertical 
+                // respecto al vector superior [0, 1, 0], previniendo giros bruscos del gimbal lock.
+                gsap.to(camera.position, {
+                    x: target.x,
+                    y: targetY,
+                    z: target.z + 0.001,
+                    duration: 1.2,
+                    ease: "power2.inOut",
+                    onUpdate: () => {
+                        camera.lookAt(target.x, target.y, target.z);
+                        controls.update();
+                    },
+                    onComplete: () => {
+                        controls.enabled = true;
+                        camera.lookAt(target.x, target.y, target.z);
+                        controls.update();
+                    }
+                });
+            } else if (viewType === 'isometric') {
+                // Permitir rotación lateral (horizontal), pero bloquear la vertical a 35.26 grados de elevación
+                controls.enableRotate = true;
+                const rad35 = 35.264 * (Math.PI / 180);
+                const isoPolarAngle = Math.PI / 2 - rad35; // 54.736 grados polar
+
+                controls.minPolarAngle = isoPolarAngle;
+                controls.maxPolarAngle = isoPolarAngle;
+
+                // El click izquierdo rota horizontalmente, el click derecho desplaza (pan)
+                controls.mouseButtons = {
+                    LEFT: THREE.MOUSE.ROTATE,
+                    MIDDLE: THREE.MOUSE.DOLLY,
+                    RIGHT: THREE.MOUSE.PAN
+                };
+
+                const target = controls.target;
+                const distance = camera.position.distanceTo(target);
+                const currentFov = camera.fov || 75;
+                const targetFov = 30;
+
+                // Compensar distancia para mantener el mismo tamaño visual
+                const fovFactor = Math.tan((currentFov * Math.PI) / 360) / Math.tan((targetFov * Math.PI) / 360);
+                const targetDistance = distance * fovFactor;
+                const isoDistance = targetDistance > 10 ? targetDistance : 100;
+
+                // Calcular posición isométrica estándar (azimut a 45 grados)
+                const rad45 = 45 * (Math.PI / 180);
+                const targetX = target.x + isoDistance * Math.cos(rad35) * Math.cos(rad45);
+                const targetY = target.y + isoDistance * Math.sin(rad35);
+                const targetZ = target.z + isoDistance * Math.cos(rad35) * Math.sin(rad45);
+
+                controls.enabled = false;
+
+                gsap.to(camera, {
+                    fov: targetFov,
+                    duration: 1.2,
+                    ease: "power2.inOut",
+                    onUpdate: () => {
+                        camera.updateProjectionMatrix();
+                    }
+                });
+
+                gsap.to(camera.position, {
+                    x: targetX,
+                    y: targetY,
+                    z: targetZ,
+                    duration: 1.2,
+                    ease: "power2.inOut",
+                    onUpdate: () => {
+                        camera.lookAt(target.x, target.y, target.z);
+                        controls.update();
+                    },
+                    onComplete: () => {
+                        controls.enabled = true;
+                        camera.lookAt(target.x, target.y, target.z);
+                        controls.update();
+                    }
+                });
+            } else {
+                // Re-habilitar rotación de cámara y restaurar click izquierdo a rotación orbital
+                controls.enableRotate = true;
+                controls.minPolarAngle = 0;
+                controls.maxPolarAngle = Math.PI;
+                controls.mouseButtons = {
+                    LEFT: THREE.MOUSE.ROTATE,
+                    MIDDLE: THREE.MOUSE.DOLLY,
+                    RIGHT: THREE.MOUSE.PAN
+                };
+                
+                const targetFov = 75;
+                if (camera.fov !== targetFov) {
+                    gsap.to(camera, {
+                        fov: targetFov,
+                        duration: 1.2,
+                        ease: "power2.inOut",
+                        onUpdate: () => {
+                            camera.updateProjectionMatrix();
+                        }
+                    });
+
+                    const target = controls.target;
+                    const distance = camera.position.distanceTo(target);
+                    const currentFov = camera.fov || 30;
+                    const fovFactor = Math.tan((currentFov * Math.PI) / 360) / Math.tan((targetFov * Math.PI) / 360);
+                    const targetDistance = distance * fovFactor;
+
+                    const dir = new THREE.Vector3().subVectors(camera.position, target).normalize();
+                    const newPos = new THREE.Vector3().addVectors(target, dir.multiplyScalar(targetDistance));
+
+                    controls.enabled = false;
+
+                    gsap.to(camera.position, {
+                        x: newPos.x,
+                        y: newPos.y,
+                        z: newPos.z,
+                        duration: 1.2,
+                        ease: "power2.inOut",
+                        onUpdate: () => {
+                            camera.lookAt(target.x, target.y, target.z);
+                            controls.update();
+                        },
+                        onComplete: () => {
+                            controls.enabled = true;
+                            controls.update();
+                        }
+                    });
+                } else {
+                    controls.update();
+                }
+            }
+        }, [viewType, camera, orbitControlsRef]);
 
         return null;
     };
@@ -360,6 +541,10 @@ const App = () => {
         setView360Markers((prev) => [...prev, newMarker]);
     };
 
+    const handleSaveYawOffset = (markerId, yawOffset) => {
+        setView360Markers(prev => prev.map(m => (m.id === markerId || m._id === markerId || String(m.id || m._id) === String(markerId)) ? { ...m, yawOffset } : m));
+    };
+
     const handleEditMarkersMode = (event) => {
         event.preventDefault();
         setEditMarkersMode((prevMode) => !prevMode);
@@ -436,7 +621,7 @@ const App = () => {
     useEffect(() => {
         const fetchModels = async () => {
             try {
-                const response = await axios.get(`/api/controllers/models_/${idProyect}/allmodels`);
+                const response = await axios.get(`/api/controllers/models_/${idProyect}/allmodels?t=${Date.now()}`);
                 console.log("Fetched models:", response.data);
 
                 if (response.data && response.data.length > 0) {
@@ -457,8 +642,21 @@ const App = () => {
                         setAllTerrains([]);
                     }
 
+                    if (response.data[safeIndex]?.background360Rotation !== undefined) {
+                        setBackground360Rotation(response.data[safeIndex].background360Rotation);
+                    } else {
+                        setBackground360Rotation(0);
+                    }
+
+                    if (response.data[safeIndex]?.background360RotationX !== undefined) {
+                        setBackground360RotationX(response.data[safeIndex].background360RotationX);
+                    } else {
+                        setBackground360RotationX(0);
+                    }
+
                     // Inicializa photo360Url con la URL del primer marcador 360 si existe
                     if (response.data[safeIndex]?.markers?.length > 0) {
+                        console.log("Cargando marcadores desde BD (edicion):", response.data[safeIndex].markers);
                         setView360Markers(response.data[safeIndex].markers);
                     } else {
                         setView360Markers([]);
@@ -503,7 +701,7 @@ const App = () => {
     useEffect(() => {
         const getModel = async () => {
             try {
-                const response = await axios.get(`/api/controllers/visualizer/${idProyect}`)
+                const response = await axios.get(`/api/controllers/visualizer/${idProyect}?t=${Date.now()}`)
 
                 if (response.data != undefined) {
                     if (response.data.proyect) {
@@ -562,6 +760,17 @@ const App = () => {
                     setCurrentModelId(projectId); // Usa la variable local
                     setPjname(currentModel.name) // Usa la variable local
                     setBackground360(currentModel.background360 || null);
+                    if (currentModel.background360Rotation !== undefined) {
+                        setBackground360Rotation(currentModel.background360Rotation);
+                    } else {
+                        setBackground360Rotation(0);
+                    }
+
+                    if (currentModel.background360RotationX !== undefined) {
+                        setBackground360RotationX(currentModel.background360RotationX);
+                    } else {
+                        setBackground360RotationX(0);
+                    }
                     // console.log('ID CARGADA:', projectId); // Usa la variable local
 
                     // Si necesitas hacer algo con los terrenos después de cargar
@@ -730,8 +939,24 @@ const App = () => {
                 modelID: modelID,
                 terrains: allTerrains,
                 view360Markers: view360Markers,
+                background360Rotation: background360Rotation,
+                background360RotationX: background360RotationX,
             });
             console.log('Terrenos guardados:', response.data);
+
+            // Sincronizar todos los modelos cargados localmente con el mismo fondo y rotaciones
+            setModels(prev => prev.map(m => ({
+                ...m,
+                background360: background360,
+                background360Rotation: background360Rotation,
+                background360RotationX: background360RotationX
+            })));
+            setcurrentModel(prev => prev ? {
+                ...prev,
+                background360: background360,
+                background360Rotation: background360Rotation,
+                background360RotationX: background360RotationX
+            } : null);
         } catch (error) {
             console.error('Error al guardar los terrenos:', error);
         }
@@ -824,6 +1049,8 @@ const App = () => {
                             onReset={handleResetMarkers}
                             lightMode={light}
                             showTerrains={toggleTerrains}
+                            currentView={currentView}
+                            onChangeView={setCurrentView}
                         />}
 
 
@@ -852,11 +1079,12 @@ const App = () => {
                 <div className='flex w-full h-full flex-col sm:flex-row'>
                     <div className='flex w-full h-full'>
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
-                            <Canvas dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 1.5]} ref={objectRef} gl={{
+                            <Canvas dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]} ref={objectRef} gl={{
                                 antialias: !(isSafariMobile || isInstagramBrowser),
                                 powerPreference: "high-performance",
                                 precision: isSafariMobile || isInstagramBrowser ? "mediump" : "highp",
                                 alpha: false,
+                                preserveDrawingBuffer: true,
                             }}
                                 onCreated={({ gl }) => {
                                     gl.toneMapping = THREE.LinearToneMapping
@@ -872,6 +1100,7 @@ const App = () => {
                                 <directionalLight color="white" position={[0, 2, 50]} />
 
                                 <CameraViewManager cameraView={cameraView} />
+                                <ViewManager viewType={currentView} orbitControlsRef={orbitControlsRef} />
                                 {/* <CameraDebugger /> */}
 
                                 {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} onAddView360Marker={handleAddView360Marker} addView360Mode={addView360Mode} />}
@@ -948,7 +1177,7 @@ const App = () => {
 
                                 {background360 ? (
                                     <>
-                                        <Background360 url={background360} />
+                                        <Background360 url={background360} rotation={background360Rotation} rotationX={background360RotationX} />
                                         <Environment preset={light} />
                                     </>
                                 ) : (
@@ -1013,7 +1242,10 @@ const App = () => {
 
                     <Photo360Modal
                         url={photo360Url}
+                        markers={view360Markers}
                         isOpen={isPhoto360ModalOpen}
+                        isEditMode={true}
+                        onSaveYawOffset={handleSaveYawOffset}
                         onClose={() => {
                             setPhoto360Url(null);
                             setIsPhoto360ModalOpen(false);
