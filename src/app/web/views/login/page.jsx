@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState } from "react";
-import { Card,CardHeader,CardBody,Image,Input,Button } from "@nextui-org/react";
+import { Card, CardHeader, CardBody, Image, Input, Button } from "@nextui-org/react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { validationSchemaLogin } from "./js/validationSchema";
@@ -12,38 +12,39 @@ import Link from "next/link";
 
 export default function Login() {
   const router = useRouter();
-  const [error, setError] = useState(false)
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    document.title = "MyView | Iniciar Sesión"
-  }, [])
+    document.title = "MyView | Iniciar Sesión";
+  }, []);
 
   return (
-    <>
-    <section className="flex flex-row flex-wrap max-[876px]:flex-col">
-      <section className={`flex justify-center ... items-center ... h-dvh  grow w-2/5 ... max-[876px]:w-full bg-[url(/images/op22.webp)] ... bg-no-repeat bg-cover`} >
-        <Card className="max-w-[400px] w-full  bg-transparent">
+    <div className="bg-[#02121B] bg-[url(/images/op11.webp)] bg-no-repeat bg-cover min-h-screen text-foreground relative flex flex-col justify-between items-center overflow-hidden">
+      <div className="w-full flex-1 flex items-center justify-center py-10 px-4">
+        <Card className="max-w-[420px] w-full bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-2 md:p-4">
           <CardHeader className="flex gap-3 flex-col mt-[5px]">
-            <div className="grid place-items-center mb-[-20px]">
-            <Image
-                alt="logo"
-                src="/logos/completo-fullblanco.png"
-                className="w-[250px] h-[250px] align-center justify-center"
-              />
-              <h1 className="text-2xl text-white font-semibold mt-[-70px]">Iniciar Sesión</h1>
+            <div className="grid place-items-center mb-[-10px]">
+              <Link href="/">
+                <Image
+                  alt="logo"
+                  src="/logos/completo-fullblanco.png"
+                  className="w-[220px] h-[120px] object-contain cursor-pointer"
+                />
+              </Link>
+              <h1 className="text-2xl text-white font-semibold mt-[-20px]">Iniciar Sesión</h1>
             </div>
-            <div className="w-full pr-[1rem] pl-[1rem] ">
+            <div className="w-full pr-[1rem] pl-[1rem] mt-2">
               {error ? (
                 <motion.div 
-                  initial={{ opacity: 0, scale: 0 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{
-                    duration: 0.4,
-                    scale: { type: "spring", visualDuration: 0.4, bounce: 0.5 },
+                    duration: 0.3,
+                    scale: { type: "spring", visualDuration: 0.3, bounce: 0.4 },
                   }}>
-                  <div className="flex justify-center items-center text-[#FD6358]  w-full border-solid border-2 border-[#FD6358]  p-[0.7rem] rounded-lg">
+                  <div className="flex justify-center items-center text-[#FD6358] w-full border border-[#FD6358]/50 bg-[#FD6358]/10 p-[0.7rem] rounded-xl">
                     <AlertCircleOutline /> 
-                    <span className=" text-base ml-[5px] text-[#FD6358]">Correo y/o contraseña incorrecta</span>
+                    <span className="text-sm ml-[5px] text-[#FD6358]">Correo y/o contraseña incorrecta</span>
                   </div>
                 </motion.div>
               ) : null}
@@ -54,16 +55,15 @@ export default function Login() {
               initialValues={{ email: '', password: '' }}
               validationSchema={validationSchemaLogin}
               onSubmit={ async (values) => {
+                setError(false);
 
-                setError(false)
-
-                const { email, password } = values
+                const { email, password } = values;
 
                 let response = await signIn('credentials', {
                   email : email,
                   password: password,
                   redirect : false
-                })
+                });
 
                 // Auto-retry once on failure (handles database cold start timeouts)
                 if (!response || !response.ok) {
@@ -77,15 +77,15 @@ export default function Login() {
                 }
 
                 if (!response || !response.ok) { // if response is not ok
-                  setError(true)
-                  return
+                  setError(true);
+                  return;
                 }
 
                 window.location.href = '/web/views/user/feed';
               }}
             >
             {({ handleSubmit, isSubmitting}) => (
-              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col ">
+              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col">
                 <Field name="email">
                   {({ field, meta }) => (
                      <>
@@ -112,15 +112,15 @@ export default function Login() {
                             "!cursor-text",
                           ],
                         }}
-                        className={`pr-4 pl-4  ${meta.error ? styleLogin.errorInputColor : styleLogin.colorWhite } `} 
+                        className={`pr-4 pl-4 ${meta.error ? styleLogin.errorInputColor : styleLogin.colorWhite }`} 
                       />
-                      <div className="mb-[10px] ml-[4px] pr-4 pl-4 ">
+                      <div className="mb-[10px] ml-[4px] pr-4 pl-4">
                           <p className="h-[1rem] text-sm text-[#FD6358]">{ meta.error ? (meta.error + "*") : "" }</p>
                       </div>
                     </>
                   )}
                 </Field>
-                <Field name="password" >
+                <Field name="password">
                   {({ field, meta }) => (
                      <>
                       <Input
@@ -146,17 +146,17 @@ export default function Login() {
                             "!cursor-text",
                           ],
                         }}
-                        className={`pr-4 pl-4  ${meta.error ? styleLogin.errorInputColor : styleLogin.colorWhite } `} 
+                        className={`pr-4 pl-4 ${meta.error ? styleLogin.errorInputColor : styleLogin.colorWhite }`} 
                         clearable
                       />
-                     <div className="mb-[15px] ml-[4px] pr-4 pl-4 ">
-                          <p className="h-[1rem] text-sm  text-[#FD6358]">{ meta.error ? (meta.error + "*") : "" }</p>
+                     <div className="mb-[15px] ml-[4px] pr-4 pl-4">
+                          <p className="h-[1rem] text-sm text-[#FD6358]">{ meta.error ? (meta.error + "*") : "" }</p>
                       </div>
                     </>
                   )}
                 </Field>
                 <Button 
-                  className="m-auto w-3/6 bg-[#0CDBFF] mb-[40px] mt-[30px] color-black" 
+                  className="m-auto w-3/6 bg-[#0CDBFF] mb-[40px] mt-[30px] color-black font-bold" 
                   type="submit"
                   isDisabled={isSubmitting}
                 >
@@ -166,16 +166,13 @@ export default function Login() {
             )}
           </Formik>
         </CardBody>
-        {/* <CardFooter>
-            <Link href="/web/views/register" className="text-center text-[#030D1C]">¿No tienes una cuenta? Regístrate</Link>
-        </CardFooter> */}
       </Card>
-      <div className="flex absolute right-5 bottom-0">
-        <Link href="/web/views/signup" className="text-center text-[#030D1C] mr-[5px] text-white"> Ayuda </Link>
-        <Link href="/web/views/signup" className="text-center text-[#030D1C] text-white"> | Terminos y condiciones</Link>
-      </div>
-    </section>
-    </section>  
-    </>
+    </div>
+    <div className="w-full py-4 text-center text-xs text-gray-400 border-t border-white/5 bg-black/20 backdrop-blur-md flex justify-center items-center gap-4">
+      <Link href="/web/views/signup" className="hover:text-primary transition-colors">Ayuda</Link>
+      <span>|</span>
+      <Link href="/web/views/signup" className="hover:text-primary transition-colors">Términos y condiciones</Link>
+    </div>
+  </div>
   );
 }

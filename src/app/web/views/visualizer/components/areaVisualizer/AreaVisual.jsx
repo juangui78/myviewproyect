@@ -196,8 +196,8 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
         </Html>
       )}
 
-      {/* Renderizar etiquetas de distancia entre cada punto */}
-      {segments.map((seg) => (
+      {/* Renderizar etiquetas de distancia entre cada punto solo si hay 4 o menos puntos */}
+      {markers.length <= 4 && segments.map((seg) => (
         <Html
           key={seg.id}
           position={seg.position}

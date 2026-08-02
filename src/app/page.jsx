@@ -19,6 +19,7 @@ import Whatsapp from "./web/global_components/icons/Whatsapp";
 
 import SectionOne from "./sectionOne.client";
 import InteractiveBlobs from "./InteractiveBlobs.client";
+import SuccessCasesSection from "./SuccessCasesSection.client";
 import ContactSection from "./ContactSection.client";
 import Footer from "./web/global_components/footer/Footer";
 
@@ -322,6 +323,9 @@ export default function Home() {
             </motion.div>
           </div>
         </div>
+
+        {/* Casos de Éxito - Alineado directamente con los 2 nichos (Inmobiliarias e Ingeniería) */}
+        <SuccessCasesSection />
 
         {/* sección dos del landing con framer motion */}
         <SectionOne />

@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
+import { useSession } from 'next-auth/react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -98,11 +100,76 @@ const preprocessLoadedGltf = (gltfLoaded) => {
 export default function EasyView({ modelUrl, currentModel, projectInfo, projectId }) {
   const mountRef = useRef(null);
   const savedCameraStateRef = useRef(null);
+  const cameraRef = useRef(null);
+  const controlsRef = useRef(null);
+  const markersGroupRef = useRef(null);
+
+  const { data: session } = useSession();
+
+  const isSuperAdmin = session?.user?.rol === 'superadmin' || session?.user?.email === "darksus78@gmail.com";
+  const userId = session?.user?._id || session?.user?.id;
+  const userCompanyId = session?.user?.id_company;
+
+  const isProjectOwner = Boolean(
+    session?.user && (
+      (projectInfo?.idUser && (projectInfo.idUser === userId || projectInfo.idUser?._id === userId)) ||
+      (projectInfo?.idCompany && (
+        projectInfo.idCompany === userCompanyId ||
+        projectInfo.idCompany?._id === userCompanyId ||
+        projectInfo.idCompany === userId ||
+        projectInfo.idCompany?._id === userId
+      ))
+    )
+  );
+
+  const canSaveCamera = isSuperAdmin || isProjectOwner;
+
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [photo360Url, setPhoto360Url] = useState(null);
   const [isPhoto360ModalOpen, setIsPhoto360ModalOpen] = useState(false);
   const [terrainsData, setTerrainsData] = useState([]);
+  const [showMarkers, setShowMarkers] = useState(true);
+  const [isSavingCam, setIsSavingCam] = useState(false);
+
+  useEffect(() => {
+    if (markersGroupRef.current) {
+      markersGroupRef.current.visible = showMarkers;
+    }
+  }, [showMarkers]);
+
+  const handleSaveCameraPosition = async () => {
+    if (!cameraRef.current || !controlsRef.current || !currentModel?._id) return;
+    try {
+      setIsSavingCam(true);
+      const cam = cameraRef.current;
+      const ctr = controlsRef.current;
+      const position = [
+        Number(cam.position.x.toFixed(4)),
+        Number(cam.position.y.toFixed(4)),
+        Number(cam.position.z.toFixed(4))
+      ];
+      const target = [
+        Number(ctr.target.x.toFixed(4)),
+        Number(ctr.target.y.toFixed(4)),
+        Number(ctr.target.z.toFixed(4))
+      ];
+
+      const targetProjectId = projectId || currentModel.idProyect;
+      await axios.post(`/api/controllers/visualizer/${targetProjectId}`, {
+        modelID: currentModel._id,
+        defaultCamera: { position, target }
+      });
+
+      currentModel.defaultCamera = { position, target };
+      alert("✅ Posición de cámara guardada con éxito como vista inicial predeterminada.");
+    } catch (err) {
+      console.error("Error al guardar la vista de cámara inicial:", err);
+      alert("❌ No se pudo guardar la posición de la cámara.");
+    } finally {
+      setIsSavingCam(false);
+    }
+  };
 
   useEffect(() => {
     const currentMount = mountRef.current;
@@ -114,6 +181,9 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
     // powerPreference: "low-power" ayuda en móviles, antialias en false reduce consumo de VRAM y GPU
     const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "low-power", alpha: false }); 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limitar a un ratio de 2 para rendimiento
+    
+    renderer.toneMapping = THREE.LinearToneMapping;
+    renderer.toneMappingExposure = 1.25;
     
     const updateSize = () => {
       const width = currentMount.clientWidth || window.innerWidth;
@@ -133,16 +203,59 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
     controls.dampingFactor = 0.05;
     controls.enablePan = true; 
 
-    // Iluminación básica
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    cameraRef.current = camera;
+    controlsRef.current = controls;
+
+    // Iluminación Hipsométrica de Alta Claridad para Terrenos (Omnidireccional sin zonas oscuras)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
     scene.add(ambientLight);
-    
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(10, 10, 10);
-    scene.add(directionalLight);
+
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444455, 0.6);
+    hemiLight.position.set(0, 50, 0);
+    scene.add(hemiLight);
+
+    // Luz solar principal (Superior-Derecha)
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
+    keyLight.position.set(50, 100, 50);
+    scene.add(keyLight);
+
+    // Luz de relleno (Elimina sombras oscuras en laderas opuestas)
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    fillLight.position.set(-50, 50, -50);
+    scene.add(fillLight);
+
+    // Luz frontal suave (Asegura nitidez frontal al girar la cámara)
+    const frontLight = new THREE.DirectionalLight(0xffffff, 0.4);
+    frontLight.position.set(0, 20, 100);
+    scene.add(frontLight);
 
     const tempV = new THREE.Vector3();
     const localTerrainsData = [];
+
+    // Carga asíncrona no bloqueante de fondo 360 (Background360) si está configurado en el modelo
+    if (currentModel?.background360) {
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.load(
+        currentModel.background360,
+        (texture) => {
+          texture.mapping = THREE.EquirectangularReflectionMapping;
+          texture.minFilter = THREE.LinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.generateMipmaps = false; // Optimización VRAM para móviles
+
+          scene.background = texture;
+
+          const rotY = currentModel.background360Rotation || 0;
+          const rotX = currentModel.background360RotationX || 0;
+          scene.backgroundRotation = new THREE.Euler(rotX, rotY, 0);
+          scene.environmentRotation = new THREE.Euler(rotX, rotY, 0);
+        },
+        undefined,
+        (err) => {
+          console.warn("No se pudo cargar la textura background360 en EasyView:", err);
+        }
+      );
+    }
 
     // 3. Carga del Modelo
     const loader = getGltfLoader();
@@ -229,6 +342,8 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
 
         // --- RENDER MARKERS ---
         const markersGroup = new THREE.Group();
+        markersGroup.visible = showMarkers;
+        markersGroupRef.current = markersGroup;
         scene.add(markersGroup);
 
         localTerrainsData.length = 0;
@@ -407,6 +522,10 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
         }
       });
 
+      if (scene.background && scene.background.dispose) {
+        scene.background.dispose();
+      }
+
       // Destruir WebGL Context
       renderer.dispose();
       renderer.forceContextLoss(); 
@@ -443,7 +562,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
       {!isLoading && (
         <>
           <div className="flex justify-between w-full pt-[15px] px-[15px] bg-transparent z-[10] absolute items-center gap-2 md:gap-4 pointer-events-none">
-            <div className="pointer-events-auto">
+            <div className="pointer-events-auto flex items-center gap-2">
               {projectId && (
                 <Link
                   href={`/proyectos/${projectId}`}
@@ -451,6 +570,38 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
                 >
                   <span>← Volver</span>
                 </Link>
+              )}
+
+              {/* Botón Ocultar/Mostrar Marcadores */}
+              <button
+                onClick={() => setShowMarkers(!showMarkers)}
+                title={showMarkers ? "Ocultar Marcadores" : "Mostrar Marcadores"}
+                className={`border border-white/20 bg-black/60 backdrop-blur-md text-white h-10 px-3.5 rounded-full hover:bg-black/80 transition-all font-medium shadow-lg flex items-center justify-center select-none text-xs gap-1.5 ${!showMarkers ? 'border-[#0CDBFF] text-[#0CDBFF]' : ''}`}
+              >
+                {showMarkers ? (
+                  <>
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    <span className="hidden sm:inline">Marcadores</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 text-[#0CDBFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858-5.908a10.05 10.05 0 013.982-.863c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m-4.692-4.692a3 3 0 00-4.243-4.243m4.242 4.242L3 3l18 18"/></svg>
+                    <span className="hidden sm:inline text-[#0CDBFF]">Marcadores Ocultos</span>
+                  </>
+                )}
+              </button>
+
+              {/* Botón Guardar Posición de Cámara Inicial (Restringido a Superadmin o Creador del Proyecto) */}
+              {canSaveCamera && (
+                <button
+                  onClick={handleSaveCameraPosition}
+                  disabled={isSavingCam}
+                  title="Guardar vista de cámara inicial al cargar"
+                  className="border border-white/20 bg-black/60 backdrop-blur-md text-white h-10 px-3.5 rounded-full hover:bg-black/80 transition-all font-medium shadow-lg flex items-center justify-center select-none text-xs gap-1.5 active:scale-95 disabled:opacity-50"
+                >
+                  <svg className="w-4 h-4 text-[#0CDBFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  <span className="hidden sm:inline">{isSavingCam ? "Guardando..." : "Guardar Vista Cámara"}</span>
+                </button>
               )}
             </div>
             <div className="pointer-events-auto"></div>
@@ -504,7 +655,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
       <div ref={mountRef} style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }} />
 
       {/* HTML Markers Overlay */}
-      {!isLoading && currentModel?.markers && (
+      {!isLoading && showMarkers && currentModel?.markers && (
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 5 }}>
           <style>{`
             .marker360-group:hover .marker360-preview {
@@ -590,7 +741,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
       )}
 
       {/* HTML Terrains Overlay */}
-      {!isLoading && terrainsData.length > 0 && (
+      {!isLoading && showMarkers && terrainsData.length > 0 && (
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 5 }}>
           {terrainsData.map((terrain) => {
             const displayArea = (terrain.name === "Concepcion" ? 3.333 : terrain.area).toFixed(2);

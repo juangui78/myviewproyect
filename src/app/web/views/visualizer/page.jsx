@@ -1,6 +1,6 @@
 'use client'
 import React, { forwardRef } from 'react';
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Environment, OrbitControls, useProgress, TransformControls } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { Suspense, useEffect } from "react";
@@ -506,6 +506,157 @@ const App = () => {
                 }
             }
         }, [viewType, camera, orbitControlsRef]);
+
+        return null;
+    };
+
+    const FirstPersonNavigation = ({ enabled, orbitControlsRef, onExit }) => {
+        const { camera, gl } = useThree();
+        const keysPressed = React.useRef({});
+        const isDragging = React.useRef(false);
+        const previousMousePosition = React.useRef({ x: 0, y: 0 });
+        const euler = React.useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
+
+        useEffect(() => {
+            if (!enabled) return;
+
+            // Deshabilitar OrbitControls mientras navegamos en Primera Persona
+            if (orbitControlsRef && orbitControlsRef.current) {
+                orbitControlsRef.current.enabled = false;
+            }
+
+            euler.current.setFromQuaternion(camera.quaternion, 'YXZ');
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Escape' || e.key === 'Esc') {
+                    if (document.pointerLockElement) document.exitPointerLock?.();
+                    onExit?.();
+                    return;
+                }
+                if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+                keysPressed.current[e.key.toLowerCase()] = true;
+            };
+
+            const handleKeyUp = (e) => {
+                keysPressed.current[e.key.toLowerCase()] = false;
+            };
+
+            const handleMouseDown = (e) => {
+                if (e.button === 0 || e.button === 2) {
+                    isDragging.current = true;
+                    previousMousePosition.current = { x: e.clientX, y: e.clientY };
+                }
+            };
+
+            const handleMouseUp = () => {
+                isDragging.current = false;
+            };
+
+            const handleMouseMove = (e) => {
+                if (!isDragging.current && document.pointerLockElement !== gl.domElement) return;
+
+                const movementX = document.pointerLockElement === gl.domElement 
+                    ? e.movementX 
+                    : e.clientX - previousMousePosition.current.x;
+                const movementY = document.pointerLockElement === gl.domElement 
+                    ? e.movementY 
+                    : e.clientY - previousMousePosition.current.y;
+
+                previousMousePosition.current = { x: e.clientX, y: e.clientY };
+
+                const sensitivity = 0.0025;
+                euler.current.y -= movementX * sensitivity; // Yaw (rotación horizontal)
+                euler.current.x -= movementY * sensitivity; // Pitch (rotación vertical)
+
+                // Limitar la inclinación vertical para evitar giros inversos (gimbal lock)
+                euler.current.x = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, euler.current.x));
+
+                camera.quaternion.setFromEuler(euler.current);
+            };
+
+            const handleCanvasClick = () => {
+                if (document.pointerLockElement !== gl.domElement) {
+                    gl.domElement.requestPointerLock?.();
+                }
+            };
+
+            const handlePointerLockChange = () => {
+                if (document.pointerLockElement !== gl.domElement && enabled) {
+                    onExit?.();
+                }
+            };
+
+            const domElem = gl.domElement;
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
+            domElem.addEventListener('mousedown', handleMouseDown);
+            window.addEventListener('mouseup', handleMouseUp);
+            window.addEventListener('mousemove', handleMouseMove);
+            domElem.addEventListener('click', handleCanvasClick);
+            document.addEventListener('pointerlockchange', handlePointerLockChange);
+
+            return () => {
+                window.removeEventListener('keydown', handleKeyDown);
+                window.removeEventListener('keyup', handleKeyUp);
+                domElem.removeEventListener('mousedown', handleMouseDown);
+                window.removeEventListener('mouseup', handleMouseUp);
+                window.removeEventListener('mousemove', handleMouseMove);
+                domElem.removeEventListener('click', handleCanvasClick);
+                document.removeEventListener('pointerlockchange', handlePointerLockChange);
+                if (document.pointerLockElement === gl.domElement) {
+                    document.exitPointerLock?.();
+                }
+                keysPressed.current = {};
+                isDragging.current = false;
+
+                // Al salir de primera persona, restaurar OrbitControls apuntando hacia la dirección donde mira la cámara
+                if (orbitControlsRef && orbitControlsRef.current) {
+                    const dir = new THREE.Vector3();
+                    camera.getWorldDirection(dir);
+                    orbitControlsRef.current.target.copy(camera.position).addScaledVector(dir, 20);
+                    orbitControlsRef.current.enabled = true;
+                    orbitControlsRef.current.update();
+                }
+            };
+        }, [enabled, camera, gl.domElement, orbitControlsRef, onExit]);
+
+        useFrame((state, delta) => {
+            if (!enabled) return;
+
+            const speedMultiplier = keysPressed.current['shift'] ? 2.5 : 1.0;
+            const moveSpeed = 16 * speedMultiplier * delta;
+
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+
+            const forward = dir.clone().normalize();
+            const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
+
+            const moveVector = new THREE.Vector3(0, 0, 0);
+
+            if (keysPressed.current['w'] || keysPressed.current['arrowup']) {
+                moveVector.addScaledVector(forward, moveSpeed);
+            }
+            if (keysPressed.current['s'] || keysPressed.current['arrowdown']) {
+                moveVector.addScaledVector(forward, -moveSpeed);
+            }
+            if (keysPressed.current['a'] || keysPressed.current['arrowleft']) {
+                moveVector.addScaledVector(right, -moveSpeed);
+            }
+            if (keysPressed.current['d'] || keysPressed.current['arrowright']) {
+                moveVector.addScaledVector(right, moveSpeed);
+            }
+            if (keysPressed.current['q'] || keysPressed.current[' ']) {
+                moveVector.y += moveSpeed;
+            }
+            if (keysPressed.current['e']) {
+                moveVector.y -= moveSpeed;
+            }
+
+            if (moveVector.lengthSq() > 0) {
+                camera.position.add(moveVector);
+            }
+        });
 
         return null;
     };
@@ -1687,16 +1838,6 @@ const App = () => {
                             isEditingMode={isEditingMode}
                             onToggleEditingMode={handleToggleEditingMode}
                         />}
-
-                    {/* {currentTerrainMarkers.length > 2 && (
-                            <Button onClick={handleAddTerrain} color="primary">
-                                Añadir Terreno
-                            </Button>
-                        )}
-                        <Button onClick={handleSaveButtonClick} color="primary"
-                        >
-                            Guardar Terrenos
-                        </Button> */}
                 </div>
                 <div>
                     <InformationCard
@@ -1717,10 +1858,37 @@ const App = () => {
 
             {!isSafariMobile && isModelLoaded && (
                 <div className='flex w-full h-full flex-col sm:flex-row'>
-                    <div className='flex w-full h-full'>
+                    <div className='flex w-full h-full relative'>
+                        {currentView === 'free' && (
+                            <>
+                                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 bg-black/80 backdrop-blur-md border border-[#0CDBFF]/50 text-white px-4 py-2.5 rounded-full text-xs font-medium flex items-center gap-3 shadow-[0_0_20px_rgba(12,219,255,0.3)] pointer-events-auto">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-[#0CDBFF] animate-pulse flex-shrink-0" />
+                                    <span>🎮 <strong>Vista Libre:</strong> Clic para fijar ratón | <strong>WASD / Flechas</strong> Avanzar | <strong>Q / Espacio</strong> Subir | <strong>E</strong> Bajar | Presiona <strong>ESC</strong> para salir</span>
+                                    <button 
+                                        onClick={() => {
+                                            if (document.pointerLockElement) document.exitPointerLock?.();
+                                            setCurrentView('3d');
+                                        }}
+                                        className="ml-2 bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-xs font-bold transition-colors border border-white/10"
+                                    >
+                                        Salir (ESC)
+                                    </button>
+                                </div>
+
+                                {/* Puntero central de alta visibilidad: 2 líneas en cruz con contraste */}
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none flex items-center justify-center w-6 h-6">
+                                    {/* Línea horizontal */}
+                                    <div className="absolute w-4 h-[2px] bg-[#0CDBFF] rounded-full shadow-[0_0_4px_rgba(0,0,0,1)] border border-black" />
+                                    {/* Línea vertical */}
+                                    <div className="absolute h-4 w-[2px] bg-[#0CDBFF] rounded-full shadow-[0_0_4px_rgba(0,0,0,1)] border border-black" />
+                                    {/* Punto central diminuto de contraste */}
+                                    <div className="absolute w-1 h-1 rounded-full bg-white border border-black shadow-[0_0_2px_rgba(0,0,0,1)]" />
+                                </div>
+                            </>
+                        )}
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
                             <Canvas
-                                style={{ cursor: editMarkersMode ? 'crosshair' : 'default' }}
+                                style={{ cursor: currentView === 'free' ? 'none' : (editMarkersMode ? 'crosshair' : 'default') }}
                                 dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]}
                                 ref={objectRef}
                                 camera={{ position: [0, 160, 0], fov: 75 }}
@@ -1743,6 +1911,7 @@ const App = () => {
 
                                 <CameraViewManager cameraView={cameraView} />
                                 <ViewManager viewType={currentView} orbitControlsRef={orbitControlsRef} />
+                                <FirstPersonNavigation enabled={currentView === 'free'} orbitControlsRef={orbitControlsRef} onExit={() => setCurrentView('3d')} />
                                 {/* <CameraDebugger /> */}
 
                                 {editMarkersMode && (

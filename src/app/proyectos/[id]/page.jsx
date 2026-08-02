@@ -339,22 +339,22 @@ export default function ProyectoPresentationPage() {
               )}
 
               {/* Stats / Details */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md flex flex-col justify-center">
                   <span className="text-white/50 text-xs block mb-1">ÁREA TOTAL</span>
-                  <span className="text-xl font-bold text-white">
+                  <span className="text-lg md:text-xl font-bold text-white block break-words">
                     {proyect?.areaOfThisproyect ? `${proyect.areaOfThisproyect.toLocaleString()} m²` : "N/A"}
                   </span>
                 </div>
-                <div className="p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md">
+                <div className="p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md flex flex-col justify-center">
                   <span className="text-white/50 text-xs block mb-1">UBICACIÓN</span>
-                  <span className="text-xl font-bold text-white truncate block">
-                    {proyect?.city}, {proyect?.department}
+                  <span className="text-lg md:text-xl font-bold text-white block break-words leading-tight">
+                    {proyect?.city}{proyect?.department ? `, ${proyect.department}` : ''}
                   </span>
                 </div>
-                <div className="p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md col-span-2 md:col-span-1">
+                <div className="p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md sm:col-span-2 md:col-span-1 flex flex-col justify-center">
                   <span className="text-white/50 text-xs block mb-1">DIRECCIÓN</span>
-                  <span className="text-sm font-semibold text-white/95 block truncate">
+                  <span className="text-sm md:text-base font-semibold text-white/95 block break-words leading-snug">
                     {proyect?.address || "No especificada"}
                   </span>
                 </div>

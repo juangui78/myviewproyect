@@ -21,7 +21,7 @@ const SectionOne = () => {
                     viewport={{ once: true }}
                     transition={{ duration: 0.6, delay: 0.3 }}
                 >
-                    <Image src="/images/explore.png" alt="Exploración 3D" fill className="object-cover relative z-10" />
+                    <Image src="/images/explore.png" alt="Exploración 3D" fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 384px" className="object-cover relative z-10" />
                 </motion.div>
 
                 <motion.div

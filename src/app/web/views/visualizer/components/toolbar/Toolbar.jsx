@@ -147,13 +147,16 @@ const Toolbar = ({
               className="p-1.5"
             >
               <DropdownItem key="3d" className={`text-white hover:bg-white/15 rounded-lg text-xs ${currentView === '3d' ? 'bg-white/10 text-[#0CDBFF]' : ''}`}>
-                🌐 Vista 3D Libre
+                🌐 Vista 3D Orbital
               </DropdownItem>
               <DropdownItem key="plant" className={`text-white hover:bg-white/15 rounded-lg text-xs ${currentView === 'plant' ? 'bg-white/10 text-[#0CDBFF]' : ''}`}>
                 🔲 Vista de Planta (2D)
               </DropdownItem>
               <DropdownItem key="isometric" className={`text-white hover:bg-white/15 rounded-lg text-xs ${currentView === 'isometric' ? 'bg-white/10 text-[#0CDBFF]' : ''}`}>
                 📐 Vista Isométrica
+              </DropdownItem>
+              <DropdownItem key="free" className={`text-white hover:bg-white/15 rounded-lg text-xs ${currentView === 'free' ? 'bg-white/10 text-[#0CDBFF]' : ''}`}>
+                🎮 Vista Libre
               </DropdownItem>
             </DropdownMenu>
           </Dropdown>
