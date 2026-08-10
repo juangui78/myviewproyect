@@ -70,7 +70,7 @@ export default function Cards({ proyects, totalProyects }) {
                   <CardBody className="p-5 flex flex-col lg:flex-row gap-6 items-stretch">
                     {/* Left Column: Image Area */}
                     <div className="w-full lg:w-[55%] flex flex-col">
-                      <div className="relative h-full min-h-[250px] rounded-[24px] overflow-hidden border border-white/10 shadow-inner group-hover:shadow-[0_0_30px_rgba(0,0,0,0.3)] transition-all duration-500">
+                      <div className="relative h-full min-h-[250px] rounded-[24px] overflow-hidden border border-white/10 shadow-inner group-hover:shadow-[0_0_30px_rgba(0,0,0,0.3)] transition-all duration-500 bg-white/5">
                         <Link
                           href={`/proyectos/${item._id}`}
                           className="w-full h-full block"

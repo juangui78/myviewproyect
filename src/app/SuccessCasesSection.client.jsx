@@ -106,8 +106,31 @@ const initialSuccessCases = [
   }
 ];
 
+export function LandingCardSkeleton() {
+  return (
+    <div className="glass-card rounded-3xl p-6 md:p-8 border border-white/10 flex flex-col justify-between relative overflow-hidden animate-pulse min-h-[420px] transform-gpu">
+      <div>
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="h-6 w-32 bg-white/10 rounded-full" />
+          <div className="h-4 w-20 bg-white/5 rounded-full" />
+        </div>
+        <div className="h-7 w-3/4 bg-white/10 rounded-xl mb-3" />
+        <div className="h-4 w-1/2 bg-white/5 rounded-md mb-6" />
+        <div className="relative aspect-[16/9] w-full bg-white/5 rounded-2xl border border-white/10 mb-6 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full border-2 border-white/10 border-t-[#0CDBFF] animate-spin" />
+        </div>
+        <div className="space-y-2 mb-4">
+          <div className="h-3 w-full bg-white/5 rounded" />
+          <div className="h-3 w-5/6 bg-white/5 rounded" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SuccessCasesSection() {
   const [cases, setCases] = useState(initialSuccessCases);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Consultar la base de datos para obtener dinámicamente la urlImage real registrada para Laurum y La Aldana
   useEffect(() => {
@@ -135,6 +158,8 @@ export default function SuccessCasesSection() {
         }
       } catch (error) {
         console.log("Not using DB images fallback to local assets:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -226,7 +251,13 @@ export default function SuccessCasesSection() {
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
-          {cases.map((item, idx) => (
+          {isLoading ? (
+            <>
+              <LandingCardSkeleton />
+              <LandingCardSkeleton />
+            </>
+          ) : (
+            cases.map((item, idx) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 25 }}
@@ -315,7 +346,7 @@ export default function SuccessCasesSection() {
                 </div>
               </div>
             </motion.div>
-          ))}
+          )))}
         </div>
       </div>
     </section>

@@ -134,15 +134,39 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
 
   return (
     <>
+      {/* Aura exterior brillante de baja opacidad */}
       {closedPoints.length > 1 && (
         <Line
           points={closedPoints}
-          color="#FF5F1F"   // Naranja neón de alta visibilidad
-          lineWidth={4}     // Grosor óptimo de 4px para resaltar
-          depthTest={false} // Evita la oclusión por parte del relieve del terreno
+          color="#0CDBFF"
+          lineWidth={6}
+          transparent={true}
+          opacity={hovered ? 0.75 : 0.35}
+          depthTest={false}
+          renderOrder={9998}
+        />
+      )}
+
+      {/* Línea central nítida cian/esmeralda */}
+      {closedPoints.length > 1 && (
+        <Line
+          points={closedPoints}
+          color={hovered ? "#00C662" : "#0CDBFF"}
+          lineWidth={2.5}
+          depthTest={false}
           renderOrder={9999}
         />
       )}
+
+      {/* Nodos reflectantes en cada vértice del terreno para estilo topográfico/CAD */}
+      {elevatedPoints.map((pt, idx) => (
+        <mesh key={idx} position={[pt.x, pt.y, pt.z]} renderOrder={10000}>
+          <sphereGeometry args={[hovered ? 0.14 : 0.09, 12, 12]} />
+          <meshBasicMaterial color="#FFFFFF" depthTest={false} />
+        </mesh>
+      ))}
+
+      {/* Relleno translúcido del terreno con interacción hover */}
       {customGeometry && (
         <mesh
           geometry={customGeometry}
@@ -158,9 +182,9 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
           onClick={onClick}
         >
           <meshBasicMaterial
-            color="white"
+            color={hovered ? "#0CDBFF" : "#00C662"}
             transparent={true}
-            opacity={hovered ? 0.20 : 0.08}
+            opacity={hovered ? 0.22 : 0.10}
             side={THREE.DoubleSide}
             depthWrite={false}
           />
@@ -207,7 +231,7 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
           <div style={{
             color: 'white',
             backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            border: '1.5px solid rgba(255, 95, 31, 0.85)', // Naranja neón a juego
+            border: '1.5px solid rgba(12, 219, 255, 0.85)', // Cian neón a juego
             padding: '3px 8px',
             borderRadius: '12px',
             fontSize: '11px',
