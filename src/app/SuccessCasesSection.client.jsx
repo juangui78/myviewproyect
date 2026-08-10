@@ -156,7 +156,7 @@ export default function SuccessCasesSection() {
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.1 }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs md:text-sm font-semibold tracking-wider text-primary uppercase mb-4"
           >
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -166,7 +166,7 @@ export default function SuccessCasesSection() {
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.1 }}
             transition={{ delay: 0.1 }}
             className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent mb-4"
           >
@@ -176,7 +176,7 @@ export default function SuccessCasesSection() {
           <motion.p
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.1 }}
             transition={{ delay: 0.2 }}
             className="text-gray-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed"
           >
@@ -201,7 +201,7 @@ export default function SuccessCasesSection() {
             }}
           >
             <motion.div
-              className="flex items-center gap-12 md:gap-16 w-max"
+              className="flex items-center gap-12 md:gap-16 w-max transform-gpu"
               animate={{ x: ["0%", "-25%"] }}
               transition={{
                 repeat: Infinity,
@@ -229,12 +229,12 @@ export default function SuccessCasesSection() {
           {cases.map((item, idx) => (
             <motion.div
               key={item.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 25 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: idx * 0.15 }}
+              viewport={{ once: true, amount: 0.1, margin: "0px 0px -20px 0px" }}
+              transition={{ duration: 0.5, delay: idx * 0.1 }}
               whileHover={{ y: -6 }}
-              className="glass-card glow-card-hover rounded-3xl p-6 md:p-8 border border-white/10 flex flex-col justify-between relative overflow-hidden group shadow-2xl"
+              className="glass-card glow-card-hover rounded-3xl p-6 md:p-8 border border-white/10 flex flex-col justify-between relative overflow-hidden group shadow-2xl transform-gpu"
             >
               {/* Header Card info */}
               <div>

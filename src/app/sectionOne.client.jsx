@@ -7,29 +7,29 @@ const SectionOne = () => {
     return (
 
         <motion.div
-            className="w-full py-10 md:py-14 flex flex-col items-center justify-center"
-            initial={{ opacity: 0, y: 30 }}
+            className="w-full py-10 md:py-14 flex flex-col items-center justify-center transform-gpu"
+            initial={{ opacity: 0, y: 25 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            viewport={{ once: true, amount: 0.1, margin: "0px 0px -20px 0px" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
         >
             <div className="w-[90%] md:w-[70%] grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
                 <motion.div
-                    className="relative aspect-[3/4] w-full max-w-sm mx-auto glow-card-hover rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+                    className="relative aspect-[3/4] w-full max-w-sm mx-auto glow-card-hover rounded-2xl overflow-hidden border border-white/10 shadow-2xl transform-gpu"
                     initial={{ opacity: 0, scale: 0.95 }}
                     whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.3 }}
+                    viewport={{ once: true, amount: 0.1 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
                 >
                     <Image src="/images/explore.png" alt="Exploración 3D" fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 384px" className="object-cover relative z-10" />
                 </motion.div>
 
                 <motion.div
-                    className="glass-card glow-card-hover p-8 rounded-2xl"
-                    initial={{ opacity: 0, x: 30 }}
+                    className="glass-card glow-card-hover p-8 rounded-2xl transform-gpu"
+                    initial={{ opacity: 0, x: 25 }}
                     whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.4 }}
+                    viewport={{ once: true, amount: 0.1 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
                 >
                     <h1 className="font-bold text-3xl text-left bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-6">
                         Escaneo 3D de <span className="text-primary text-glow-animated">Alta Precisión</span>

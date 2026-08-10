@@ -48,7 +48,7 @@ export default function ContactSection() {
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.1 }}
             className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent mb-4"
           >
             ¿Listo para empezar?
@@ -56,7 +56,7 @@ export default function ContactSection() {
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, amount: 0.1 }}
             transition={{ delay: 0.1 }}
             className="text-gray-400 text-lg max-w-2xl mx-auto"
           >
@@ -67,11 +67,11 @@ export default function ContactSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-stretch">
           {/* Left Column: Direct Contact Info */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
+            initial={{ opacity: 0, x: -25 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="flex flex-col justify-between p-8 rounded-3xl border border-white/10 glass-card glow-card-hover bg-gradient-to-br from-white/5 to-transparent relative overflow-hidden"
+            viewport={{ once: true, amount: 0.1, margin: "0px 0px -20px 0px" }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col justify-between p-8 rounded-3xl border border-white/10 glass-card glow-card-hover bg-gradient-to-br from-white/5 to-transparent relative overflow-hidden transform-gpu"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[60px] rounded-full pointer-events-none"></div>
             
