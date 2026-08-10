@@ -110,8 +110,8 @@ export const InformationCard = ({ info, currentModel, canEdit, onUpdateModelNote
   const isEasyView = typeof window !== "undefined" && window.location.pathname.includes("/easyview");
 
   return (
-    <div className="flex flex-col gap-3">
-      <Card className="w-full max-w-[90vw] md:max-w-[70vh] border border-white/20 bg-black/80 backdrop-blur-md text-white shadow-2xl" shadow="none">
+    <div className="flex flex-col gap-3 max-h-[calc(100vh-80px)] overflow-y-auto overscroll-contain scrollbar-hide py-1 px-1">
+      <Card className="w-full max-w-[90vw] md:max-w-[70vh] border border-white/20 bg-black/80 backdrop-blur-md text-white shadow-2xl shrink-0" shadow="none">
         <CardHeader className="justify-between border-b border-white/10 pb-3">
           <div className="flex gap-3">
             <h2 className="text-lg font-bold tracking-wide">{info?.name}</h2>
@@ -265,15 +265,15 @@ export default function App({ info, currentModel, session, onUpdateModelNotes })
 
   return (
     <div className={styles.InformationContainer}>
-      <Popover className="" showArrow placement="bottom" shouldCloseOnScroll={false}>
+      <Popover className="" showArrow placement="bottom-end" shouldCloseOnScroll={false}>
         <PopoverTrigger>
 
           <Button
-            className="border border-white/20 bg-black/60 backdrop-blur-md p-2 text-white h-10 gap-x-2 rounded-full hover:bg-black/80 transition-all font-medium px-4 shadow-lg"
+            className="border border-white/20 bg-black/60 backdrop-blur-md p-2 text-white h-10 gap-x-1.5 sm:gap-x-2 rounded-full hover:bg-black/80 transition-all font-medium px-3 sm:px-4 shadow-lg shrink-0"
           >
-            <PlusIcon className='h-5 w-5 text-white/90'></PlusIcon>
-            <span className="hidden md:inline">Información</span>
-            <span className="inline md:hidden">Info</span>
+            <PlusIcon className='h-5 w-5 text-white/90 shrink-0'></PlusIcon>
+            <span className="hidden sm:inline">Información</span>
+            <span className="inline sm:hidden">Info</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="p-0 border-none bg-transparent shadow-none z-[9999]">

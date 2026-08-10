@@ -151,7 +151,6 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
       transition: true,
       showLoader: false,
     }).then(() => {
-      setIs360Loading(false);
       // If a new transition started while this one was loading, do not modify markers
       if (!isCurrent) return;
 

@@ -36,6 +36,21 @@ import Photo360Modal from '../components/viewer360/PhotoSphereModal';
 import Background360 from '../components/background360/Background360';
 
 
+const BackArrowIcon = ({ className = "w-4 h-4" }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M19 12H5M12 19l-7-7 7-7" />
+  </svg>
+);
+
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
         <primitive object={gltf.scene} ref={ref} scale={1} />
@@ -1199,7 +1214,7 @@ const App = () => {
 
 
     return (
-        <div className="flex flex-col  items-center h-[100vh] overflow-hidden relative">
+        <div className="flex flex-col items-center h-screen max-h-screen w-full overflow-hidden fixed inset-0">
             {/* div de carga inicial */}
 
             {(isLoadingScreenVisible) && (
@@ -1227,31 +1242,33 @@ const App = () => {
                 </div>
             )}
 
-            {/* Canvas */}
-            <div className="flex justify-between ... w-[100%] pt-[15px] px-[15px] bg-transparent z-[10] absolute items-center">
-                <div>
-
+            {/* Canvas Header Controls */}
+            <div className="flex justify-between w-full pt-[12px] px-[10px] sm:px-[15px] bg-transparent z-[10] absolute items-center gap-1.5 sm:gap-4 pointer-events-none">
+                <div className="pointer-events-auto shrink-0">
                     {!isPublish ?
                         <Link href='/web/views/user/feed' >
-                            <button type="button" className="pointer-events-auto flex justify-start px-5 py-2 text-sm text-gray-700 transition-colors duration-200 bg-transparent  rounded-lg gap-x-2 dark:hover:bg-gray-800 dark:bg-gray-900 hover:bg-gray-100 dark:text-gray-200 dark:border-gray-700">
-                                <span>Regresar</span>
+                            <button 
+                                type="button" 
+                                className="flex items-center justify-center h-10 px-3 sm:px-4 text-sm font-medium text-white bg-black/60 backdrop-blur-md border border-white/20 rounded-full shadow-lg hover:bg-black/80 transition-all gap-1.5 shrink-0"
+                                title="Regresar al feed"
+                            >
+                                <BackArrowIcon className="w-4 h-4 text-white shrink-0" />
+                                <span className="hidden sm:inline">Regresar</span>
                             </button>
                         </Link> :
 
-                        <div>
+                        <div className="shrink-0">
                             <Image
-                                src='/logos/isotipo-full-color.png' // Ruta de la imagen
+                                src='/logos/isotipo-full-color.png'
                                 alt="My View Icon"
-                                width={50} // Ancho de la imagen
-                                height={50} // Altura de la imagen
-                                className="rounded-full" // Clases adicionales de Tailwind CSS
-
+                                width={40}
+                                height={40}
+                                className="rounded-full shrink-0"
                             />
                         </div>
                     }
-
                 </div>
-                <div>
+                <div className="pointer-events-auto min-w-0">
                     {isModelLoaded &&
                         <Toolbar
                             onToggleLight={changeLight}
@@ -1270,10 +1287,9 @@ const App = () => {
                             hasBackground360={!!background360}
                         />}
                 </div>
-                <div>
+                <div className="pointer-events-auto shrink-0">
                     <InformationCard info={projectInfo} />
                 </div>
-
             </div>
 
             {/* Se condiciona el renderizado general no safari */}
