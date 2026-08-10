@@ -27,6 +27,37 @@ const CameraIcon = ({ className }) => (
   </svg>
 );
 
+const RotateIcon = ({ className }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38" />
+  </svg>
+);
+
+const GridIcon = ({ className }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+  </svg>
+);
+
 const Toolbar = ({
   onToggleLight,
   onMeasureDistance,
@@ -43,7 +74,12 @@ const Toolbar = ({
   onChangeView,
   canEdit,
   isEditingMode,
-  onToggleEditingMode
+  onToggleEditingMode,
+  isAutoRotate,
+  onToggleAutoRotate,
+  showBackground360 = true,
+  onToggleBackground360,
+  hasBackground360 = false
 }) => {
   const [isMeasuringDistance, setIsMeasuringDistance] = useState(false);
 
@@ -123,6 +159,32 @@ const Toolbar = ({
           className={`text-white hover:bg-white/20 rounded-full transition-colors h-8 w-8 ${isElevationMode ? 'bg-white/20 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : ''}`}
         >
           <ElevationIcon className="w-5 h-5 drop-shadow-sm" />
+        </Button>
+      </Tooltip>
+
+      <Tooltip content={isAutoRotate ? "Pausar Autorrotación" : "Iniciar Autorrotación 360°"} placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
+        <Button
+          isIconOnly
+          size="md"
+          variant="light"
+          aria-label="Autorrotación"
+          onClick={onToggleAutoRotate}
+          className={`text-white hover:bg-white/20 rounded-full transition-colors h-8 w-8 ${isAutoRotate ? 'bg-[#0CDBFF] text-black hover:bg-[#0CDBFF]/80 shadow-[0_0_10px_rgba(12,219,255,0.4)]' : ''}`}
+        >
+          <RotateIcon className="w-5 h-5 drop-shadow-sm" />
+        </Button>
+      </Tooltip>
+
+      <Tooltip content={showBackground360 ? "Ver Rejilla 3D de Fondo" : "Ver Fondo Estándar / 360°"} placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
+        <Button
+          isIconOnly
+          size="md"
+          variant="light"
+          aria-label="Fondo Rejilla 3D"
+          onClick={onToggleBackground360}
+          className={`text-white hover:bg-white/20 rounded-full transition-colors h-8 w-8 ${!showBackground360 ? 'bg-[#0CDBFF] text-black hover:bg-[#0CDBFF]/80 shadow-[0_0_10px_rgba(12,219,255,0.4)]' : ''}`}
+        >
+          <GridIcon className="w-5 h-5 drop-shadow-sm" />
         </Button>
       </Tooltip>
 

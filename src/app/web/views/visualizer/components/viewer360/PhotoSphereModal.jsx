@@ -10,7 +10,6 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
   const [activeUrl, setActiveUrl] = useState(null);
-  const [is360Loading, setIs360Loading] = useState(true);
   
   // Local state to handle real-time manual orientation adjustment (in degrees)
   const [localOffsetDegrees, setLocalOffsetDegrees] = useState(0);
@@ -19,13 +18,10 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
   // Toggle edit/calibration mode directly inside the modal
   const [isLocalEditMode, setIsLocalEditMode] = useState(isEditMode);
 
-  // Sync isLocalEditMode with parent isEditMode prop and set loading state on open
+  // Sync isLocalEditMode with parent isEditMode prop
   useEffect(() => {
     setIsLocalEditMode(isEditMode);
-    if (isOpen) {
-      setIs360Loading(true);
-    }
-  }, [isEditMode, isOpen, url]);
+  }, [isEditMode, isOpen]);
 
   // Find current marker object based on activeUrl
   const activeMarker = markers.find(m => m.photo360 === activeUrl);
@@ -115,10 +111,6 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
       ]
     });
 
-    viewerRef.current.addEventListener('ready', () => {
-      setIs360Loading(false);
-    }, { once: true });
-
     const markersPlugin = viewerRef.current.getPlugin(MarkersPlugin);
 
     // Event handler when a hotspot marker is clicked
@@ -153,8 +145,6 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
     if (markersPlugin) {
       markersPlugin.clearMarkers();
     }
-
-    setIs360Loading(true);
 
     viewerRef.current.setPanorama(activeUrl, {
       zoom: 0,
@@ -280,14 +270,6 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
         className="relative w-[90vw] h-[90vh] bg-black rounded-lg overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Loading Overlay */}
-        {is360Loading && (
-          <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
-            <div className="w-10 h-10 border-4 border-[#0CDBFF] border-t-transparent rounded-full animate-spin" />
-            <span className="text-white text-sm font-semibold tracking-wide">Cargando...</span>
-          </div>
-        )}
-
         {/* Top Header Card */}
         {activeMarker && (
           <div className="absolute top-4 left-4 z-10 bg-black/60 border border-white/20 backdrop-blur-md px-4 py-2 rounded-lg text-white pointer-events-none select-none">

@@ -1,7 +1,7 @@
 'use client'
 import React, { forwardRef } from 'react';
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { Environment, OrbitControls, useProgress } from "@react-three/drei";
+import { Environment, OrbitControls, useProgress, Grid } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { Suspense, useEffect } from "react";
 import { useState } from "react";
@@ -43,6 +43,65 @@ const ModelComponent = forwardRef(({ gltf }, ref) => {
 });
 
 ModelComponent.displayName = 'ModelComponent';
+
+const FadedGrid = () => {
+    const shaderMaterial = React.useMemo(() => {
+        return new THREE.ShaderMaterial({
+            uniforms: {
+                gridSize: { value: 10.0 },
+                sectionSize: { value: 50.0 },
+                gridColor: { value: new THREE.Color("#ffffff") },
+                fadeDistance: { value: 500.0 },
+            },
+            vertexShader: `
+                varying vec3 vWorldPosition;
+                void main() {
+                    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                    vWorldPosition = worldPosition.xyz;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float gridSize;
+                uniform float sectionSize;
+                uniform vec3 gridColor;
+                uniform float fadeDistance;
+                varying vec3 vWorldPosition;
+
+                float getGrid(vec2 pos, float size) {
+                    vec2 coord = pos / size;
+                    vec2 grid = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
+                    float line = min(grid.x, grid.y);
+                    return 1.0 - min(line, 1.0);
+                }
+
+                void main() {
+                    float cell = getGrid(vWorldPosition.xz, gridSize);
+                    float section = getGrid(vWorldPosition.xz, sectionSize);
+                    
+                    float linePattern = max(cell * 0.5, section * 0.95);
+                    if (linePattern <= 0.02) discard;
+
+                    float dist = length(vWorldPosition.xz);
+                    float alpha = clamp(1.0 - (dist / fadeDistance), 0.0, 1.0);
+                    alpha = pow(alpha, 1.1);
+
+                    gl_FragColor = vec4(gridColor, linePattern * alpha * 0.9);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            side: THREE.DoubleSide
+        });
+    }, []);
+
+    return (
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]}>
+            <planeGeometry args={[1000, 1000]} />
+            <primitive object={shaderMaterial} attach="material" />
+        </mesh>
+    );
+};
 
 
 
@@ -161,6 +220,8 @@ const App = () => {
     const [background360Rotation, setBackground360Rotation] = useState(0);
     const [background360RotationX, setBackground360RotationX] = useState(0);
     const [currentView, setCurrentView] = useState('3d');
+    const [isAutoRotate, setIsAutoRotate] = useState(false);
+    const [showBackground360, setShowBackground360] = useState(true);
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
     //search Params to validate info
@@ -1202,6 +1263,11 @@ const App = () => {
                             showTerrains={toggleTerrains}
                             currentView={currentView}
                             onChangeView={setCurrentView}
+                            isAutoRotate={isAutoRotate}
+                            onToggleAutoRotate={() => setIsAutoRotate(!isAutoRotate)}
+                            showBackground360={showBackground360}
+                            onToggleBackground360={() => setShowBackground360(!showBackground360)}
+                            hasBackground360={!!background360}
                         />}
                 </div>
                 <div>
@@ -1340,15 +1406,22 @@ const App = () => {
                                     maxPolarAngle={Math.PI / 2}
                                     enableDamping={true}
                                     dampingFactor={0.05}
+                                    autoRotate={isAutoRotate}
+                                    autoRotateSpeed={1.5}
+                                    onStart={() => setIsAutoRotate(false)}
                                 />
 
-                                {background360 ? (
+                                {background360 && showBackground360 ? (
                                     <>
                                         <Background360 url={background360} rotation={background360Rotation} rotationX={background360RotationX} />
                                         <Environment preset={light} />
                                     </>
                                 ) : (
-                                    <Environment preset={light} background blur backgroundBlurriness />
+                                    <>
+                                        <color attach="background" args={["#020b12"]} />
+                                        <FadedGrid />
+                                        <Environment preset={light} />
+                                    </>
                                 )}
 
 

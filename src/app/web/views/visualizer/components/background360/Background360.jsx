@@ -23,14 +23,19 @@ const Background360 = ({ url, rotation = 0, rotationX = 0 }) => {
     }
   });
 
+  const { scene } = useThree();
+
   useEffect(() => {
-    // Cuando el componente se desmonta o cambia el URL, el texture anterior debería liberarse
+    // Cuando el componente se desmonta o cambia el URL, restablecer el fondo de la escena y liberar textura
     return () => {
+      if (scene) {
+        scene.background = null;
+      }
       if (texture) {
         texture.dispose();
       }
     };
-  }, [texture]);
+  }, [texture, scene]);
 
   return <primitive attach="background" object={texture} />;
 }
