@@ -32,10 +32,14 @@ import { Image } from '@nextui-org/react';
 import Eye from '@/web/global_components/icons/Eye';
 import gsap from "gsap";
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import dynamic from "next/dynamic";
 import LoadingScreen from './components/loadingScreen/LoadingScreen.jsx';
 import { get, set } from 'mongoose';
-import Photo360Modal from './components/viewer360/PhotoSphereModal';
 import Background360 from './components/background360/Background360';
+
+const Photo360Modal = dynamic(() => import('./components/viewer360/PhotoSphereModal'), {
+    ssr: false
+});
 
 const BackArrowIcon = ({ className = "w-4 h-4" }) => (
   <svg 
@@ -193,6 +197,399 @@ const getGltfLoader = () => {
     return globalGltfLoader;
 };
 
+const CameraViewManager = React.memo(({ cameraView,
+    onUserControlChange,
+    onLastCameraViewChange,
+    orbitControlsRef
+}) => {
+    const { camera } = useThree();
+
+    useEffect(() => {
+        const positions = [
+            { x: 0, y: 50, z: 0 },
+            { x: -59.69, y: 103.87, z: -84.092 },
+            { x: 475.40, y: 223.10, z: -84.77 },
+            { x: -91.45, y: 71.300, z: -28.779 },
+            { x: 90.581, y: 32.404, z: 51.591 },
+        ];
+
+        const targetPosition = positions[cameraView];
+
+        // Solo ejecutar si realmente cambió la vista (no en cada render)
+        if (onLastCameraViewChange && onUserControlChange) {
+            // Marcar que la cámara está siendo controlada por el sistema
+            onUserControlChange(false);
+
+            // Deshabilitar controles temporalmente
+            if (orbitControlsRef && orbitControlsRef.current) {
+                orbitControlsRef.current.enabled = false;
+            }
+
+            // Usar gsap para animar la posición de la cámara
+            gsap.to(camera.position, {
+                x: targetPosition.x,
+                y: targetPosition.y,
+                z: targetPosition.z,
+                duration: 1.5,
+                ease: "power2.inOut",
+                onUpdate: () => {
+                    camera.lookAt(0, 0, 0);
+                    if (orbitControlsRef && orbitControlsRef.current) {
+                        orbitControlsRef.current.target.set(0, 0, 0);
+                        orbitControlsRef.current.update();
+                    }
+                },
+                onComplete: () => {
+                    onLastCameraViewChange(cameraView);
+                    // Re-habilitar controles después de la animación
+                    if (orbitControlsRef && orbitControlsRef.current) {
+                        orbitControlsRef.current.enabled = true;
+                    }
+                }
+            });
+
+            camera.updateProjectionMatrix();
+        }
+    }, [cameraView, camera, onUserControlChange, onLastCameraViewChange, orbitControlsRef]);
+
+    return null;
+});
+
+CameraViewManager.displayName = 'CameraViewManager';
+
+const ViewManager = React.memo(({ viewType, orbitControlsRef }) => {
+    const { camera } = useThree();
+
+    useEffect(() => {
+        if (!orbitControlsRef || !orbitControlsRef.current) return;
+        const controls = orbitControlsRef.current;
+
+        // Mantener el vector superior constante para evitar rotaciones y volteos extraños
+        camera.up.set(0, 1, 0);
+
+        if (viewType === 'plant') {
+            // Deshabilitar rotación en los controles (solo permitir paneo y zoom)
+            controls.enableRotate = false;
+            controls.minPolarAngle = 0;
+            controls.maxPolarAngle = Math.PI;
+
+            // Cambiar el click izquierdo para realizar desplazamiento (pan)
+            controls.mouseButtons = {
+                LEFT: THREE.MOUSE.PAN,
+                MIDDLE: THREE.MOUSE.DOLLY,
+                RIGHT: THREE.MOUSE.PAN
+            };
+
+            const target = controls.target;
+            const distance = camera.position.distanceTo(target);
+            const currentFov = camera.fov || 75;
+            const targetFov = 45;
+
+            // Compensar distancia para mantener el mismo tamaño visual
+            const fovFactor = Math.tan((currentFov * Math.PI) / 360) / Math.tan((targetFov * Math.PI) / 360);
+            const targetDistance = distance * fovFactor;
+            const targetY = target.y + (targetDistance > 10 ? targetDistance : 100);
+
+            controls.enabled = false;
+
+            gsap.to(camera, {
+                fov: targetFov,
+                duration: 1.2,
+                ease: "power2.inOut",
+                onUpdate: () => {
+                    camera.updateProjectionMatrix();
+                }
+            });
+
+            // Posicionamos con un offset mínimo en Z de 0.001 para que la cámara no quede perfectamente vertical 
+            // respecto al vector superior [0, 1, 0], previniendo giros bruscos del gimbal lock.
+            gsap.to(camera.position, {
+                x: target.x,
+                y: targetY,
+                z: target.z + 0.001,
+                duration: 1.2,
+                ease: "power2.inOut",
+                onUpdate: () => {
+                    camera.lookAt(target.x, target.y, target.z);
+                    controls.update();
+                },
+                onComplete: () => {
+                    controls.enabled = true;
+                    camera.lookAt(target.x, target.y, target.z);
+                    controls.update();
+                }
+            });
+        } else if (viewType === 'isometric') {
+            // Permitir rotación lateral (horizontal), pero bloquear la vertical a 35.26 grados de elevación
+            controls.enableRotate = true;
+            const rad35 = 35.264 * (Math.PI / 180);
+            const isoPolarAngle = Math.PI / 2 - rad35; // 54.736 grados polar
+
+            controls.minPolarAngle = isoPolarAngle;
+            controls.maxPolarAngle = isoPolarAngle;
+
+            // El click izquierdo rota horizontalmente, el click derecho desplaza (pan)
+            controls.mouseButtons = {
+                LEFT: THREE.MOUSE.ROTATE,
+                MIDDLE: THREE.MOUSE.DOLLY,
+                RIGHT: THREE.MOUSE.PAN
+            };
+
+            const target = controls.target;
+            const distance = camera.position.distanceTo(target);
+            const currentFov = camera.fov || 75;
+            const targetFov = 30;
+
+            // Compensar distancia para mantener el mismo tamaño visual
+            const fovFactor = Math.tan((currentFov * Math.PI) / 360) / Math.tan((targetFov * Math.PI) / 360);
+            const targetDistance = distance * fovFactor;
+            const isoDistance = targetDistance > 10 ? targetDistance : 100;
+
+            // Calcular posición isométrica estándar (azimut a 45 grados)
+            const rad45 = 45 * (Math.PI / 180);
+            const targetX = target.x + isoDistance * Math.cos(rad35) * Math.cos(rad45);
+            const targetY = target.y + isoDistance * Math.sin(rad35);
+            const targetZ = target.z + isoDistance * Math.cos(rad35) * Math.sin(rad45);
+
+            controls.enabled = false;
+
+            gsap.to(camera, {
+                fov: targetFov,
+                duration: 1.2,
+                ease: "power2.inOut",
+                onUpdate: () => {
+                    camera.updateProjectionMatrix();
+                }
+            });
+
+            gsap.to(camera.position, {
+                x: targetX,
+                y: targetY,
+                z: targetZ,
+                duration: 1.2,
+                ease: "power2.inOut",
+                onUpdate: () => {
+                    camera.lookAt(target.x, target.y, target.z);
+                    controls.update();
+                },
+                onComplete: () => {
+                    controls.enabled = true;
+                    camera.lookAt(target.x, target.y, target.z);
+                    controls.update();
+                }
+            });
+        } else {
+            // Re-habilitar rotación de cámara y restaurar click izquierdo a rotación orbital
+            controls.enableRotate = true;
+            controls.minPolarAngle = 0;
+            controls.maxPolarAngle = Math.PI;
+            controls.mouseButtons = {
+                LEFT: THREE.MOUSE.ROTATE,
+                MIDDLE: THREE.MOUSE.DOLLY,
+                RIGHT: THREE.MOUSE.PAN
+            };
+            
+            const targetFov = 75;
+            if (camera.fov !== targetFov) {
+                gsap.to(camera, {
+                    fov: targetFov,
+                    duration: 1.2,
+                    ease: "power2.inOut",
+                    onUpdate: () => {
+                        camera.updateProjectionMatrix();
+                    }
+                });
+
+                const target = controls.target;
+                const distance = camera.position.distanceTo(target);
+                const currentFov = camera.fov || 30;
+                const fovFactor = Math.tan((currentFov * Math.PI) / 360) / Math.tan((targetFov * Math.PI) / 360);
+                const targetDistance = distance * fovFactor;
+
+                const dir = new THREE.Vector3().subVectors(camera.position, target).normalize();
+                const newPos = new THREE.Vector3().addVectors(target, dir.multiplyScalar(targetDistance));
+
+                controls.enabled = false;
+
+                gsap.to(camera.position, {
+                    x: newPos.x,
+                    y: newPos.y,
+                    z: newPos.z,
+                    duration: 1.2,
+                    ease: "power2.inOut",
+                    onUpdate: () => {
+                        camera.lookAt(target.x, target.y, target.z);
+                        controls.update();
+                    },
+                    onComplete: () => {
+                        controls.enabled = true;
+                        controls.update();
+                    }
+                });
+            } else {
+                controls.update();
+            }
+        }
+    }, [viewType, camera, orbitControlsRef]);
+
+    return null;
+});
+
+ViewManager.displayName = 'ViewManager';
+
+const FirstPersonNavigation = React.memo(({ enabled, orbitControlsRef, onExit }) => {
+    const { camera, gl } = useThree();
+    const keysPressed = React.useRef({});
+    const isDragging = React.useRef(false);
+    const previousMousePosition = React.useRef({ x: 0, y: 0 });
+    const euler = React.useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
+
+    useEffect(() => {
+        if (!enabled) return;
+
+        // Deshabilitar OrbitControls mientras navegamos en Primera Persona
+        if (orbitControlsRef && orbitControlsRef.current) {
+            orbitControlsRef.current.enabled = false;
+        }
+
+        euler.current.setFromQuaternion(camera.quaternion, 'YXZ');
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' || e.key === 'Esc') {
+                if (document.pointerLockElement) document.exitPointerLock?.();
+                onExit?.();
+                return;
+            }
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+            keysPressed.current[e.key.toLowerCase()] = true;
+        };
+
+        const handleKeyUp = (e) => {
+            keysPressed.current[e.key.toLowerCase()] = false;
+        };
+
+        const handleMouseDown = (e) => {
+            if (e.button === 0 || e.button === 2) {
+                isDragging.current = true;
+                previousMousePosition.current = { x: e.clientX, y: e.clientY };
+            }
+        };
+
+        const handleMouseUp = () => {
+            isDragging.current = false;
+        };
+
+        const handleMouseMove = (e) => {
+            if (!isDragging.current && document.pointerLockElement !== gl.domElement) return;
+
+            const movementX = document.pointerLockElement === gl.domElement 
+                ? e.movementX 
+                : e.clientX - previousMousePosition.current.x;
+            const movementY = document.pointerLockElement === gl.domElement 
+                ? e.movementY 
+                : e.clientY - previousMousePosition.current.y;
+
+            previousMousePosition.current = { x: e.clientX, y: e.clientY };
+
+            const sensitivity = 0.0025;
+            euler.current.y -= movementX * sensitivity; // Yaw (rotación horizontal)
+            euler.current.x -= movementY * sensitivity; // Pitch (rotación vertical)
+
+            // Limitar la inclinación vertical para evitar giros inversos (gimbal lock)
+            euler.current.x = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, euler.current.x));
+
+            camera.quaternion.setFromEuler(euler.current);
+        };
+
+        const handleCanvasClick = () => {
+            if (document.pointerLockElement !== gl.domElement) {
+                gl.domElement.requestPointerLock?.();
+            }
+        };
+
+        const handlePointerLockChange = () => {
+            if (document.pointerLockElement !== gl.domElement && enabled) {
+                onExit?.();
+            }
+        };
+
+        const domElem = gl.domElement;
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        domElem.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('mousemove', handleMouseMove);
+        domElem.addEventListener('click', handleCanvasClick);
+        document.addEventListener('pointerlockchange', handlePointerLockChange);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+            domElem.removeEventListener('mousedown', handleMouseDown);
+            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('mousemove', handleMouseMove);
+            domElem.removeEventListener('click', handleCanvasClick);
+            document.removeEventListener('pointerlockchange', handlePointerLockChange);
+            if (document.pointerLockElement === gl.domElement) {
+                document.exitPointerLock?.();
+            }
+            keysPressed.current = {};
+            isDragging.current = false;
+
+            // Al salir de primera persona, restaurar OrbitControls apuntando hacia la dirección donde mira la cámara
+            if (orbitControlsRef && orbitControlsRef.current) {
+                const dir = new THREE.Vector3();
+                camera.getWorldDirection(dir);
+                orbitControlsRef.current.target.copy(camera.position).addScaledVector(dir, 20);
+                orbitControlsRef.current.enabled = true;
+                orbitControlsRef.current.update();
+            }
+        };
+    }, [enabled, camera, gl.domElement, orbitControlsRef, onExit]);
+
+    useFrame((state, delta) => {
+        if (!enabled) return;
+
+        const speedMultiplier = keysPressed.current['shift'] ? 2.5 : 1.0;
+        const moveSpeed = 16 * speedMultiplier * delta;
+
+        const dir = new THREE.Vector3();
+        camera.getWorldDirection(dir);
+
+        const forward = dir.clone().normalize();
+        const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
+
+        const moveVector = new THREE.Vector3(0, 0, 0);
+
+        if (keysPressed.current['w'] || keysPressed.current['arrowup']) {
+            moveVector.addScaledVector(forward, moveSpeed);
+        }
+        if (keysPressed.current['s'] || keysPressed.current['arrowdown']) {
+            moveVector.addScaledVector(forward, -moveSpeed);
+        }
+        if (keysPressed.current['a'] || keysPressed.current['arrowleft']) {
+            moveVector.addScaledVector(right, -moveSpeed);
+        }
+        if (keysPressed.current['d'] || keysPressed.current['arrowright']) {
+            moveVector.addScaledVector(right, moveSpeed);
+        }
+        if (keysPressed.current['q'] || keysPressed.current[' ']) {
+            moveVector.y += moveSpeed;
+        }
+        if (keysPressed.current['e']) {
+            moveVector.y -= moveSpeed;
+        }
+
+        if (moveVector.lengthSq() > 0) {
+            camera.position.add(moveVector);
+        }
+    });
+
+    return null;
+});
+
+FirstPersonNavigation.displayName = 'FirstPersonNavigation';
+
 const App = () => {
     const [light, setLight] = useState('lobby')
     const [currentModel, setcurrentModel] = useState(null);
@@ -348,393 +745,6 @@ const App = () => {
     const handleCameraViewChange = () => {
         setCameraView((prevView) => (prevView + 1) % 5); // Cambia entre 0, 1, 2 y 3
         setIsUserControlling(false);
-    };
-
-    const CameraViewManager = ({ cameraView,
-        onUserControlChange,
-        onLastCameraViewChange,
-        orbitControlsRef
-    }) => {
-        const { camera } = useThree();
-
-        useEffect(() => {
-            const positions = [
-                { x: 0, y: 50, z: 0 },
-                { x: -59.69, y: 103.87, z: -84.092 },
-                { x: 475.40, y: 223.10, z: -84.77 },
-                { x: -91.45, y: 71.300, z: -28.779 },
-                { x: 90.581, y: 32.404, z: 51.591 },
-            ];
-
-            const targetPosition = positions[cameraView];
-
-            // Solo ejecutar si realmente cambió la vista (no en cada render)
-            if (onLastCameraViewChange && onUserControlChange) {
-                // Marcar que la cámara está siendo controlada por el sistema
-                onUserControlChange(false);
-
-                // Deshabilitar controles temporalmente
-                if (orbitControlsRef && orbitControlsRef.current) {
-                    orbitControlsRef.current.enabled = false;
-                }
-
-                // Usar gsap para animar la posición de la cámara
-                gsap.to(camera.position, {
-                    x: targetPosition.x,
-                    y: targetPosition.y,
-                    z: targetPosition.z,
-                    duration: 1.5,
-                    ease: "power2.inOut",
-                    onUpdate: () => {
-                        camera.lookAt(0, 0, 0);
-                        if (orbitControlsRef && orbitControlsRef.current) {
-                            orbitControlsRef.current.target.set(0, 0, 0);
-                            orbitControlsRef.current.update();
-                        }
-                    },
-                    onComplete: () => {
-                        onLastCameraViewChange(cameraView);
-                        // Re-habilitar controles después de la animación
-                        if (orbitControlsRef && orbitControlsRef.current) {
-                            orbitControlsRef.current.enabled = true;
-                        }
-                    }
-                });
-
-                camera.updateProjectionMatrix();
-            }
-        }, [cameraView, camera, onUserControlChange, onLastCameraViewChange, orbitControlsRef]);
-
-        return null;
-    };
-
-    const ViewManager = ({ viewType, orbitControlsRef }) => {
-        const { camera } = useThree();
-
-        useEffect(() => {
-            if (!orbitControlsRef || !orbitControlsRef.current) return;
-            const controls = orbitControlsRef.current;
-
-            // Mantener el vector superior constante para evitar rotaciones y volteos extraños
-            camera.up.set(0, 1, 0);
-
-            if (viewType === 'plant') {
-                // Deshabilitar rotación en los controles (solo permitir paneo y zoom)
-                controls.enableRotate = false;
-                controls.minPolarAngle = 0;
-                controls.maxPolarAngle = Math.PI;
-
-                // Cambiar el click izquierdo para realizar desplazamiento (pan)
-                controls.mouseButtons = {
-                    LEFT: THREE.MOUSE.PAN,
-                    MIDDLE: THREE.MOUSE.DOLLY,
-                    RIGHT: THREE.MOUSE.PAN
-                };
-
-                const target = controls.target;
-                const distance = camera.position.distanceTo(target);
-                const currentFov = camera.fov || 75;
-                const targetFov = 45;
-
-                // Compensar distancia para mantener el mismo tamaño visual
-                const fovFactor = Math.tan((currentFov * Math.PI) / 360) / Math.tan((targetFov * Math.PI) / 360);
-                const targetDistance = distance * fovFactor;
-                const targetY = target.y + (targetDistance > 10 ? targetDistance : 100);
-
-                controls.enabled = false;
-
-                gsap.to(camera, {
-                    fov: targetFov,
-                    duration: 1.2,
-                    ease: "power2.inOut",
-                    onUpdate: () => {
-                        camera.updateProjectionMatrix();
-                    }
-                });
-
-                // Posicionamos con un offset mínimo en Z de 0.001 para que la cámara no quede perfectamente vertical 
-                // respecto al vector superior [0, 1, 0], previniendo giros bruscos del gimbal lock.
-                gsap.to(camera.position, {
-                    x: target.x,
-                    y: targetY,
-                    z: target.z + 0.001,
-                    duration: 1.2,
-                    ease: "power2.inOut",
-                    onUpdate: () => {
-                        camera.lookAt(target.x, target.y, target.z);
-                        controls.update();
-                    },
-                    onComplete: () => {
-                        controls.enabled = true;
-                        camera.lookAt(target.x, target.y, target.z);
-                        controls.update();
-                    }
-                });
-            } else if (viewType === 'isometric') {
-                // Permitir rotación lateral (horizontal), pero bloquear la vertical a 35.26 grados de elevación
-                controls.enableRotate = true;
-                const rad35 = 35.264 * (Math.PI / 180);
-                const isoPolarAngle = Math.PI / 2 - rad35; // 54.736 grados polar
-
-                controls.minPolarAngle = isoPolarAngle;
-                controls.maxPolarAngle = isoPolarAngle;
-
-                // El click izquierdo rota horizontalmente, el click derecho desplaza (pan)
-                controls.mouseButtons = {
-                    LEFT: THREE.MOUSE.ROTATE,
-                    MIDDLE: THREE.MOUSE.DOLLY,
-                    RIGHT: THREE.MOUSE.PAN
-                };
-
-                const target = controls.target;
-                const distance = camera.position.distanceTo(target);
-                const currentFov = camera.fov || 75;
-                const targetFov = 30;
-
-                // Compensar distancia para mantener el mismo tamaño visual
-                const fovFactor = Math.tan((currentFov * Math.PI) / 360) / Math.tan((targetFov * Math.PI) / 360);
-                const targetDistance = distance * fovFactor;
-                const isoDistance = targetDistance > 10 ? targetDistance : 100;
-
-                // Calcular posición isométrica estándar (azimut a 45 grados)
-                const rad45 = 45 * (Math.PI / 180);
-                const targetX = target.x + isoDistance * Math.cos(rad35) * Math.cos(rad45);
-                const targetY = target.y + isoDistance * Math.sin(rad35);
-                const targetZ = target.z + isoDistance * Math.cos(rad35) * Math.sin(rad45);
-
-                controls.enabled = false;
-
-                gsap.to(camera, {
-                    fov: targetFov,
-                    duration: 1.2,
-                    ease: "power2.inOut",
-                    onUpdate: () => {
-                        camera.updateProjectionMatrix();
-                    }
-                });
-
-                gsap.to(camera.position, {
-                    x: targetX,
-                    y: targetY,
-                    z: targetZ,
-                    duration: 1.2,
-                    ease: "power2.inOut",
-                    onUpdate: () => {
-                        camera.lookAt(target.x, target.y, target.z);
-                        controls.update();
-                    },
-                    onComplete: () => {
-                        controls.enabled = true;
-                        camera.lookAt(target.x, target.y, target.z);
-                        controls.update();
-                    }
-                });
-            } else {
-                // Re-habilitar rotación de cámara y restaurar click izquierdo a rotación orbital
-                controls.enableRotate = true;
-                controls.minPolarAngle = 0;
-                controls.maxPolarAngle = Math.PI;
-                controls.mouseButtons = {
-                    LEFT: THREE.MOUSE.ROTATE,
-                    MIDDLE: THREE.MOUSE.DOLLY,
-                    RIGHT: THREE.MOUSE.PAN
-                };
-                
-                const targetFov = 75;
-                if (camera.fov !== targetFov) {
-                    gsap.to(camera, {
-                        fov: targetFov,
-                        duration: 1.2,
-                        ease: "power2.inOut",
-                        onUpdate: () => {
-                            camera.updateProjectionMatrix();
-                        }
-                    });
-
-                    const target = controls.target;
-                    const distance = camera.position.distanceTo(target);
-                    const currentFov = camera.fov || 30;
-                    const fovFactor = Math.tan((currentFov * Math.PI) / 360) / Math.tan((targetFov * Math.PI) / 360);
-                    const targetDistance = distance * fovFactor;
-
-                    const dir = new THREE.Vector3().subVectors(camera.position, target).normalize();
-                    const newPos = new THREE.Vector3().addVectors(target, dir.multiplyScalar(targetDistance));
-
-                    controls.enabled = false;
-
-                    gsap.to(camera.position, {
-                        x: newPos.x,
-                        y: newPos.y,
-                        z: newPos.z,
-                        duration: 1.2,
-                        ease: "power2.inOut",
-                        onUpdate: () => {
-                            camera.lookAt(target.x, target.y, target.z);
-                            controls.update();
-                        },
-                        onComplete: () => {
-                            controls.enabled = true;
-                            controls.update();
-                        }
-                    });
-                } else {
-                    controls.update();
-                }
-            }
-        }, [viewType, camera, orbitControlsRef]);
-
-        return null;
-    };
-
-    const FirstPersonNavigation = ({ enabled, orbitControlsRef, onExit }) => {
-        const { camera, gl } = useThree();
-        const keysPressed = React.useRef({});
-        const isDragging = React.useRef(false);
-        const previousMousePosition = React.useRef({ x: 0, y: 0 });
-        const euler = React.useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
-
-        useEffect(() => {
-            if (!enabled) return;
-
-            // Deshabilitar OrbitControls mientras navegamos en Primera Persona
-            if (orbitControlsRef && orbitControlsRef.current) {
-                orbitControlsRef.current.enabled = false;
-            }
-
-            euler.current.setFromQuaternion(camera.quaternion, 'YXZ');
-
-            const handleKeyDown = (e) => {
-                if (e.key === 'Escape' || e.key === 'Esc') {
-                    if (document.pointerLockElement) document.exitPointerLock?.();
-                    onExit?.();
-                    return;
-                }
-                if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
-                keysPressed.current[e.key.toLowerCase()] = true;
-            };
-
-            const handleKeyUp = (e) => {
-                keysPressed.current[e.key.toLowerCase()] = false;
-            };
-
-            const handleMouseDown = (e) => {
-                if (e.button === 0 || e.button === 2) {
-                    isDragging.current = true;
-                    previousMousePosition.current = { x: e.clientX, y: e.clientY };
-                }
-            };
-
-            const handleMouseUp = () => {
-                isDragging.current = false;
-            };
-
-            const handleMouseMove = (e) => {
-                if (!isDragging.current && document.pointerLockElement !== gl.domElement) return;
-
-                const movementX = document.pointerLockElement === gl.domElement 
-                    ? e.movementX 
-                    : e.clientX - previousMousePosition.current.x;
-                const movementY = document.pointerLockElement === gl.domElement 
-                    ? e.movementY 
-                    : e.clientY - previousMousePosition.current.y;
-
-                previousMousePosition.current = { x: e.clientX, y: e.clientY };
-
-                const sensitivity = 0.0025;
-                euler.current.y -= movementX * sensitivity; // Yaw (rotación horizontal)
-                euler.current.x -= movementY * sensitivity; // Pitch (rotación vertical)
-
-                // Limitar la inclinación vertical para evitar giros inversos (gimbal lock)
-                euler.current.x = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, euler.current.x));
-
-                camera.quaternion.setFromEuler(euler.current);
-            };
-
-            const handleCanvasClick = () => {
-                if (document.pointerLockElement !== gl.domElement) {
-                    gl.domElement.requestPointerLock?.();
-                }
-            };
-
-            const handlePointerLockChange = () => {
-                if (document.pointerLockElement !== gl.domElement && enabled) {
-                    onExit?.();
-                }
-            };
-
-            const domElem = gl.domElement;
-            window.addEventListener('keydown', handleKeyDown);
-            window.addEventListener('keyup', handleKeyUp);
-            domElem.addEventListener('mousedown', handleMouseDown);
-            window.addEventListener('mouseup', handleMouseUp);
-            window.addEventListener('mousemove', handleMouseMove);
-            domElem.addEventListener('click', handleCanvasClick);
-            document.addEventListener('pointerlockchange', handlePointerLockChange);
-
-            return () => {
-                window.removeEventListener('keydown', handleKeyDown);
-                window.removeEventListener('keyup', handleKeyUp);
-                domElem.removeEventListener('mousedown', handleMouseDown);
-                window.removeEventListener('mouseup', handleMouseUp);
-                window.removeEventListener('mousemove', handleMouseMove);
-                domElem.removeEventListener('click', handleCanvasClick);
-                document.removeEventListener('pointerlockchange', handlePointerLockChange);
-                if (document.pointerLockElement === gl.domElement) {
-                    document.exitPointerLock?.();
-                }
-                keysPressed.current = {};
-                isDragging.current = false;
-
-                // Al salir de primera persona, restaurar OrbitControls apuntando hacia la dirección donde mira la cámara
-                if (orbitControlsRef && orbitControlsRef.current) {
-                    const dir = new THREE.Vector3();
-                    camera.getWorldDirection(dir);
-                    orbitControlsRef.current.target.copy(camera.position).addScaledVector(dir, 20);
-                    orbitControlsRef.current.enabled = true;
-                    orbitControlsRef.current.update();
-                }
-            };
-        }, [enabled, camera, gl.domElement, orbitControlsRef, onExit]);
-
-        useFrame((state, delta) => {
-            if (!enabled) return;
-
-            const speedMultiplier = keysPressed.current['shift'] ? 2.5 : 1.0;
-            const moveSpeed = 16 * speedMultiplier * delta;
-
-            const dir = new THREE.Vector3();
-            camera.getWorldDirection(dir);
-
-            const forward = dir.clone().normalize();
-            const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
-
-            const moveVector = new THREE.Vector3(0, 0, 0);
-
-            if (keysPressed.current['w'] || keysPressed.current['arrowup']) {
-                moveVector.addScaledVector(forward, moveSpeed);
-            }
-            if (keysPressed.current['s'] || keysPressed.current['arrowdown']) {
-                moveVector.addScaledVector(forward, -moveSpeed);
-            }
-            if (keysPressed.current['a'] || keysPressed.current['arrowleft']) {
-                moveVector.addScaledVector(right, -moveSpeed);
-            }
-            if (keysPressed.current['d'] || keysPressed.current['arrowright']) {
-                moveVector.addScaledVector(right, moveSpeed);
-            }
-            if (keysPressed.current['q'] || keysPressed.current[' ']) {
-                moveVector.y += moveSpeed;
-            }
-            if (keysPressed.current['e']) {
-                moveVector.y -= moveSpeed;
-            }
-
-            if (moveVector.lengthSq() > 0) {
-                camera.position.add(moveVector);
-            }
-        });
-
-        return null;
     };
 
     // Función para capturar el estado actual de la cámara

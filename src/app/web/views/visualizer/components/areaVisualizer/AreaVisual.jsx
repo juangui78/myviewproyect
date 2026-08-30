@@ -129,8 +129,17 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
     }
     calculatedArea = Math.abs(calculatedArea) / 2;
     setArea(calculatedArea);
-    areaCalculated(calculatedArea);
+    if (areaCalculated) areaCalculated(calculatedArea);
   }, [originalPoints, areaCalculated]);
+
+  // Limpiar geometría de ThreeJS para prevenir memory leaks en GPU
+  useEffect(() => {
+    return () => {
+      if (customGeometry) {
+        customGeometry.dispose();
+      }
+    };
+  }, [customGeometry]);
 
   return (
     <>
@@ -249,4 +258,4 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
   );
 };
 
-export default AreaVisual;
+export default React.memo(AreaVisual);

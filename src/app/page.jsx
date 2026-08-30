@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Navbar,
   NavbarBrand,
@@ -9,8 +9,8 @@ import {
   NavbarMenuItem,
   NavbarMenuToggle,
   Button,
-  Image,
 } from "@heroui/react";
+import NextImage from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import axios from "axios";
@@ -27,7 +27,7 @@ import Footer from "./web/global_components/footer/Footer";
 
 const words = ["parcelas", "terrenos", "obras"];
 
-export default function Home() {
+const RotatingWords = React.memo(function RotatingWords() {
   const [wordIndex, setWordIndex] = useState(0);
 
   useEffect(() => {
@@ -37,6 +37,26 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  return (
+    <span className="relative inline-flex justify-center lg:justify-start items-center h-[1.2em] overflow-hidden">
+      <span className="invisible pointer-events-none select-none">terrenos</span>
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={wordIndex}
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -20, opacity: 0 }}
+          transition={{ duration: 0.35, ease: "easeInOut" }}
+          className="absolute text-gradient text-glow-animated left-0 right-0 text-center lg:text-left pl-0 pr-2"
+        >
+          {words[wordIndex]}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+});
+
+export default function Home() {
   return (
     <div className="bg-[#02121B] bg-[url(/images/op11.webp)] bg-no-repeat bg-cover bg-grid-pattern overflow-hidden h-full min-h-screen text-foreground relative">
       <InteractiveBlobs />
@@ -57,12 +77,13 @@ export default function Home() {
           <NavbarContent className="sm:hidden pr-3" justify="center">
             <NavbarBrand>
               <Link href="/">
-                <Image
+                <NextImage
                   src="/logos/completo-fullblanco.png"
-                  className="object-cover cursor-pointer"
+                  className="object-contain cursor-pointer"
                   alt="logo"
-                  width={150}
-                  height={150}
+                  width={140}
+                  height={45}
+                  priority
                 />
               </Link>
             </NavbarBrand>
@@ -71,12 +92,13 @@ export default function Home() {
           <NavbarContent className="hidden sm:flex gap-6" justify="center">
             <NavbarBrand>
               <Link href="/">
-                <Image
+                <NextImage
                   src="/logos/completo-fullblanco.png"
-                  className="object-cover cursor-pointer"
+                  className="object-contain cursor-pointer"
                   alt="logo"
                   width={150}
-                  height={150}
+                  height={48}
+                  priority
                 />
               </Link>
             </NavbarBrand>
@@ -121,47 +143,12 @@ export default function Home() {
         </Navbar>
 
         <div className="flex flex-col items-center justify-center min-h-[60vh] py-12 md:py-20 w-full mx-auto relative overflow-hidden">
-          {/* Video de fondo con baja opacidad en el header (hero)
-          <div 
-            className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-0 opacity-30"
-            style={{
-              maskImage: "linear-gradient(to bottom, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 100%)",
-              WebkitMaskImage: "linear-gradient(to bottom, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 100%)"
-            }}
-          >
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            >
-              <source src="/videos/landing3.mp4" type="video/mp4" />
-            </video>
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#02121B]/30 to-[#02121B]" />
-          </div>
-          */}
-
           <div className="w-[90%] max-w-7xl flex flex-col lg:flex-row items-center justify-between gap-12 z-10 text-center lg:text-left">
             {/* Column 1: Text & Actions */}
             <div className="w-full lg:w-[40%] flex flex-col items-center lg:items-start">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tighter leading-tight flex flex-wrap justify-center lg:justify-start items-center gap-x-3 gap-y-2">
                 <span className="text-white">Transforma</span>
-                <span className="relative inline-flex justify-center lg:justify-start items-center h-[1.2em] overflow-hidden">
-                  <span className="invisible pointer-events-none select-none">terrenos</span>
-                  <AnimatePresence mode="wait">
-                    <motion.span
-                      key={wordIndex}
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -20, opacity: 0 }}
-                      transition={{ duration: 0.35, ease: "easeInOut" }}
-                      className="absolute text-gradient text-glow-animated left-0 right-0 text-center lg:text-left pl-0 pr-2"
-                    >
-                      {words[wordIndex]}
-                    </motion.span>
-                  </AnimatePresence>
-                </span>
+                <RotatingWords />
                 <span className="inline-flex items-center gap-x-3">
                   <span className="text-white">en</span>
                   <span className="text-gradient text-glow-animated">modelos 3D</span>
@@ -217,9 +204,12 @@ export default function Home() {
                   loop
                   muted
                   playsInline
-                  preload="auto"
+                  preload="metadata"
+                  poster="/videos/landing3_poster.webp"
                   className="w-full h-full object-cover"
                 >
+                  <source src="/videos/landing3_opt.webm" type="video/webm" />
+                  <source src="/videos/landing3_opt.mp4" type="video/mp4" />
                   <source src="/videos/landing3.mp4" type="video/mp4" />
                 </video>
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 pointer-events-none" />

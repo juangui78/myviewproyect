@@ -9,7 +9,11 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import InformationCard from '../components/information/InformationCard';
 import Whatsapp from '@/web/global_components/icons/Whatsapp';
 import Link from 'next/link';
-import Photo360Modal from '../components/viewer360/PhotoSphereModal';
+import dynamic from 'next/dynamic';
+
+const Photo360Modal = dynamic(() => import('../components/viewer360/PhotoSphereModal'), {
+  ssr: false
+});
 
 const calculateCentroidAndArea = (markers) => {
   if (!markers || markers.length === 0) return { centroid: [0, 0, 0], area: 0 };
@@ -97,12 +101,73 @@ const preprocessLoadedGltf = (gltfLoaded) => {
     return gltfLoaded;
 };
 
+const createFadedGridMesh = (gridY = 0) => {
+  const shaderMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+      gridSize: { value: 10.0 },
+      sectionSize: { value: 50.0 },
+      gridColor: { value: new THREE.Color("#ffffff") },
+      fadeDistance: { value: 500.0 },
+    },
+    vertexShader: `
+      varying vec3 vWorldPosition;
+      void main() {
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        vWorldPosition = worldPosition.xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float gridSize;
+      uniform float sectionSize;
+      uniform vec3 gridColor;
+      uniform float fadeDistance;
+      varying vec3 vWorldPosition;
+
+      float getGrid(vec2 pos, float size) {
+        vec2 coord = pos / size;
+        vec2 grid = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
+        float line = min(grid.x, grid.y);
+        return 1.0 - min(line, 1.0);
+      }
+
+      void main() {
+        float cell = getGrid(vWorldPosition.xz, gridSize);
+        float section = getGrid(vWorldPosition.xz, sectionSize);
+        
+        float linePattern = max(cell * 0.5, section * 0.95);
+        if (linePattern <= 0.02) discard;
+
+        float dist = length(vWorldPosition.xz);
+        float alpha = clamp(1.0 - (dist / fadeDistance), 0.0, 1.0);
+        alpha = pow(alpha, 1.1);
+
+        gl_FragColor = vec4(gridColor, linePattern * alpha * 0.9);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+
+  const geometry = new THREE.PlaneGeometry(2000, 2000);
+  const mesh = new THREE.Mesh(geometry, shaderMaterial);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = gridY;
+  mesh.renderOrder = 0;
+  return mesh;
+};
+
 export default function EasyView({ modelUrl, currentModel, projectInfo, projectId }) {
   const mountRef = useRef(null);
   const savedCameraStateRef = useRef(null);
   const cameraRef = useRef(null);
   const controlsRef = useRef(null);
   const markersGroupRef = useRef(null);
+  const sceneRef = useRef(null);
+  const rendererRef = useRef(null);
+  const backgroundTextureRef = useRef(null);
+  const gridMeshRef = useRef(null);
 
   const { data: session } = useSession();
 
@@ -130,13 +195,35 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
   const [isPhoto360ModalOpen, setIsPhoto360ModalOpen] = useState(false);
   const [terrainsData, setTerrainsData] = useState([]);
   const [showMarkers, setShowMarkers] = useState(true);
+  const [showBackground360, setShowBackground360] = useState(Boolean(currentModel?.background360));
   const [isSavingCam, setIsSavingCam] = useState(false);
+
+  const showBackground360Ref = useRef(showBackground360);
+  showBackground360Ref.current = showBackground360;
 
   useEffect(() => {
     if (markersGroupRef.current) {
       markersGroupRef.current.visible = showMarkers;
     }
   }, [showMarkers]);
+
+  useEffect(() => {
+    if (!sceneRef.current || !rendererRef.current) return;
+    const scene = sceneRef.current;
+    const renderer = rendererRef.current;
+    const gridMesh = gridMeshRef.current;
+    const bgTexture = backgroundTextureRef.current;
+
+    if (showBackground360 && bgTexture) {
+      scene.background = bgTexture;
+      if (gridMesh) gridMesh.visible = false;
+      renderer.setClearColor(0x000000, 0);
+    } else {
+      scene.background = new THREE.Color("#020b12");
+      if (gridMesh) gridMesh.visible = true;
+      renderer.setClearColor(0x020b12, 1);
+    }
+  }, [showBackground360]);
 
   const handleSaveCameraPosition = async () => {
     if (!cameraRef.current || !controlsRef.current || !currentModel?._id) return;
@@ -197,6 +284,15 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
     renderer.setClearColor(0xf0f0f0); // Color de fondo por defecto
     currentMount.appendChild(renderer.domElement);
 
+    // Guardar referencias
+    sceneRef.current = scene;
+    rendererRef.current = renderer;
+
+    // Crear rejilla 3D de fondo
+    const gridMesh = createFadedGridMesh(0);
+    scene.add(gridMesh);
+    gridMeshRef.current = gridMesh;
+
     // 2. Controles fluidos Touch (Pan, Zoom, Rotate)
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -234,6 +330,11 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
 
     // Carga asíncrona no bloqueante de fondo 360 (Background360) si está configurado en el modelo
     if (currentModel?.background360) {
+      if (!showBackground360Ref.current) {
+        scene.background = new THREE.Color("#020b12");
+        gridMesh.visible = true;
+        renderer.setClearColor(0x020b12, 1);
+      }
       const textureLoader = new THREE.TextureLoader();
       textureLoader.load(
         currentModel.background360,
@@ -243,18 +344,32 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
           texture.magFilter = THREE.LinearFilter;
           texture.generateMipmaps = false; // Optimización VRAM para móviles
 
-          scene.background = texture;
+          backgroundTextureRef.current = texture;
 
           const rotY = currentModel.background360Rotation || 0;
           const rotX = currentModel.background360RotationX || 0;
           scene.backgroundRotation = new THREE.Euler(rotX, rotY, 0);
           scene.environmentRotation = new THREE.Euler(rotX, rotY, 0);
+
+          if (showBackground360Ref.current) {
+            scene.background = texture;
+            gridMesh.visible = false;
+            renderer.setClearColor(0x000000, 0);
+          } else {
+            scene.background = new THREE.Color("#020b12");
+            gridMesh.visible = true;
+            renderer.setClearColor(0x020b12, 1);
+          }
         },
         undefined,
         (err) => {
           console.warn("No se pudo cargar la textura background360 en EasyView:", err);
         }
       );
+    } else {
+      scene.background = new THREE.Color("#020b12");
+      gridMesh.visible = true;
+      renderer.setClearColor(0x020b12, 1);
     }
 
     // 3. Carga del Modelo
@@ -266,8 +381,10 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
         const optimizedGltf = preprocessLoadedGltf(gltfLoaded);
         scene.add(optimizedGltf.scene);
         
-        // Centrar el modelo y ajustar la cámara dinámicamente sin que quede recortada o muy lejos
         const box = new THREE.Box3().setFromObject(optimizedGltf.scene);
+        if (gridMesh) {
+          gridMesh.position.y = box.min.y - 0.05;
+        }
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
@@ -442,12 +559,13 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
       const width = currentMount.clientWidth || window.innerWidth;
       const height = currentMount.clientHeight || window.innerHeight;
 
-      // Update HTML marker positions
+      // Update HTML marker positions with calibrated scale
       if (currentModel?.markers && currentModel.markers.length > 0) {
         currentModel.markers.forEach(marker => {
           const domElement = document.getElementById(`marker-360-${marker.id}`);
           if (domElement) {
             tempV.set(marker.position[0], marker.position[1] + 6, marker.position[2]);
+            const distance = camera.position.distanceTo(tempV);
             tempV.project(camera);
 
             // Check if behind the camera
@@ -456,20 +574,25 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
             } else {
               const x = (tempV.x * 0.5 + 0.5) * width;
               const y = (tempV.y * -0.5 + 0.5) * height;
-              domElement.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+
+              // Factor de escala suave y perfectamente legible a cualquier distancia
+              const scale = Math.max(0.70, Math.min(1.20, 0.70 + (45 / Math.max(distance, 10)) * 0.35));
+
+              domElement.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${scale.toFixed(2)})`;
               domElement.style.display = 'flex';
             }
           }
         });
       }
 
-      // Update HTML terrain labels
+      // Update HTML terrain labels with calibrated scale
       if (localTerrainsData.length > 0) {
         localTerrainsData.forEach(terrain => {
           const domElement = document.getElementById(`terrain-label-${terrain.id}`);
           if (domElement) {
             // Place label slightly above the centroid
             tempV.set(terrain.centroid[0], terrain.centroid[1] + 0.3, terrain.centroid[2]);
+            const distance = camera.position.distanceTo(tempV);
             tempV.project(camera);
 
             // Check if behind the camera
@@ -478,7 +601,9 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
             } else {
               const x = (tempV.x * 0.5 + 0.5) * width;
               const y = (tempV.y * -0.5 + 0.5) * height;
-              domElement.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+              const scale = Math.max(0.75, Math.min(1.20, 0.75 + (45 / Math.max(distance, 10)) * 0.30));
+
+              domElement.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${scale.toFixed(2)})`;
               domElement.style.display = 'block';
             }
           }
@@ -530,6 +655,11 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
       renderer.dispose();
       renderer.forceContextLoss(); 
       renderer.domElement = null;
+
+      sceneRef.current = null;
+      rendererRef.current = null;
+      backgroundTextureRef.current = null;
+      gridMeshRef.current = null;
 
       if (currentMount) {
         currentMount.innerHTML = ''; // Remover el canvas del DOM explícitamente
@@ -589,6 +719,30 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
                     <span className="hidden sm:inline text-[#0CDBFF]">Marcadores Ocultos</span>
                   </>
                 )}
+              </button>
+
+              {/* Botón Fondo 360 / Rejilla 3D */}
+              <button
+                onClick={() => setShowBackground360(!showBackground360)}
+                title={showBackground360 ? "Ver Rejilla 3D de Fondo" : "Ver Fondo Estándar / 360°"}
+                className={`border border-white/20 bg-black/60 backdrop-blur-md text-white h-10 px-3.5 rounded-full hover:bg-black/80 transition-all font-medium shadow-lg flex items-center justify-center select-none text-xs gap-1.5 ${!showBackground360 ? 'border-[#0CDBFF] text-[#0CDBFF] shadow-[0_0_10px_rgba(12,219,255,0.4)]' : ''}`}
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  className={`w-4 h-4 ${!showBackground360 ? 'text-[#0CDBFF]' : 'text-white'}`}
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+                </svg>
+                <span className="hidden sm:inline">
+                  {!showBackground360 ? "Rejilla 3D" : (currentModel?.background360 ? "Fondo 360°" : "Fondo 3D")}
+                </span>
               </button>
 
               {/* Botón Guardar Posición de Cámara Inicial (Restringido a Superadmin o Creador del Proyecto) */}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 function Marker({ position, label, onClick }) {
     return (
@@ -12,4 +12,4 @@ function Marker({ position, label, onClick }) {
     );
 }
 
-export default Marker;
+export default memo(Marker);

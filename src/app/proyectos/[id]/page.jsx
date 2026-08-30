@@ -1,7 +1,8 @@
 'use client';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import NextImage from "next/image";
 import dynamic from "next/dynamic";
 import axios from "axios";
 import { Spinner, Button, Card, CardBody, Input, Textarea, Table, TableHeader, TableBody, TableColumn, TableRow, TableCell, Chip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/react";
@@ -42,6 +43,33 @@ export default function ProyectoPresentationPage() {
   const [isSubmittingLead, setIsSubmittingLead] = useState(false);
   const [leadContextTerrain, setLeadContextTerrain] = useState(null);
   const [countryCode, setCountryCode] = useState("+57");
+
+  const encryptedId = useMemo(() => (id ? encrypt(id) : ""), [id]);
+
+  const terrainAreasMap = useMemo(() => {
+    const map = {};
+    if (projectData?.model?.terrains) {
+      projectData.model.terrains.forEach((t, idx) => {
+        const key = t.id || idx;
+        if (t.markers && t.markers.length >= 3) {
+          let aVal = 0;
+          const n = t.markers.length;
+          for (let i = 0; i < n; i++) {
+            const j = (i + 1) % n;
+            const xi = t.markers[i].position[0];
+            const zi = t.markers[i].position[2];
+            const xj = t.markers[j].position[0];
+            const zj = t.markers[j].position[2];
+            aVal += xi * zj - xj * zi;
+          }
+          map[key] = `${Math.abs(aVal / 2).toFixed(1)} m²`;
+        } else {
+          map[key] = "N/A";
+        }
+      });
+    }
+    return map;
+  }, [projectData?.model?.terrains]);
 
   const fetchProject = async (retries = 2, delay = 1500) => {
     try {
@@ -219,12 +247,13 @@ export default function ProyectoPresentationPage() {
           {/* Header */}
           <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
             <Link href="/" className="flex items-center">
-              <img
+              <NextImage
                 src="/logos/completo-fullblanco.png"
                 alt="MyView Logo"
-                className="object-cover cursor-pointer"
+                className="object-contain cursor-pointer"
                 width={150}
-                height={150}
+                height={48}
+                priority
               />
             </Link>
             <div className="flex items-center gap-3">
@@ -318,10 +347,13 @@ export default function ProyectoPresentationPage() {
                 <>
                   {proyect?.urlImage && (
                     <div className="relative w-full h-[250px] md:h-[380px] rounded-2xl overflow-hidden border border-white/10 shadow-lg">
-                      <img
+                      <NextImage
                         src={proyect.urlImage}
-                        alt={proyect.name}
-                        className="w-full h-full object-cover"
+                        alt={proyect.name || "Proyecto"}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 60vw, 800px"
+                        className="object-cover"
+                        priority
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#02121B] via-transparent to-transparent" />
                     </div>
@@ -403,21 +435,7 @@ export default function ProyectoPresentationPage() {
                     </TableHeader>
                     <TableBody>
                       {model.terrains.map((terrain, idx) => {
-                        // Calcular área si tiene marcadores
-                        let terrainArea = "N/A";
-                        if (terrain.markers && terrain.markers.length >= 3) {
-                          let areaVal = 0;
-                          const n = terrain.markers.length;
-                          for (let i = 0; i < n; i++) {
-                            const j = (i + 1) % n;
-                            const xi = terrain.markers[i].position[0];
-                            const zi = terrain.markers[i].position[2];
-                            const xj = terrain.markers[j].position[0];
-                            const zj = terrain.markers[j].position[2];
-                            areaVal += xi * zj - xj * zi;
-                          }
-                          terrainArea = `${Math.abs(areaVal / 2).toFixed(1)} m²`;
-                        }
+                        const terrainArea = terrainAreasMap[terrain.id || idx] || "N/A";
                         const isSelected = selectedTerrain?.id === terrain.id;
                         return (
                           <TableRow 
@@ -470,30 +488,17 @@ export default function ProyectoPresentationPage() {
                       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                         {/* Lado izquierdo: Foto */}
                         <div className="md:col-span-5 relative w-full h-[180px] rounded-xl overflow-hidden border border-white/10 shadow-lg">
-                          <img
+                          <NextImage
                             src={selectedTerrain.urlImage || "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=600&q=80"}
                             alt={selectedTerrain.name || `Lote ${selectedTerrain.id}`}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="(max-width: 768px) 100vw, 300px"
+                            className="object-cover"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                           <div className="absolute bottom-3 left-3 bg-[#02121B]/80 px-3 py-1 rounded-lg border border-white/10">
                             <span className="text-xs font-bold text-[#0CDBFF]">
-                              Área: {(() => {
-                                if (selectedTerrain.markers && selectedTerrain.markers.length >= 3) {
-                                  let aVal = 0;
-                                  const n = selectedTerrain.markers.length;
-                                  for (let i = 0; i < n; i++) {
-                                    const j = (i + 1) % n;
-                                    const xi = selectedTerrain.markers[i].position[0];
-                                    const zi = selectedTerrain.markers[i].position[2];
-                                    const xj = selectedTerrain.markers[j].position[0];
-                                    const zj = selectedTerrain.markers[j].position[2];
-                                    aVal += xi * zj - xj * zi;
-                                  }
-                                  return `${Math.abs(aVal / 2).toFixed(1)} m²`;
-                                }
-                                return "N/A";
-                              })()}
+                              Área: {terrainAreasMap[selectedTerrain.id] || "N/A"}
                             </span>
                           </div>
                         </div>
@@ -507,7 +512,7 @@ export default function ProyectoPresentationPage() {
                           <div className="flex flex-col sm:flex-row gap-3 pt-2">
                             <Button
                               as={Link}
-                              href={`/web/views/visualizer?id=${encodeURIComponent(encrypt(id))}&terrainId=${selectedTerrain.id}`}
+                              href={`/web/views/visualizer?id=${encodeURIComponent(encryptedId)}&terrainId=${selectedTerrain.id}`}
                               className="w-full sm:flex-1 bg-gradient-to-r from-[#0CDBFF] to-[#00C662] text-[#02121B] font-bold hover:opacity-90 transition-opacity"
                               size="md"
                             >
@@ -567,7 +572,7 @@ export default function ProyectoPresentationPage() {
                   <div className="flex flex-col sm:flex-row gap-3 pt-2">
                     <Button
                       as={Link}
-                      href={`/web/views/visualizer?id=${encodeURIComponent(encrypt(id))}`}
+                      href={`/web/views/visualizer?id=${encodeURIComponent(encryptedId)}`}
                       className="w-full bg-gradient-to-r from-[#0CDBFF] to-[#00C662] text-[#02121B] font-bold hover:opacity-90 transition-opacity"
                       size="lg"
                     >
@@ -664,22 +669,7 @@ export default function ProyectoPresentationPage() {
                       </span>
                     </div>
                     <span className="text-xs text-white/50 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
-                      Área Estimada: {(() => {
-                        if (leadContextTerrain.markers && leadContextTerrain.markers.length >= 3) {
-                          let aVal = 0;
-                          const n = leadContextTerrain.markers.length;
-                          for (let i = 0; i < n; i++) {
-                            const j = (i + 1) % n;
-                            const xi = leadContextTerrain.markers[i].position[0];
-                            const zi = leadContextTerrain.markers[i].position[2];
-                            const xj = leadContextTerrain.markers[j].position[0];
-                            const zj = leadContextTerrain.markers[j].position[2];
-                            aVal += xi * zj - xj * zi;
-                          }
-                          return `${Math.abs(aVal / 2).toFixed(1)} m²`;
-                        }
-                        return "N/A";
-                      })()}
+                      Área Estimada: {terrainAreasMap[leadContextTerrain.id] || "N/A"}
                     </span>
                   </div>
                 )}

@@ -128,7 +128,7 @@ export function LandingCardSkeleton() {
   );
 }
 
-export default function SuccessCasesSection() {
+export default React.memo(function SuccessCasesSection() {
   const [cases, setCases] = useState(initialSuccessCases);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -351,4 +351,4 @@ export default function SuccessCasesSection() {
       </div>
     </section>
   );
-}
+});

@@ -96,9 +96,9 @@ const Toolbar = ({
     checkScroll();
     const el = toolbarRef.current;
     if (el) {
-      el.addEventListener('scroll', checkScroll);
+      el.addEventListener('scroll', checkScroll, { passive: true });
     }
-    window.addEventListener('resize', checkScroll);
+    window.addEventListener('resize', checkScroll, { passive: true });
     return () => {
       if (el) el.removeEventListener('scroll', checkScroll);
       window.removeEventListener('resize', checkScroll);
@@ -288,4 +288,4 @@ const Toolbar = ({
   );
 };
 
-export default Toolbar;
+export default React.memo(Toolbar);

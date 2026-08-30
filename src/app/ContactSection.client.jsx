@@ -4,7 +4,7 @@ import { Card, CardBody, Button, Input, Textarea } from "@heroui/react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
-export default function ContactSection() {
+export default React.memo(function ContactSection() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -199,4 +199,4 @@ export default function ContactSection() {
       </div>
     </div>
   );
-}
+});

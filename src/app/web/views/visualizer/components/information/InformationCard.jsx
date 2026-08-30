@@ -66,7 +66,7 @@ const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
   "📲 319 206 7689"
 ]
 
-export const InformationCard = ({ info, currentModel, canEdit, onUpdateModelNotes, session }) => {
+export const InformationCard = React.memo(function InformationCard({ info, currentModel, canEdit, onUpdateModelNotes, session }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedNotes, setEditedNotes] = useState(currentModel?.version_notes || "");
   const [isSaving, setIsSaving] = useState(false);
@@ -257,10 +257,10 @@ export const InformationCard = ({ info, currentModel, canEdit, onUpdateModelNote
       )}
     </div>
   );
-};
+});
 
 
-export default function App({ info, currentModel, session, onUpdateModelNotes }) {
+export default React.memo(function App({ info, currentModel, session, onUpdateModelNotes }) {
   const canEdit = session !== null && session !== undefined;
 
   return (
@@ -288,4 +288,4 @@ export default function App({ info, currentModel, session, onUpdateModelNotes })
       </Popover>
     </div>
   );
-}
+});

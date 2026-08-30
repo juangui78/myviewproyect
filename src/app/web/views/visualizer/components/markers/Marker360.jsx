@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo, memo } from 'react';
 import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -6,8 +6,11 @@ function Marker360({ position, label, onClick, preview, hidden = false, picture 
     const groupRef = useRef();
     const { camera } = useThree();
 
-    // Opción 1: Elevar todo el marcador sumando altura a la posición Y
-    const adjustedPosition = [position[0], position[1] + 6, position[2]];
+    // Elevar todo el marcador sumando altura a la posición Y
+    const posX = position?.[0] || 0;
+    const posY = position?.[1] || 0;
+    const posZ = position?.[2] || 0;
+    const adjustedPosition = useMemo(() => [posX, posY + 6, posZ], [posX, posY, posZ]);
 
     const finalImage = picture || '/images/lowprev.jpg';
 
@@ -16,7 +19,6 @@ function Marker360({ position, label, onClick, preview, hidden = false, picture 
         if (groupRef.current && !hidden) {
             const distance = camera.position.distanceTo(groupRef.current.position);
 
-            // Ajusta estos valores según necesites:
             const baseScale = 0.5;
             const scaleFactor = 0.01;
             const minScale = 0.3;
@@ -52,21 +54,8 @@ function Marker360({ position, label, onClick, preview, hidden = false, picture 
                 distanceFactor={97}
                 zIndexRange={[40, 0]}
             >
-                <style>
-                    {`
-                    .marker360-group:hover .marker360-preview {
-                        transform: scale(1.4);
-                        z-index: 2;
-                        box-shadow: 0 0 12px #0008;
-                    }
-                    .marker360-group:hover .marker360-label {
-                        transform: scale(1.2);
-                        z-index: 2;
-                    }
-                    `}
-                </style>
                 <div
-                    className="marker360-group"
+                    className="marker360-group group"
                     onClick={handleClick}
                     style={{
                         display: 'flex',
@@ -80,7 +69,7 @@ function Marker360({ position, label, onClick, preview, hidden = false, picture 
                         <img
                             src={finalImage}
                             alt="preview"
-                            className="marker360-preview"
+                            className="marker360-preview transition-all duration-200 hover:scale-125 hover:shadow-lg"
                             style={{
                                 width: 62,
                                 height: 32,
@@ -89,12 +78,11 @@ function Marker360({ position, label, onClick, preview, hidden = false, picture 
                                 marginBottom: 4,
                                 boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
                                 border: '1px solid rgba(255,255,255,0.5)',
-                                transition: 'all 0.2s cubic-bezier(.4,2,.3,1)',
                             }}
                         />
                     ) : (
                         <div
-                            className="marker360-preview"
+                            className="marker360-preview transition-all duration-200 hover:scale-125 hover:shadow-lg"
                             style={{
                                 width: 62,
                                 height: 32,
@@ -104,12 +92,11 @@ function Marker360({ position, label, onClick, preview, hidden = false, picture 
                                 marginBottom: 4,
                                 boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                                 border: '1px solid rgba(255,255,255,0.2)',
-                                transition: 'all 0.2s cubic-bezier(.4,2,.3,1)',
                             }}
                         />
                     )}
                     <span
-                        className="marker360-label"
+                        className="marker360-label transition-transform duration-200 hover:scale-110"
                         style={{
                             color: 'white',
                             background: 'rgba(0, 0, 0, 0.6)',
@@ -122,7 +109,6 @@ function Marker360({ position, label, onClick, preview, hidden = false, picture 
                             fontWeight: '500',
                             marginTop: 2,
                             whiteSpace: 'nowrap',
-                            transition: 'transform 0.2s cubic-bezier(.4,2,.3,1)',
                         }}
                     >
                         {label}
@@ -133,4 +119,4 @@ function Marker360({ position, label, onClick, preview, hidden = false, picture 
     );
 }
 
-export default Marker360;
+export default memo(Marker360);

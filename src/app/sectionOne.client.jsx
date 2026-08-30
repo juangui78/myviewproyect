@@ -1,11 +1,10 @@
 "use client"
+import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-const SectionOne = () => {
-
+const SectionOne = React.memo(function SectionOne() {
     return (
-
         <motion.div
             className="w-full py-10 md:py-14 flex flex-col items-center justify-center transform-gpu"
             initial={{ opacity: 0, y: 25 }}
@@ -55,8 +54,7 @@ const SectionOne = () => {
                 </motion.div>
             </div>
         </motion.div>
-    )
-}
+    );
+});
 
-
-export default SectionOne
+export default SectionOne;

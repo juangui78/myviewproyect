@@ -10,15 +10,17 @@ import Qr from "@/web/global_components/icons/Qr";
 import { Ban } from "@/web/global_components/icons/Ban";
 import { encrypt } from "@/api/libs/crypto";
 import Link from "next/link";
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { useDisclosure } from "@nextui-org/react";
-import DrawerInfo from "./DrawerInfo";
-import ModalUsersInvited from "./ModalUsersInvited";
-import ModalQr from "./ModalQr";
+
+const DrawerInfo = dynamic(() => import("./DrawerInfo"), { ssr: false });
+const ModalUsersInvited = dynamic(() => import("./ModalUsersInvited"), { ssr: false });
+const ModalQr = dynamic(() => import("./ModalQr"), { ssr: false });
 
 
-export default function Cards({ proyects, totalProyects }) {
+export default React.memo(function Cards({ proyects, totalProyects }) {
   const { data: session, status } = useSession();
   const [_id, setId] = useState("");
   const [ID_USER, setID_USER] = useState(null);
@@ -27,6 +29,16 @@ export default function Cards({ proyects, totalProyects }) {
   const { isOpen: isOpenUsers, onOpenChange: onOpenChangeUsers } =
     useDisclosure(); // modal users
   const { isOpen: isOpenQr, onOpenChange: onOpenChangeQr } = useDisclosure(); // modal qr
+
+  const encryptedIds = useMemo(() => {
+    const map = {};
+    if (Array.isArray(proyects)) {
+      proyects.forEach((p) => {
+        map[p._id] = encrypt(p._id);
+      });
+    }
+    return map;
+  }, [proyects]);
 
   const handleOpen = (id) => {
     //open drawer info
@@ -102,7 +114,7 @@ export default function Cards({ proyects, totalProyects }) {
                         <Link
                           href={{
                             pathname: `/web/views/visualizer`,
-                            query: { id: encrypt(item._id) },
+                            query: { id: encryptedIds[item._id] || encrypt(item._id) },
                           }}
                           target="_blank"
                         >
@@ -190,4 +202,4 @@ export default function Cards({ proyects, totalProyects }) {
       {/* modal qr */}
     </>
   );
-}
+});

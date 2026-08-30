@@ -12,15 +12,22 @@ export async function GET() {
       { _id: 1, name: 1, description: 1, urlImage: 1 }
     ).lean();
 
-    return NextResponse.json({
-      success: true,
-      projects: projects.map(p => ({
-        id: p._id.toString(),
-        name: p.name,
-        description: p.description,
-        urlImage: p.urlImage || ""
-      }))
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        projects: projects.map((p) => ({
+          id: p._id.toString(),
+          name: p.name,
+          description: p.description,
+          urlImage: p.urlImage || ""
+        }))
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400"
+        }
+      }
+    );
   } catch (error) {
     console.error("Error fetching success cases projects from DB:", error);
     return NextResponse.json(

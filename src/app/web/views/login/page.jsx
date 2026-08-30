@@ -1,6 +1,7 @@
 "use client"
 import React, { useEffect, useState } from "react";
-import { Card, CardHeader, CardBody, Image, Input, Button } from "@nextui-org/react";
+import { Card, CardHeader, CardBody, Input, Button } from "@nextui-org/react";
+import NextImage from "next/image";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { validationSchemaLogin } from "./js/validationSchema";
@@ -25,13 +26,16 @@ export default function Login() {
           <CardHeader className="flex gap-3 flex-col mt-[5px]">
             <div className="grid place-items-center mb-[-10px]">
               <Link href="/">
-                <Image
+                <NextImage
                   alt="logo"
                   src="/logos/completo-fullblanco.png"
-                  className="w-[220px] h-[120px] object-contain cursor-pointer"
+                  width={220}
+                  height={80}
+                  priority
+                  className="w-[220px] h-[80px] object-contain cursor-pointer"
                 />
               </Link>
-              <h1 className="text-2xl text-white font-semibold mt-[-20px]">Iniciar Sesión</h1>
+              <h1 className="text-2xl text-white font-semibold mt-[-10px]">Iniciar Sesión</h1>
             </div>
             <div className="w-full pr-[1rem] pl-[1rem] mt-2">
               {error ? (
@@ -81,7 +85,8 @@ export default function Login() {
                   return;
                 }
 
-                window.location.href = '/web/views/user/feed';
+                router.push('/web/views/user/feed');
+                router.refresh();
               }}
             >
             {({ handleSubmit, isSubmitting}) => (

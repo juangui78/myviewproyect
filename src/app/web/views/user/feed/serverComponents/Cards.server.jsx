@@ -47,18 +47,41 @@ export default async function CardsList({ searchParams }) {
         proyectsFromDB = await Proyect.find(queryFilter, searchParamas).sort({ creation_date: -1 }).lean();
       }
 
-      data = await Promise.all(proyectsFromDB.map(async (proyect) => {
-        const lastModel = await Model.findOne({ idProyect: proyect._id })
-          .sort({ creation_date: -1 })
-          .select('creation_date')
-          .lean();
-        
+      const projectIds = proyectsFromDB.map(p => p._id);
+      const projectIdsString = projectIds.map(id => id.toString());
+
+      // Consulta en lote única para obtener las fechas del último escaneo sin waterfall N+1
+      const lastModels = await Model.aggregate([
+        {
+          $match: {
+            $or: [
+              { idProyect: { $in: projectIds } },
+              { idProyect: { $in: projectIdsString } }
+            ]
+          }
+        },
+        { $sort: { creation_date: -1 } },
+        {
+          $group: {
+            _id: "$idProyect",
+            creation_date: { $first: "$creation_date" }
+          }
+        }
+      ]);
+
+      const lastModelMap = new Map();
+      lastModels.forEach(m => {
+        if (m._id) lastModelMap.set(m._id.toString(), m.creation_date);
+      });
+
+      data = proyectsFromDB.map((proyect) => {
+        const pId = proyect._id.toString();
         return {
           ...proyect,
-          _id: proyect._id.toString(),
-          lastScanDate: lastModel?.creation_date || proyect.creation_date,
+          _id: pId,
+          lastScanDate: lastModelMap.get(pId) || proyect.creation_date,
         };
-      }));
+      });
     }
   } catch (err) {
     console.error("Error cargando proyectos directamente:", err);
