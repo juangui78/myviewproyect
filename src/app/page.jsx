@@ -210,7 +210,6 @@ export default function Home() {
                 >
                   <source src="/videos/landing3_opt.webm" type="video/webm" />
                   <source src="/videos/landing3_opt.mp4" type="video/mp4" />
-                  <source src="/videos/landing3.mp4" type="video/mp4" />
                 </video>
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 pointer-events-none" />
               </motion.div>
