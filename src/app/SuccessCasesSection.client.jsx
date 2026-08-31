@@ -157,7 +157,7 @@ export default React.memo(function SuccessCasesSection() {
           );
         }
       } catch (error) {
-        console.log("Not using DB images fallback to local assets:", error);
+        // Fallback silencioso a assets locales
       } finally {
         setIsLoading(false);
       }
@@ -166,8 +166,8 @@ export default React.memo(function SuccessCasesSection() {
     fetchProjectImagesFromDB();
   }, []);
 
-  // Triplicamos la lista para lograr un bucle infinito continuo e imperceptible
-  const duplicatedLogos = [...logosList, ...logosList, ...logosList, ...logosList];
+  // Dos conjuntos de logos para animación continua y suave por GPU (-50% CSS translate3d)
+  const duplicatedLogos = [...logosList, ...logosList];
 
   return (
     <section className="w-full py-16 md:py-24 relative z-20 overflow-hidden border-t border-white/5">
@@ -209,7 +209,7 @@ export default React.memo(function SuccessCasesSection() {
           </motion.p>
         </div>
 
-        {/* Infinite Logo-Only Carousel Ticker */}
+        {/* Infinite Logo-Only Carousel Ticker con Aceleración GPU */}
         <div className="w-full mb-16 relative py-4">
           <div className="text-center mb-6">
             <p className="text-xs uppercase font-bold tracking-[0.2em] text-gray-400/80">
@@ -225,15 +225,7 @@ export default React.memo(function SuccessCasesSection() {
               WebkitMaskImage: "linear-gradient(to right, transparent, black 15%, black 85%, transparent)"
             }}
           >
-            <motion.div
-              className="flex items-center gap-12 md:gap-16 w-max transform-gpu"
-              animate={{ x: ["0%", "-25%"] }}
-              transition={{
-                repeat: Infinity,
-                ease: "linear",
-                duration: 22
-              }}
-            >
+            <div className="animate-ticker gap-12 md:gap-16">
               {duplicatedLogos.map((item, index) => {
                 const LogoComponent = item.Component;
                 return (
@@ -245,7 +237,7 @@ export default React.memo(function SuccessCasesSection() {
                   </div>
                 );
               })}
-            </motion.div>
+            </div>
           </div>
         </div>
 

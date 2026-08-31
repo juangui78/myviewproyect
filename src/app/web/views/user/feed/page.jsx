@@ -1,5 +1,4 @@
-"use server"
-import Header from "./components/header";
+"use server";
 import CardsList from "./serverComponents/Cards.server";
 import FeedSkeleton from "./components/FeedSkeleton";
 import { Suspense } from "react";
@@ -13,9 +12,8 @@ export default async function Page({ searchParams }) {
           <FeedSkeleton />
         </section>
       }>
-        <Header />
         <CardsList searchParams={searchParams} />
       </Suspense>
     </>
-  )
+  );
 }

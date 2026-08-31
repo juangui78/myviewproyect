@@ -48,6 +48,8 @@ export async function PUT(request, { params }) {
 
         const updateSchema = z.object({
             name: z.string().max(100).optional(),
+            city: z.string().max(100).optional(),
+            department: z.string().max(100).optional(),
             address: z.string().max(300).optional(),
             description: z.string().max(500).optional(),
             urlImage: z.string().max(1000).optional(),

@@ -3,6 +3,7 @@ import Proyect from "@/api/models/proyect";
 import Model from "@/api/models/models";
 import { getServerSession } from "next-auth";
 import { AuthOptions } from "@/api/auth/[...nextauth]/route";
+import { encrypt } from "@/api/libs/crypto";
 import style from "./../styles/feed.module.css";
 import Cards from "./../components/Cards";
 
@@ -29,6 +30,8 @@ export default async function CardsList({ searchParams }) {
         _id: 1,
         name: 1,
         description: 1,
+        city: 1,
+        department: 1,
         state: 1,
         urlImage: 1,
         creation_date: 1,
@@ -36,9 +39,17 @@ export default async function CardsList({ searchParams }) {
 
       let proyectsFromDB;
       if (search && search !== 'null' && search !== '' && search !== 'undefined') {
+        const searchRegex = { $regex: search, $options: 'i' };
+        const orConditions = [
+          { name: searchRegex },
+          { city: searchRegex },
+          { department: searchRegex },
+        ];
+
         const regexFilter = isSuperadmin 
-          ? { name: { $regex: search, $options: 'i' } }
-          : { idCompany, name: { $regex: search, $options: 'i' } };
+          ? { $or: orConditions }
+          : { idCompany, $or: orConditions };
+
         proyectsFromDB = await Proyect.find(
           regexFilter,
           searchParamas
@@ -79,6 +90,7 @@ export default async function CardsList({ searchParams }) {
         return {
           ...proyect,
           _id: pId,
+          encryptedId: encrypt(pId),
           lastScanDate: lastModelMap.get(pId) || proyect.creation_date,
         };
       });

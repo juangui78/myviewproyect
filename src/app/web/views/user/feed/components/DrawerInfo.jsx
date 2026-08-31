@@ -20,6 +20,8 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [editForm, setEditForm] = useState({
         name: "",
+        city: "",
+        department: "",
         address: "",
         description: ""
     })
@@ -40,6 +42,8 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
             setData({});
             setEditForm({
                 name: "",
+                city: "",
+                department: "",
                 address: "",
                 description: ""
             });
@@ -63,6 +67,8 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
           setData(data_)
           setEditForm({
               name: data_.name || "",
+              city: data_.city || "",
+              department: data_.department || "",
               address: data_.address || "",
               description: data_.description || ""
           })
@@ -90,6 +96,8 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
             // Cancel editing, reset form
             setEditForm({
                 name: data.name || "",
+                city: data.city || "",
+                department: data.department || "",
                 address: data.address || "",
                 description: data.description || ""
             })
@@ -285,6 +293,32 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                                         label: "text-white/70"
                                     }}
                                 />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <Input
+                                        label="Ciudad"
+                                        name="city"
+                                        value={editForm.city}
+                                        onChange={handleInputChange}
+                                        variant="bordered"
+                                        className="text-white"
+                                        classNames={{
+                                            input: "text-white",
+                                            label: "text-white/70"
+                                        }}
+                                    />
+                                    <Input
+                                        label="Departamento"
+                                        name="department"
+                                        value={editForm.department}
+                                        onChange={handleInputChange}
+                                        variant="bordered"
+                                        className="text-white"
+                                        classNames={{
+                                            input: "text-white",
+                                            label: "text-white/70"
+                                        }}
+                                    />
+                                </div>
                                 <Input
                                     label="Dirección"
                                     name="address"
