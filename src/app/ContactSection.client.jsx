@@ -76,7 +76,11 @@ export default React.memo(function ContactSection() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[60px] rounded-full pointer-events-none"></div>
             
             <div className="flex flex-col gap-6">
-              <span className="text-4xl mb-4 block select-none">✉️</span>
+              <div className="w-12 h-12 mb-2 rounded-2xl bg-[#0CDBFF]/10 border border-[#0CDBFF]/30 flex items-center justify-center text-[#0CDBFF] shadow-[0_0_15px_rgba(12,219,255,0.2)]">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
               <h3 className="text-2xl font-bold text-white mb-2">Contacto Directo</h3>
               <p className="text-gray-300 leading-relaxed mb-4">
                 Si prefieres un contacto inmediato o tienes especificaciones técnicas complejas, puedes escribirnos directamente a nuestro correo corporativo o a través de WhatsApp.

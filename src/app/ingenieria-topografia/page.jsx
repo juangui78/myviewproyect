@@ -19,6 +19,8 @@ import InteractiveBlobs from "../InteractiveBlobs.client";
 import ContactSection from "../ContactSection.client";
 import Footer from "../web/global_components/footer/Footer";
 import TablePrices from "../tablePrices";
+import NicheStepsSection from "../NicheStepsSection.client";
+import FloatingWhatsapp from "../FloatingWhatsapp.client";
 
 export default function IngenieriaTopografiaPage() {
   return (
@@ -228,6 +230,9 @@ export default function IngenieriaTopografiaPage() {
           ))}
         </div>
 
+        {/* Pasos de trabajo especializados para Ingeniería y Topografía */}
+        <NicheStepsSection niche="ingenieria" />
+
         {/* Dynamic Detail Section */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -254,9 +259,12 @@ export default function IngenieriaTopografiaPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <h1 className="font-bold text-3xl text-left bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-6">
-                Fotogrametría y <span className="text-primary text-glow-animated">Levantamientos Digitales</span>
-              </h1>
+              <h2 className="font-bold text-3xl text-left text-white mb-6">
+                Fotogrametría y{" "}
+                <span className="text-[#10B981] font-extrabold not-italic drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+                  Levantamientos Digitales
+                </span>
+              </h2>
               <p className="text-lg text-gray-300 leading-relaxed mb-6">
                 Reduce drásticamente el tiempo de recolección en campo. Captura miles de coordenadas en minutos con una resolución visual excepcional y precisión métrica confiable.
               </p>
@@ -292,9 +300,12 @@ export default function IngenieriaTopografiaPage() {
 
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
               <div className="flex-1">
-                <h1 className="font-bold text-4xl text-left bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-4">
-                  Topografía del futuro, <span className="text-primary text-glow-animated">hoy mismo</span>
-                </h1>
+                <h2 className="font-bold text-4xl text-left text-white mb-4">
+                  Topografía del futuro,{" "}
+                  <span className="text-[#10B981] font-extrabold not-italic drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+                    hoy mismo
+                  </span>
+                </h2>
                 <p className="text-lg text-gray-300 leading-relaxed">
                   Lleva tus estudios topográficos al estándar digital tridimensional interactivo. Compatible con proyectos de parcelación, desarrollo urbano e infraestructura vial.
                 </p>
@@ -321,7 +332,11 @@ export default function IngenieriaTopografiaPage() {
                   className="w-full h-[200px] rounded-2xl bg-gradient-to-tr from-gray-900/80 to-black border border-white/10 flex items-center justify-center relative overflow-hidden group"
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <span className="text-6xl group-hover:scale-110 transition-transform duration-500 select-none">📐</span>
+                  <div className="w-20 h-20 rounded-3xl bg-[#10B981]/10 border border-[#10B981]/30 flex items-center justify-center text-[#10B981] shadow-[0_0_25px_rgba(16,185,129,0.2)] group-hover:scale-110 transition-transform duration-500">
+                    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                  </div>
                 </motion.div>
               </div>
             </div>
@@ -429,6 +444,7 @@ export default function IngenieriaTopografiaPage() {
 
         <ContactSection />
         <Footer />
+        <FloatingWhatsapp />
       </div>
     </div>
   );

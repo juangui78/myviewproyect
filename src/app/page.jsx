@@ -22,6 +22,10 @@ import InteractiveBlobs from "./InteractiveBlobs.client";
 import SuccessCasesSection from "./SuccessCasesSection.client";
 import ContactSection from "./ContactSection.client";
 import Footer from "./web/global_components/footer/Footer";
+import BeforeAfterTimeline from "./BeforeAfterTimeline.client";
+import MarketingShareMockup from "./MarketingShareMockup.client";
+import FloatingWhatsapp from "./FloatingWhatsapp.client";
+import HowItWorksSection from "./HowItWorksSection.client";
 
 // Axios defaults.baseURL removido para soportar deploy de producción con rutas relativas
 
@@ -249,7 +253,11 @@ export default function Home() {
               className="glass-card glow-card-hover p-8 rounded-3xl border border-white/10 relative overflow-hidden group"
             >
               <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-primary/20 transition-all duration-700"></div>
-              <span className="text-5xl mb-6 block select-none">🏡</span>
+              <div className="w-14 h-14 mb-6 rounded-2xl bg-[#0CDBFF]/10 border border-[#0CDBFF]/30 flex items-center justify-center text-[#0CDBFF] shadow-[0_0_20px_rgba(12,219,255,0.15)] group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
               <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Inmobiliarias</h2>
               <p className="text-gray-400 mb-6 leading-relaxed">
                 Vende lotes y proyectos más rápido con recorridos virtuales 3D interactivos. Atrae clientes internacionales y diferénciate con marketing inmersivo.
@@ -285,7 +293,11 @@ export default function Home() {
               className="glass-card glow-card-hover p-8 rounded-3xl border border-white/10 relative overflow-hidden group"
             >
               <div className="absolute top-0 right-0 w-48 h-48 bg-secondary/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-secondary/20 transition-all duration-700"></div>
-              <span className="text-5xl mb-6 block select-none">📐</span>
+              <div className="w-14 h-14 mb-6 rounded-2xl bg-[#10B981]/10 border border-[#10B981]/30 flex items-center justify-center text-[#10B981] shadow-[0_0_20px_rgba(16,185,129,0.15)] group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+              </div>
               <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">Ingeniería y Topografía</h2>
               <p className="text-gray-400 mb-6 leading-relaxed">
                 Levantamientos aéreos de alta precisión con fotogrametría avanzada. Genera curvas de nivel, modelos DEM y exporta a CAD/GIS.
@@ -313,6 +325,9 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Cómo Funciona - Proceso en 4 pasos adaptado por Nicho */}
+        <HowItWorksSection />
+
         {/* Casos de Éxito - Alineado directamente con los 2 nichos (Inmobiliarias e Ingeniería) */}
         <SuccessCasesSection />
 
@@ -333,43 +348,42 @@ export default function Home() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <h1 className="font-bold text-3xl italic text-left bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-6">
-                Evolución en el Tiempo: <span className="text-primary not-italic text-glow-animated">Modelos 3D Históricos</span>
-              </h1>
-              <p className="pt-6 text-lg text-gray-300 leading-relaxed">
+              <h2 className="font-bold text-3xl text-left text-white mb-6">
+                Evolución en el Tiempo:{" "}
+                <span className="text-[#0CDBFF] font-extrabold not-italic drop-shadow-[0_0_12px_rgba(12,219,255,0.4)]">
+                  Modelos 3D Históricos
+                </span>
+              </h2>
+              <p className="pt-2 text-base md:text-lg text-gray-200 leading-relaxed">
                 Visualiza la transformación de terrenos, edificaciones y
                 parcelaciones a lo largo del tiempo con nuestra línea del tiempo
                 interactiva. Accede a modelos 3D detallados de cada fecha y
                 analiza los cambios con precisión.
               </p>
-              <ul className="pt-6 space-y-3 text-gray-400">
+              <ul className="pt-6 space-y-3 text-gray-300 text-sm md:text-base">
                 <li className="flex items-center gap-3">
-                  <span className="w-2 h-2 bg-primary rounded-full"></span>
-                  <strong>Comparación temporal</strong> para evaluar progreso.
+                  <span className="w-2 h-2 bg-[#0CDBFF] rounded-full flex-shrink-0"></span>
+                  <span><strong className="text-white">Comparación temporal</strong> para evaluar progreso.</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="w-2 h-2 bg-secondary rounded-full"></span>
-                  <strong>Acceso a versiones anteriores</strong> de cada modelo.
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full flex-shrink-0"></span>
+                  <span><strong className="text-white">Acceso a versiones anteriores</strong> de cada modelo.</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <span className="w-2 h-2 bg-primary rounded-full"></span>
-                  <strong>Seguimiento detallado</strong> de obras y cambios.
+                  <span className="w-2 h-2 bg-[#0CDBFF] rounded-full flex-shrink-0"></span>
+                  <span><strong className="text-white">Seguimiento detallado</strong> de obras y cambios.</span>
                 </li>
               </ul>
             </motion.div>
 
             <motion.div
-              className="relative aspect-video w-full rounded-2xl overflow-hidden glass-card glow-card-hover flex items-center justify-center border border-white/10"
+              className="w-full flex items-center justify-center"
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.3 }}
             >
-              <div className="absolute -inset-4 bg-gradient-to-r from-secondary to-primary opacity-20 blur-2xl rounded-full"></div>
-              <div className="z-10 text-center p-6">
-                <span className="text-6xl mb-4 block select-none">📼</span>
-                <p className="text-gray-400 text-sm font-semibold tracking-wider">VIDEO DEMOSTRACION</p>
-              </div>
+              <BeforeAfterTimeline />
             </motion.div>
           </div>
         </motion.div>
@@ -387,22 +401,19 @@ export default function Home() {
 
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
               <div className="flex-1">
-                <h1 className="font-bold text-4xl text-left bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-4">
-                  Aprovéchate del <span className="text-primary text-glow-animated">marketing 3D</span>
-                </h1>
-                <p className="text-lg text-gray-300 leading-relaxed">
+                <h2 className="font-bold text-4xl text-left text-white mb-4">
+                  Aprovéchate del{" "}
+                  <span className="text-[#0CDBFF] font-extrabold not-italic drop-shadow-[0_0_12px_rgba(12,219,255,0.4)]">
+                    marketing 3D
+                  </span>
+                </h2>
+                <p className="text-lg text-gray-200 leading-relaxed">
                   Comparte tus modelos 3D en redes sociales, páginas web y
                   aplicaciones móviles. <span className="text-white font-medium">Visualización interactiva</span> que cautiva a tus clientes desde el primer momento.
                 </p>
               </div>
               <div className="flex-1 flex justify-center w-full">
-                <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  className="w-full h-[200px] rounded-2xl bg-gradient-to-tr from-gray-900/80 to-black border border-white/10 flex items-center justify-center relative overflow-hidden group"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <span className="text-6xl group-hover:scale-110 transition-transform duration-500 select-none">🚀</span>
-                </motion.div>
+                <MarketingShareMockup />
               </div>
             </div>
           </div>
@@ -410,6 +421,7 @@ export default function Home() {
 
         <ContactSection />
         <Footer />
+        <FloatingWhatsapp />
       </div>
     </div>
   );

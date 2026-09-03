@@ -29,6 +29,8 @@ import ChartOs from "@/web/views/admin/analytics/components/ChartOs";
 import ChartQuantyPerDay from "@/web/views/admin/analytics/components/ChartQuantyPerDay";
 import { getAnalyticsData } from "@/web/views/admin/analytics/actions/getAnalyticsData";
 import moment from "moment";
+import SystemFlowDiagram from "./components/SystemFlowDiagram";
+import CompaniesProjectsView from "./components/CompaniesProjectsView";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, Legend);
 
@@ -525,9 +527,16 @@ export default function SuperadminDashboard() {
                 </svg>
               </div>
             </div>
-            <h3 className="text-3xl font-black text-white mt-3">
-              {statsLoading ? "..." : <AnimatedCounter value={stats.totalProjects} />}
-            </h3>
+            <div className="flex justify-between items-baseline mt-3">
+              <h3 className="text-3xl font-black text-white">
+                {statsLoading ? "..." : <AnimatedCounter value={stats.totalProjects} />}
+              </h3>
+              {stats.activeProjects !== undefined && (
+                <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                  {statsLoading ? "..." : stats.activeProjects} activos
+                </span>
+              )}
+            </div>
             <div className="w-full bg-white/10 h-[2px] rounded-full mt-4 overflow-hidden">
               <div className="bg-cyan-300 h-full w-[60%]" />
             </div>
@@ -569,6 +578,19 @@ export default function SuperadminDashboard() {
             Gestión de Usuarios
           </button>
           <button
+            onClick={() => setActiveTab("empresas")}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+              activeTab === "empresas"
+                ? "bg-[#0CDBFF] text-black shadow-[0_0_15px_rgba(12,219,255,0.3)] font-extrabold"
+                : "text-white/60 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            Empresas & Proyectos
+          </button>
+          <button
             onClick={() => setActiveTab("analiticas")}
             className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
               activeTab === "analiticas"
@@ -580,6 +602,19 @@ export default function SuperadminDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             Analíticas del Sistema
+          </button>
+          <button
+            onClick={() => setActiveTab("arquitectura")}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+              activeTab === "arquitectura"
+                ? "bg-[#0CDBFF] text-black shadow-[0_0_15px_rgba(12,219,255,0.3)] font-extrabold"
+                : "text-white/60 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            Flujo & Arquitectura
           </button>
         </div>
 
@@ -715,7 +750,10 @@ export default function SuperadminDashboard() {
               </TableBody>
             </Table>
           </div>
-        ) : (
+        ) : activeTab === "empresas" ? (
+          /* Empresas & Proyectos Section */
+          <CompaniesProjectsView />
+        ) : activeTab === "analiticas" ? (
           /* Analiticas Section */
           <div className="flex flex-col gap-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -788,6 +826,9 @@ export default function SuperadminDashboard() {
               </div>
             </div>
           </div>
+        ) : (
+          /* Flujo & Arquitectura Section */
+          <SystemFlowDiagram />
         )}
       </div>
 

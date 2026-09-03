@@ -34,10 +34,8 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  will-change: transform, opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .neon-glow {
@@ -149,10 +147,8 @@ body {
 .glow-card-hover {
   position: relative;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  will-change: transform, opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .glow-card-hover::before {
@@ -196,14 +192,16 @@ body {
 /* Text glow keyframe and utility */
 @keyframes text-glow-pulse {
   0%, 100% {
-    text-shadow: 0 0 15px rgba(12, 219, 255, 0.2);
+    text-shadow: 0 0 8px rgba(12, 219, 255, 0.35);
   }
   50% {
-    text-shadow: 0 0 30px rgba(12, 219, 255, 0.5), 0 0 10px rgba(0, 198, 98, 0.3);
+    text-shadow: 0 0 14px rgba(12, 219, 255, 0.6), 0 0 4px rgba(0, 198, 98, 0.3);
   }
 }
 
 .text-glow-animated {
+  -webkit-text-fill-color: initial !important;
+  color: #0CDBFF;
   animation: text-glow-pulse 4s infinite ease-in-out;
 }
 

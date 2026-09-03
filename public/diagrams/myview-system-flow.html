@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyView · Arquitectura del Sistema y Flujo de Datos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --color-bg:      #060B11;
+      --color-paper:   #0B151F;
+      --color-card-border: rgba(255, 255, 255, 0.10);
+      --color-ink:     #F8FAFC;
+      --color-muted:   #94A3B8;
+      --color-soft:    #64748B;
+      --color-cyan:    #0CDBFF;
+      --color-accent:  #EB6C36;
+      --color-emerald: #10B981;
+      --font-sans:     'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-serif:    'Instrument Serif', Georgia, serif;
+      --font-mono:     'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-bg);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .frame {
+      max-width: 1280px;
+      width: 100%;
+      background: #0B151F;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 1.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 1.25rem;
+    }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-cyan);
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .eyebrow::before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--color-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--color-cyan);
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(2rem, 2.8vw + 0.8rem, 2.6rem);
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+      color: #FFFFFF;
+    }
+
+    .subtitle {
+      color: var(--color-muted);
+      font-size: 0.95rem;
+      margin-top: 0.35rem;
+    }
+
+    .badge-bar {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--color-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 12px;
+    }
+
+    .node-group {
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease;
+    }
+    .node-group:hover rect.node-box {
+      stroke-width: 2.4;
+      filter: drop-shadow(0 0 10px rgba(12, 219, 255, 0.45));
+    }
+
+    .footer-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.75rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.85rem;
+      color: var(--color-muted);
+      font-family: var(--font-mono);
+    }
+
+    .legend-items {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .legend-line {
+      width: 18px;
+      height: 3px;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div class="header-row">
+      <div>
+        <p class="eyebrow">Arquitectura & Topología · Diagram Design</p>
+        <h1>Flujo Operativo MyView</h1>
+        <p class="subtitle">Ecosistema integral: Ingress Público, Visualizador 3D R3F, Middleware RBAC, Controllers y MongoDB Atlas</p>
+      </div>
+      <div class="badge-bar">
+        <div class="badge">
+          <span class="badge-dot" style="background:#0CDBFF;box-shadow:0 0 8px #0CDBFF;"></span>
+          Next.js App Router
+        </div>
+        <div class="badge">
+          <span class="badge-dot" style="background:#10B981;box-shadow:0 0 8px #10B981;"></span>
+          Three.js / R3F
+        </div>
+        <div class="badge">
+          <span class="badge-dot" style="background:#EB6C36;box-shadow:0 0 8px #EB6C36;"></span>
+          MongoDB Atlas
+        </div>
+      </div>
+    </div>
+
+    <!-- SVG Architecture Diagram with Enhanced Typography -->
+    <svg viewBox="0 0 1180 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">Arquitectura y Flujo de Datos MyView</title>
+      <desc id="svg-desc">Diagrama de arquitectura técnica mostrando el recorrido entre usuarios, el motor 3D, middleware NextAuth, controllers de backend y MongoDB.</desc>
+      
+      <defs>
+        <pattern id="dot-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2" r="0.9" fill="rgba(255,255,255,0.07)" />
+        </pattern>
+
+        <linearGradient id="grad-focal-cyan" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0E2838" />
+          <stop offset="100%" stop-color="#081824" />
+        </linearGradient>
+
+        <linearGradient id="grad-focal-accent" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#261915" />
+          <stop offset="100%" stop-color="#140E0C" />
+        </linearGradient>
+
+        <linearGradient id="grad-node-standard" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#131E2C" />
+          <stop offset="100%" stop-color="#0E1724" />
+        </linearGradient>
+
+        <marker id="arrow-default" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+          <polygon points="0 0, 9 3.5, 0 7" fill="#94A3B8"/>
+        </marker>
+        <marker id="arrow-cyan" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+          <polygon points="0 0, 9 3.5, 0 7" fill="#0CDBFF"/>
+        </marker>
+        <marker id="arrow-accent" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+          <polygon points="0 0, 9 3.5, 0 7" fill="#EB6C36"/>
+        </marker>
+        <marker id="arrow-emerald" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+          <polygon points="0 0, 9 3.5, 0 7" fill="#10B981"/>
+        </marker>
+      </defs>
+
+      <!-- Base Canvas Background & Dots -->
+      <rect width="100%" height="100%" rx="14" fill="#070D14" />
+      <rect width="100%" height="100%" rx="14" fill="url(#dot-grid)" />
+
+      <!-- TIER / ZONE BOUNDARIES -->
+      <!-- ZONE 1: INGRESS / ACTORES -->
+      <rect x="35" y="55" width="225" height="540" rx="10"
+            fill="rgba(255,255,255,0.018)" stroke="rgba(255,255,255,0.12)" stroke-width="1" stroke-dasharray="6,4"/>
+      <rect x="65" y="44" width="165" height="22" rx="4" fill="#070D14" stroke="rgba(255,255,255,0.15)" stroke-width="0.8"/>
+      <text x="147" y="59" fill="#E2E8F0" font-size="11" font-family="'Geist Mono', monospace"
+            font-weight="700" text-anchor="middle" letter-spacing="0.14em">INGRESS & ROLES</text>
+
+      <!-- ZONE 2: RUNTIME NEXT.JS & VISUALIZADOR 3D -->
+      <rect x="290" y="55" width="480" height="540" rx="10"
+            fill="rgba(12,219,255,0.02)" stroke="rgba(12,219,255,0.2)" stroke-width="1" stroke-dasharray="6,4"/>
+      <rect x="390" y="44" width="280" height="22" rx="4" fill="#070D14" stroke="rgba(12,219,255,0.3)" stroke-width="0.8"/>
+      <text x="530" y="59" fill="#0CDBFF" font-size="11" font-family="'Geist Mono', monospace"
+            font-weight="700" text-anchor="middle" letter-spacing="0.14em">NEXT.JS PLATFORM & 3D RUNTIME</text>
+
+      <!-- ZONE 3: CORE API & PERSISTENCIA -->
+      <rect x="800" y="55" width="345" height="540" rx="10"
+            fill="rgba(235,108,54,0.02)" stroke="rgba(235,108,54,0.2)" stroke-width="1" stroke-dasharray="6,4"/>
+      <rect x="850" y="44" width="245" height="22" rx="4" fill="#070D14" stroke="rgba(235,108,54,0.3)" stroke-width="0.8"/>
+      <text x="972" y="59" fill="#EB6C36" font-size="11" font-family="'Geist Mono', monospace"
+            font-weight="700" text-anchor="middle" letter-spacing="0.14em">BACKEND API & DATA TIER</text>
+
+      <!-- ORTHOGONAL CONNECTORS -->
+      <!-- 1. Comprador -> Visualizador 3D -->
+      <line x1="220" y1="138" x2="520" y2="138" stroke="#0CDBFF" stroke-width="2.2" marker-end="url(#arrow-cyan)"/>
+      <rect x="325" y="125" width="138" height="26" rx="5" fill="#070D14" stroke="rgba(12,219,255,0.4)" stroke-width="1"/>
+      <text x="394" y="142" fill="#0CDBFF" font-size="11" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle" letter-spacing="0.08em">EXPLORA 3D / TOUR</text>
+
+      <!-- 2. Inmobiliaria -> Middleware -->
+      <line x1="220" y1="298" x2="315" y2="298" stroke="#94A3B8" stroke-width="1.4" marker-end="url(#arrow-default)"/>
+      <rect x="230" y="286" width="80" height="24" rx="4" fill="#070D14" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>
+      <text x="270" y="302" fill="#E2E8F0" font-size="10" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">LOGIN / JWT</text>
+
+      <!-- 3. Superadmin -> Dashboard Superadmin -->
+      <line x1="220" y1="465" x2="315" y2="465" stroke="#EB6C36" stroke-width="1.6" marker-end="url(#arrow-accent)"/>
+      <rect x="228" y="453" width="84" height="24" rx="4" fill="#070D14" stroke="rgba(235,108,54,0.4)" stroke-width="0.8"/>
+      <text x="270" y="469" fill="#EB6C36" font-size="10" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">RBAC ROOT</text>
+
+      <!-- 4. Middleware -> Panel Inmobiliaria -->
+      <line x1="480" y1="298" x2="520" y2="298" stroke="#94A3B8" stroke-width="1.4" marker-end="url(#arrow-default)"/>
+
+      <!-- 5. Middleware -> Dashboard Superadmin -->
+      <line x1="395" y1="336" x2="395" y2="425" stroke="#EB6C36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+      <rect x="345" y="364" width="100" height="24" rx="4" fill="#070D14" stroke="rgba(235,108,54,0.3)" stroke-width="0.8"/>
+      <text x="395" y="380" fill="#EB6C36" font-size="10" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">SESSION VERIF</text>
+
+      <!-- 6. Visualizador 3D -> API Controllers -->
+      <line x1="720" y1="130" x2="830" y2="130" stroke="#10B981" stroke-width="1.8" marker-end="url(#arrow-emerald)"/>
+      <rect x="730" y="117" width="94" height="25" rx="4" fill="#070D14" stroke="rgba(16,185,129,0.4)" stroke-width="1"/>
+      <text x="777" y="133" fill="#10B981" font-size="10.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">LEADS & VISITS</text>
+
+      <!-- 7. Visualizador 3D -> Cloud CDN -->
+      <path d="M 720,160 H 767 Q 775,160 775,168 V 267 Q 775,275 783,275 H 830"
+            fill="none" stroke="#94A3B8" stroke-width="1.4" marker-end="url(#arrow-default)"/>
+      <rect x="730" y="209" width="90" height="24" rx="4" fill="#070D14" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>
+      <text x="775" y="225" fill="#E2E8F0" font-size="10" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">GET .GLB / 360°</text>
+
+      <!-- 8. Panel Inmobiliaria -> API Controllers -->
+      <path d="M 720,298 H 752 Q 760,298 760,290 V 158 Q 760,150 768,150 H 830"
+            fill="none" stroke="#94A3B8" stroke-width="1.4" marker-end="url(#arrow-default)"/>
+      <rect x="718" y="239" width="86" height="24" rx="4" fill="#070D14" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>
+      <text x="761" y="255" fill="#E2E8F0" font-size="10" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">CRUD PROYECT</text>
+
+      <!-- 9. Dashboard Superadmin -> API -->
+      <path d="M 480,465 H 737 Q 745,465 745,457 V 178 Q 745,170 753,170 H 830"
+            fill="none" stroke="#EB6C36" stroke-width="1.4" stroke-dasharray="5,3" marker-end="url(#arrow-accent)"/>
+
+      <!-- 10. API Controllers <-> MongoDB -->
+      <line x1="995" y1="185" x2="995" y2="400" stroke="#0CDBFF" stroke-width="1.8" marker-end="url(#arrow-cyan)"/>
+      <line x1="960" y1="400" x2="960" y2="185" stroke="#94A3B8" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#arrow-default)"/>
+      <rect x="995" y="278" width="108" height="25" rx="4" fill="#070D14" stroke="rgba(12,219,255,0.35)" stroke-width="1"/>
+      <text x="1049" y="294" fill="#0CDBFF" font-size="10" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle">MONGOOSE QUERY</text>
+      <rect x="870" y="313" width="84" height="24" rx="4" fill="#070D14" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>
+      <text x="912" y="329" fill="#E2E8F0" font-size="10" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">DOCUMENTS</text>
+
+      <!-- NODES -->
+      <!-- NODE 1: Comprador / Visitante -->
+      <g class="node-group">
+        <rect class="node-box" x="55" y="98" width="165" height="80" rx="8" fill="url(#grad-node-standard)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <rect x="65" y="108" width="64" height="16" rx="3" fill="rgba(255,255,255,0.08)"/>
+        <text x="97" y="120" fill="#CBD5E1" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle" letter-spacing="0.1em">PUBLIC</text>
+        <text x="137" y="143" fill="#FFFFFF" font-size="14" font-weight="700" font-family="'Geist', sans-serif" text-anchor="middle">Comprador Web</text>
+        <text x="137" y="162" fill="#94A3B8" font-size="10.5" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle">Exploración 3D & Leads</text>
+      </g>
+
+      <!-- NODE 2: Inmobiliaria (Admin) -->
+      <g class="node-group">
+        <rect class="node-box" x="55" y="258" width="165" height="80" rx="8" fill="url(#grad-node-standard)" stroke="rgba(16,185,129,0.35)" stroke-width="1"/>
+        <rect x="65" y="268" width="72" height="16" rx="3" fill="rgba(16,185,129,0.15)"/>
+        <text x="101" y="280" fill="#10B981" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle" letter-spacing="0.1em">COMPANY</text>
+        <text x="137" y="303" fill="#FFFFFF" font-size="14" font-weight="700" font-family="'Geist', sans-serif" text-anchor="middle">Inmobiliaria</text>
+        <text x="137" y="322" fill="#94A3B8" font-size="10.5" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle">Gestión Proyectos & Leads</text>
+      </g>
+
+      <!-- NODE 3: Superadministrador -->
+      <g class="node-group">
+        <rect class="node-box" x="55" y="423" width="165" height="80" rx="8" fill="url(#grad-node-standard)" stroke="rgba(235,108,54,0.4)" stroke-width="1"/>
+        <rect x="65" y="433" width="82" height="16" rx="3" fill="rgba(235,108,54,0.18)"/>
+        <text x="106" y="445" fill="#EB6C36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle" letter-spacing="0.1em">SUPERADMIN</text>
+        <text x="137" y="468" fill="#FFFFFF" font-size="14" font-weight="700" font-family="'Geist', sans-serif" text-anchor="middle">Superadmin</text>
+        <text x="137" y="487" fill="#94A3B8" font-size="10.5" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle">Auditoría & Métricas</text>
+      </g>
+
+      <!-- NODE 4: Middleware & NextAuth -->
+      <g class="node-group">
+        <rect class="node-box" x="315" y="258" width="165" height="80" rx="8" fill="url(#grad-node-standard)" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
+        <rect x="325" y="268" width="88" height="16" rx="3" fill="rgba(255,255,255,0.08)"/>
+        <text x="369" y="280" fill="#CBD5E1" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle" letter-spacing="0.08em">MIDDLEWARE</text>
+        <text x="397" y="303" fill="#FFFFFF" font-size="14" font-weight="700" font-family="'Geist', sans-serif" text-anchor="middle">NextAuth / RBAC</text>
+        <text x="397" y="322" fill="#94A3B8" font-size="10.5" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle">Tokens JWT & Guard</text>
+      </g>
+
+      <!-- NODE 5 (FOCAL 1): Visualizador 3D R3F -->
+      <g class="node-group">
+        <rect class="node-box" x="520" y="93" width="200" height="92" rx="10" fill="url(#grad-focal-cyan)" stroke="#0CDBFF" stroke-width="2.2" filter="drop-shadow(0 0 8px rgba(12,219,255,0.25))"/>
+        <rect x="532" y="103" width="112" height="18" rx="3" fill="rgba(12,219,255,0.2)"/>
+        <text x="588" y="116" fill="#0CDBFF" font-size="9" font-family="'Geist Mono', monospace" font-weight="800" text-anchor="middle" letter-spacing="0.1em">CORE 3D ENGINE</text>
+        <text x="620" y="142" fill="#FFFFFF" font-size="15.5" font-weight="800" font-family="'Geist', sans-serif" text-anchor="middle">Visualizador 3D</text>
+        <text x="620" y="161" fill="#0CDBFF" font-size="11" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">Three.js · R3F · EasyView</text>
+        <text x="620" y="176" fill="rgba(255,255,255,0.75)" font-size="9.5" font-weight="500" font-family="'Geist', sans-serif" text-anchor="middle">Hotspots · 360° · Planos 3D</text>
+      </g>
+
+      <!-- NODE 6: Panel Inmobiliaria -->
+      <g class="node-group">
+        <rect class="node-box" x="520" y="258" width="200" height="80" rx="8" fill="url(#grad-node-standard)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <rect x="532" y="268" width="82" height="16" rx="3" fill="rgba(255,255,255,0.08)"/>
+        <text x="573" y="280" fill="#CBD5E1" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle" letter-spacing="0.08em">ADMIN VIEW</text>
+        <text x="620" y="303" fill="#FFFFFF" font-size="14" font-weight="700" font-family="'Geist', sans-serif" text-anchor="middle">Dashboard Empresa</text>
+        <text x="620" y="322" fill="#94A3B8" font-size="10.5" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle">Proyectos · Leads · Métricas</text>
+      </g>
+
+      <!-- NODE 7: Dashboard Superadmin -->
+      <g class="node-group">
+        <rect class="node-box" x="315" y="423" width="165" height="80" rx="8" fill="url(#grad-node-standard)" stroke="rgba(235,108,54,0.4)" stroke-width="1"/>
+        <rect x="325" y="433" width="90" height="16" rx="3" fill="rgba(235,108,54,0.18)"/>
+        <text x="370" y="445" fill="#EB6C36" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle" letter-spacing="0.08em">SUPERADMIN</text>
+        <text x="397" y="468" fill="#FFFFFF" font-size="14" font-weight="700" font-family="'Geist', sans-serif" text-anchor="middle">Superadmin Core</text>
+        <text x="397" y="487" fill="#94A3B8" font-size="10.5" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle">Empresas & Analítica Global</text>
+      </g>
+
+      <!-- NODE 8: EasyView Embed -->
+      <g class="node-group">
+        <rect class="node-box" x="520" y="423" width="200" height="80" rx="8" fill="url(#grad-node-standard)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <rect x="532" y="433" width="76" height="16" rx="3" fill="rgba(255,255,255,0.08)"/>
+        <text x="570" y="445" fill="#CBD5E1" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle" letter-spacing="0.08em">IFRAME API</text>
+        <text x="620" y="468" fill="#FFFFFF" font-size="14" font-weight="700" font-family="'Geist', sans-serif" text-anchor="middle">EasyView Embed</text>
+        <text x="620" y="487" fill="#94A3B8" font-size="10.5" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle">Integración Portales Inmob.</text>
+      </g>
+
+      <!-- NODE 9 (FOCAL 2): Core API Endpoints -->
+      <g class="node-group">
+        <rect class="node-box" x="830" y="93" width="285" height="92" rx="10" fill="url(#grad-focal-accent)" stroke="#EB6C36" stroke-width="2.2" filter="drop-shadow(0 0 8px rgba(235,108,54,0.25))"/>
+        <rect x="844" y="103" width="96" height="18" rx="3" fill="rgba(235,108,54,0.25)"/>
+        <text x="892" y="116" fill="#EB6C36" font-size="9" font-family="'Geist Mono', monospace" font-weight="800" text-anchor="middle" letter-spacing="0.1em">API GATEWAY</text>
+        <text x="972" y="142" fill="#FFFFFF" font-size="15" font-weight="800" font-family="'Geist', sans-serif" text-anchor="middle">Next.js API Route Handlers</text>
+        <text x="972" y="161" fill="#EB6C36" font-size="11" font-family="'Geist Mono', monospace" font-weight="600" text-anchor="middle">/api/controllers (Proyectos, Leads, Modelos)</text>
+        <text x="972" y="176" fill="rgba(255,255,255,0.75)" font-size="9.5" font-weight="500" font-family="'Geist', sans-serif" text-anchor="middle">Validación, crypto.js & sesiones</text>
+      </g>
+
+      <!-- NODE 10: Cloud Assets CDN -->
+      <g class="node-group">
+        <rect class="node-box" x="830" y="248" width="285" height="80" rx="8" fill="url(#grad-node-standard)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+        <rect x="844" y="258" width="86" height="16" rx="3" fill="rgba(255,255,255,0.08)"/>
+        <text x="887" y="270" fill="#CBD5E1" font-size="8.5" font-family="'Geist Mono', monospace" font-weight="700" text-anchor="middle" letter-spacing="0.08em">CDN STORAGE</text>
+        <text x="972" y="293" fill="#FFFFFF" font-size="14" font-weight="700" font-family="'Geist', sans-serif" text-anchor="middle">Almacenamiento de Modelos 3D</text>
+        <text x="972" y="312" fill="#94A3B8" font-size="10.5" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle">Archivos .GLB · Panoramas 360° · Planos</text>
+      </g>
+
+      <!-- NODE 11: MongoDB Database Cluster -->
+      <g class="node-group">
+        <rect class="node-box" x="830" y="398" width="285" height="100" rx="10" fill="url(#grad-node-standard)" stroke="rgba(12,219,255,0.45)" stroke-width="1.8"/>
+        <rect x="844" y="408" width="118" height="18" rx="3" fill="rgba(12,219,255,0.18)"/>
+        <text x="903" y="421" fill="#0CDBFF" font-size="9" font-family="'Geist Mono', monospace" font-weight="800" text-anchor="middle" letter-spacing="0.1em">DATABASE ATLAS</text>
+        <text x="972" y="446" fill="#FFFFFF" font-size="15" font-weight="800" font-family="'Geist', sans-serif" text-anchor="middle">MongoDB (Mongoose ODM)</text>
+        <text x="972" y="466" fill="#CBD5E1" font-size="10.5" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle">Users · Companies · Proyects · Models</text>
+        <text x="972" y="483" fill="#94A3B8" font-size="10.5" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle">Leads · Analytics · Notes · PlansM</text>
+      </g>
+    </svg>
+
+    <!-- Editorial Footer & Legend -->
+    <div class="footer-legend">
+      <div class="legend-items">
+        <div class="legend-item">
+          <span class="legend-line" style="background: #0CDBFF;"></span>
+          <span>Flujo de Navegación 3D</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-line" style="background: #10B981;"></span>
+          <span>Captación de Leads & Telemetría</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-line" style="background: #EB6C36;"></span>
+          <span>Superadmin & Gobernanza RBAC</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-line" style="background: #94A3B8; border-top: 1px dashed #94A3B8; height:0;"></span>
+          <span>Consultas Mongoose & Assets</span>
+        </div>
+      </div>
+      <div>
+        <span>Diagram Design Specification v2.6 · MyView Ecosistema</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

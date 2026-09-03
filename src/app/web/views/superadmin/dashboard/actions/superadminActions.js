@@ -22,10 +22,11 @@ export async function getSuperadminStats() {
   try {
     await checkSuperadmin();
 
-    const [totalUsers, totalCompanies, totalProjects, totalAnalytics] = await Promise.all([
+    const [totalUsers, totalCompanies, totalProjects, activeProjects, totalAnalytics] = await Promise.all([
       User.countDocuments(),
       Company.countDocuments(),
       Proyect.countDocuments(),
+      Proyect.countDocuments({ state: { $regex: /^activ/i } }),
       Analytics.countDocuments()
     ]);
 
@@ -81,6 +82,7 @@ export async function getSuperadminStats() {
         totalUsers,
         totalCompanies,
         totalProjects,
+        activeProjects,
         totalAnalytics,
         projectsPerCompany,
         popularProjects
@@ -245,6 +247,99 @@ export async function getAllCompaniesList() {
     };
   } catch (error) {
     console.error("Error in getAllCompaniesList:", error);
+    return { success: false, message: error.message };
+  }
+}
+
+export async function getCompaniesWithActiveProjects() {
+  try {
+    await checkSuperadmin();
+
+    const companies = await Company.find().sort({ name: 1 }).lean();
+
+    const data = await Promise.all(
+      companies.map(async (c) => {
+        const companyId = c._id;
+
+        // Find active projects for this company
+        const activeProjectsRaw = await Proyect.find({
+          idCompany: companyId,
+          state: { $regex: /^activ/i }
+        })
+          .select("name description city department address areaOfThisproyect urlImage linkWeb creation_date state")
+          .sort({ creation_date: -1 })
+          .lean();
+
+        const totalProjects = await Proyect.countDocuments({ idCompany: companyId });
+
+        return {
+          _id: companyId.toString(),
+          name: c.name || "Inmobiliaria sin nombre",
+          email: c.email || "",
+          city: c.city || "",
+          department: c.department || "",
+          country: c.country || "Colombia",
+          active: c.active ?? true,
+          activeProjectsCount: activeProjectsRaw.length,
+          totalProjectsCount: totalProjects,
+          activeProjects: activeProjectsRaw.map(p => ({
+            _id: p._id.toString(),
+            name: p.name || "Proyecto sin nombre",
+            description: p.description || "",
+            city: p.city || "",
+            department: p.department || "",
+            address: p.address || "",
+            areaOfThisproyect: p.areaOfThisproyect || 0,
+            urlImage: p.urlImage || "",
+            linkWeb: p.linkWeb || "",
+            state: p.state || "Actived",
+            creation_date: p.creation_date ? p.creation_date.toISOString() : null
+          }))
+        };
+      })
+    );
+
+    // Also check for any active projects without assigned company (orphaned)
+    const unassignedProjectsRaw = await Proyect.find({
+      $or: [{ idCompany: null }, { idCompany: { $exists: false } }],
+      state: { $regex: /^activ/i }
+    })
+      .select("name description city department address areaOfThisproyect urlImage linkWeb creation_date state")
+      .lean();
+
+    if (unassignedProjectsRaw.length > 0) {
+      data.push({
+        _id: "unassigned",
+        name: "Proyectos sin Inmobiliaria asignada",
+        email: "N/A",
+        city: "Varios",
+        department: "",
+        country: "",
+        active: true,
+        activeProjectsCount: unassignedProjectsRaw.length,
+        totalProjectsCount: unassignedProjectsRaw.length,
+        activeProjects: unassignedProjectsRaw.map(p => ({
+          _id: p._id.toString(),
+          name: p.name || "Proyecto sin nombre",
+          description: p.description || "",
+          city: p.city || "",
+          department: p.department || "",
+          address: p.address || "",
+          areaOfThisproyect: p.areaOfThisproyect || 0,
+          urlImage: p.urlImage || "",
+          linkWeb: p.linkWeb || "",
+          state: p.state || "Actived",
+          creation_date: p.creation_date ? p.creation_date.toISOString() : null
+        }))
+      });
+    }
+
+    return {
+      success: true,
+      data
+    };
+  } catch (error) {
+    console.error("Error in getCompaniesWithActiveProjects:", error);
     return { success: false, message: error.message };
   }
 }

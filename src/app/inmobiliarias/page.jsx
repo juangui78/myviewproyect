@@ -19,6 +19,8 @@ import InteractiveBlobs from "../InteractiveBlobs.client";
 import ContactSection from "../ContactSection.client";
 import Footer from "../web/global_components/footer/Footer";
 import TablePrices from "../tablePrices";
+import NicheStepsSection from "../NicheStepsSection.client";
+import FloatingWhatsapp from "../FloatingWhatsapp.client";
 
 export default function InmobiliariasPage() {
   return (
@@ -228,6 +230,9 @@ export default function InmobiliariasPage() {
           ))}
         </div>
 
+        {/* Pasos de trabajo especializados para Inmobiliarias */}
+        <NicheStepsSection niche="inmobiliarias" />
+
         {/* Dynamic Detail Section */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -254,9 +259,12 @@ export default function InmobiliariasPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <h1 className="font-bold text-3xl text-left bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-6">
-                Recorridos topográficos interactivos de <span className="text-primary text-glow-animated">Lotes</span>
-              </h1>
+              <h2 className="font-bold text-3xl text-left text-white mb-6">
+                Recorridos topográficos interactivos de{" "}
+                <span className="text-[#0CDBFF] font-extrabold not-italic drop-shadow-[0_0_12px_rgba(12,219,255,0.4)]">
+                  Lotes
+                </span>
+              </h2>
               <p className="text-lg text-gray-300 leading-relaxed mb-6">
                 Muestra la parcelación con delimitación exacta de linderos. Los clientes pueden visualizar la elevación del lote, inclinación, accesos viales y la vista panorámica de cada locación.
               </p>
@@ -292,9 +300,12 @@ export default function InmobiliariasPage() {
 
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
               <div className="flex-1">
-                <h1 className="font-bold text-4xl text-left bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent mb-4">
-                  Lleva tu constructora al <span className="text-primary text-glow-animated">futuro digital</span>
-                </h1>
+                <h2 className="font-bold text-4xl text-left text-white mb-4">
+                  Lleva tu constructora al{" "}
+                  <span className="text-[#0CDBFF] font-extrabold not-italic drop-shadow-[0_0_12px_rgba(12,219,255,0.4)]">
+                    futuro digital
+                  </span>
+                </h2>
                 <p className="text-lg text-gray-300 leading-relaxed">
                   Ofrece a tus compradores una herramienta inmersiva inigualable. Ideal para inmobiliarias independientes, constructoras y agencias de corretaje de parcelaciones.
                 </p>
@@ -321,7 +332,11 @@ export default function InmobiliariasPage() {
                   className="w-full h-[200px] rounded-2xl bg-gradient-to-tr from-gray-900/80 to-black border border-white/10 flex items-center justify-center relative overflow-hidden group"
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  <span className="text-6xl group-hover:scale-110 transition-transform duration-500 select-none">🏡</span>
+                  <div className="w-20 h-20 rounded-3xl bg-[#0CDBFF]/10 border border-[#0CDBFF]/30 flex items-center justify-center text-[#0CDBFF] shadow-[0_0_25px_rgba(12,219,255,0.2)] group-hover:scale-110 transition-transform duration-500">
+                    <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
                 </motion.div>
               </div>
             </div>
@@ -429,6 +444,7 @@ export default function InmobiliariasPage() {
 
         <ContactSection />
         <Footer />
+        <FloatingWhatsapp />
       </div>
     </div>
   );
