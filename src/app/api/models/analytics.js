@@ -32,5 +32,7 @@ const AnalyticsSchema = new schema({
     },
 });
 
+AnalyticsSchema.index({ projectId: 1 });
+AnalyticsSchema.index({ createdAt: -1 });
 const Analytics = mongoose.model.Analytics ?? mongoose.model('Analytics', AnalyticsSchema);
 export default Analytics;

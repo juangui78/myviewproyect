@@ -44,6 +44,16 @@ const models_schema = new Schema({
     type : String,
     required : false
   },
+  background360Rotation: {
+    type: Number,
+    required: false,
+    default: 0
+  },
+  background360RotationX: {
+    type: Number,
+    required: false,
+    default: 0
+  },
   creation_date: {
     type: Date,
     default: Date.now
@@ -60,6 +70,21 @@ const models_schema = new Schema({
   notes_updated_at: {
     type: Date,
     required: false,
+  },
+  updated_at: {
+    type: Date,
+    default: Date.now,
+    required: false,
+  },
+  defaultCamera: {
+    position: {
+      type: [Number],
+      required: false
+    },
+    target: {
+      type: [Number],
+      required: false
+    }
   },
 
 });

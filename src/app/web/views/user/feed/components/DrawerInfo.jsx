@@ -1,11 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerFooter } from "@heroui/drawer";
-import { Tooltip, Input, Textarea, Button, Link, Avatar, AvatarGroup, Image } from "@nextui-org/react";
+import { Tooltip, Input, Textarea, Button, Link, Avatar, AvatarGroup, Image, Spinner } from "@nextui-org/react";
 import { getTodoList, updateProject } from "../js/todo";
 import ChevronDoubleLeft from "@/web/global_components/icons/ChevronDoubleLeft";
 import { EditIcon } from "@/web/global_components/icons/EditIcon";
 import CheckIcon from "@/web/global_components/icons/CheckIcon";
 import { Ban } from "@/web/global_components/icons/Ban";
+import ShareIcon from "@/web/global_components/icons/Share";
+import { uploadProjectImageAction } from "../actions/uploadImage";
+import { encrypt } from "@/api/libs/crypto";
+import axios from "axios";
+import { toast, Toaster } from "sonner";
 
 const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
 
@@ -15,14 +20,39 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [editForm, setEditForm] = useState({
         name: "",
+        city: "",
+        department: "",
         address: "",
         description: ""
     })
     const [isSaving, setIsSaving] = useState(false)
+    const fileInputRef = useRef(null)
+    const [imageFile, setImageFile] = useState(null)
+    const [imagePreview, setImagePreview] = useState(null)
+    const [versions, setVersions] = useState([])
 
     useEffect(() => {
+        if (!isOpen) {
+            setIsEditing(false);
+            setImageFile(null);
+            if (imagePreview) {
+                URL.revokeObjectURL(imagePreview);
+                setImagePreview(null);
+            }
+            setData({});
+            setEditForm({
+                name: "",
+                city: "",
+                department: "",
+                address: "",
+                description: ""
+            });
+            setVersions([]);
+            return;
+        }
 
         const fetchData = async () => {
+          setLoading(true);
           const response = await getTodoList(_id); //get data from api
           const status_ = response[0]
           const data_ = response[1]
@@ -34,27 +64,48 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
           }
 
           setError(false)
-          setLoading(false)
           setData(data_)
           setEditForm({
               name: data_.name || "",
+              city: data_.city || "",
+              department: data_.department || "",
               address: data_.address || "",
               description: data_.description || ""
           })
+
+          try {
+              const versionsRes = await axios.get(`/api/controllers/models_/${_id}/allmodels`);
+              if (versionsRes.status === 200 && Array.isArray(versionsRes.data)) {
+                  setVersions(versionsRes.data);
+              } else {
+                  setVersions([]);
+              }
+          } catch (err) {
+              console.error("Error fetching project versions:", err);
+              setVersions([]);
+          }
+          setLoading(false)
         }
 
         if (_id) fetchData()
 
-    }, [_id])
+    }, [_id, isOpen]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleEditToggle = () => {
         if (isEditing) {
             // Cancel editing, reset form
             setEditForm({
                 name: data.name || "",
+                city: data.city || "",
+                department: data.department || "",
                 address: data.address || "",
                 description: data.description || ""
             })
+            setImageFile(null)
+            if (imagePreview) {
+                URL.revokeObjectURL(imagePreview)
+                setImagePreview(null)
+            }
         }
         setIsEditing(!isEditing)
     }
@@ -64,28 +115,64 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
         setEditForm(prev => ({ ...prev, [name]: value }))
     }
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0]
+        if (file) {
+            setImageFile(file)
+            const previewUrl = URL.createObjectURL(file)
+            setImagePreview(previewUrl)
+        }
+    }
+
     const handleSave = async () => {
         if (!window.confirm("¿Estás seguro de que deseas guardar los cambios?")) return
 
         setIsSaving(true)
-        const [status, updatedData] = await updateProject(_id, editForm)
+        let finalEditForm = { ...editForm }
+
+        if (imageFile) {
+            const formData = new FormData()
+            formData.append("image", imageFile)
+            const uploadRes = await uploadProjectImageAction(_id, formData)
+            if (uploadRes.success) {
+                finalEditForm.urlImage = uploadRes.url
+            } else {
+                alert("Error al subir la imagen: " + uploadRes.message)
+                setIsSaving(false)
+                return
+            }
+        }
+
+        const [status, updatedData] = await updateProject(_id, finalEditForm)
         
         if (status === "success") {
             setData(updatedData)
             setIsEditing(false)
+            setImageFile(null)
+            setImagePreview(null)
             alert("Proyecto actualizado correctamente")
-            // Reload if name changed to update the title in the Cards list
-            if (updatedData.name !== data.name) {
-                window.location.reload() 
-            }
+            window.location.reload() 
         } else {
             alert("Error al actualizar el proyecto")
         }
         setIsSaving(false)
     }
 
+    const copyToClipboard = (idx) => {
+        const link = `${window.location.origin}/web/views/visualizer?id=${encrypt(_id)}&modelIndex=${idx}`;
+        navigator.clipboard.writeText(link)
+            .then(() => {
+                toast.success("Enlace de la versión copiado al portapapeles");
+            })
+            .catch((err) => {
+                console.error("Error al copiar el enlace:", err);
+                toast.error("No se pudo copiar el enlace");
+            });
+    };
+
     return (
         <>
+            <Toaster richColors position="top-right" />
             <Drawer
                isOpen={isOpen}
                placement={"left"}
@@ -134,28 +221,62 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                           )}
                         </div>
                         <div className="flex gap-1 items-center">
-                         <Tooltip content="Cerrar">
-                           <Button  
-                           isIconOnly
-                           className="text-default-400"
-                           size="sm"
-                           variant="light"
-                           onPress={onClose}>
-                             <ChevronDoubleLeft />
-                           </Button>
-                         </Tooltip>
-                       </div>
+                          <Tooltip content="Cerrar">
+                            <Button  
+                            isIconOnly
+                            className="text-default-400"
+                            size="sm"
+                            variant="light"
+                            onPress={onClose}>
+                              <ChevronDoubleLeft />
+                            </Button>
+                          </Tooltip>
+                        </div>
                      </DrawerHeader>
                     <DrawerBody className="pt-16 scrollbar-hide">
-                      <div className="flex w-full justify-center items-center pt-4">
-                        <Image
-                          isBlurred
-                          isZoomed
-                          alt="Event image"
-                          className="aspect-square w-full hover:scale-110 object-cover rounded-xl"
-                          height={300}
-                          src={data?.urlImage || "/images/parcela.jpg"}
-                        />
+                      {loading ? (
+                        <div className="flex justify-center items-center h-full min-h-[300px]">
+                          <Spinner color="primary" label="Cargando información..." />
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex w-full flex-col justify-center items-center pt-4">
+                        <div className="relative w-full aspect-square rounded-xl overflow-hidden group/img border border-white/10">
+                          <Image
+                            removeWrapper
+                            alt="Event image"
+                            className="w-full h-full object-cover rounded-xl hover:scale-105 transition-transform duration-500"
+                            src={imagePreview || data?.urlImage || "/images/parcela.jpg"}
+                          />
+                          {isEditing && (
+                            <div 
+                              onClick={() => fileInputRef.current?.click()}
+                              className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 cursor-pointer z-20"
+                            >
+                              <EditIcon className="w-8 h-8 text-[#0CDBFF] mb-2" />
+                              <span className="text-[#0CDBFF] font-semibold text-sm">Cambiar Imagen</span>
+                            </div>
+                          )}
+                        </div>
+                        {isEditing && (
+                          <>
+                            <input 
+                              type="file"
+                              ref={fileInputRef}
+                              className="hidden"
+                              accept="image/*"
+                              onChange={handleFileChange}
+                            />
+                            <Button
+                              size="sm"
+                              variant="light"
+                              className="text-white/60 hover:text-white mt-2 text-xs"
+                              onPress={() => fileInputRef.current?.click()}
+                            >
+                              Seleccionar nueva imagen
+                            </Button>
+                          </>
+                        )}
                       </div>
                       <div className="flex flex-col gap-4 py-4">
                         {isEditing ? (
@@ -172,6 +293,32 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                                         label: "text-white/70"
                                     }}
                                 />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <Input
+                                        label="Ciudad"
+                                        name="city"
+                                        value={editForm.city}
+                                        onChange={handleInputChange}
+                                        variant="bordered"
+                                        className="text-white"
+                                        classNames={{
+                                            input: "text-white",
+                                            label: "text-white/70"
+                                        }}
+                                    />
+                                    <Input
+                                        label="Departamento"
+                                        name="department"
+                                        value={editForm.department}
+                                        onChange={handleInputChange}
+                                        variant="bordered"
+                                        className="text-white"
+                                        classNames={{
+                                            input: "text-white",
+                                            label: "text-white/70"
+                                        }}
+                                    />
+                                </div>
                                 <Input
                                     label="Dirección"
                                     name="address"
@@ -201,12 +348,12 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                             <>
                                 <h1 className="text-2xl font-bold leading-7">{data?.name}</h1>
                                 <p className="text-sm text-default-500 text-white/70">{data?.department}, {data?.city}, {data?.address}</p>
-                                <div className="mt-2 flex flex-col gap-3">
-                                  <div className="flex flex-col mt-2 gap-1 items-start">
+                                <div className="mt-2 flex flex-col gap-3 text-left items-start w-full">
+                                  <div className="flex flex-col mt-2 gap-1 items-start w-full text-left">
                                     <span className="text-medium text-white font-bold">Descripción</span>
                                     <p className="text-medium text-white/80 leading-relaxed">{data?.description}</p>
                                   </div>
-                                  <div className="flex flex-col mt-2 gap-1 items-start">
+                                  <div className="flex flex-col mt-2 gap-1 items-start w-full text-left">
                                     <span className="text-medium text-white font-bold">Información adicional</span>
                                     <div className="grid grid-cols-2 gap-4 w-full">
                                         <div className="bg-white/5 p-3 rounded-lg border border-white/10">
@@ -219,11 +366,55 @@ const DrawerInfo = ({ isOpen, onOpenChange, _id }) => {
                                         </div>
                                     </div>
                                   </div>
+                                  <div className="flex flex-col mt-4 gap-2 items-start w-full text-left">
+                                    <span className="text-medium text-white font-bold">Versiones del Escaneo ({versions.length})</span>
+                                    <div className="flex flex-col gap-2 w-full">
+                                      {versions.length > 0 ? (
+                                        versions.map((ver, idx) => (
+                                          <div key={ver._id || idx} className="bg-white/5 p-3 rounded-[16px] border border-white/10 hover:border-cyan-500/30 flex justify-between items-center gap-4 transition-all w-full">
+                                            <div className="flex flex-col gap-0.5 text-left">
+                                              <p className="text-sm font-semibold text-white">{ver.name || `Versión ${versions.length - idx}`}</p>
+                                              <p className="text-xs text-white/40">
+                                                {ver.creation_date 
+                                                  ? new Date(ver.creation_date).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+                                                  : "Sin fecha"}
+                                              </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                              <Button
+                                                as={Link}
+                                                href={`/web/views/visualizer?id=${encrypt(_id)}&modelIndex=${idx}`}
+                                                target="_blank"
+                                                size="sm"
+                                                className="bg-[#0CDBFF] text-black font-bold hover:bg-cyan-400 min-w-0 px-4 rounded-full h-8"
+                                              >
+                                                Acceder
+                                              </Button>
+                                              <Button
+                                                isIconOnly
+                                                size="sm"
+                                                variant="flat"
+                                                onClick={() => copyToClipboard(idx)}
+                                                className="bg-white/10 hover:bg-white/20 text-[#0CDBFF] hover:text-cyan-400 rounded-full h-8 w-8 min-w-8 flex items-center justify-center border border-white/5"
+                                                title="Compartir versión"
+                                              >
+                                                <ShareIcon className="w-4 h-4" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        ))
+                                      ) : (
+                                        <p className="text-sm text-white/50 italic">No hay escaneos disponibles.</p>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                             </>
                         )}
-                    </div>
-                  </DrawerBody>
+                      </div>
+                        </>
+                      )}
+                    </DrawerBody>
                     <DrawerFooter className="border-t border-white/10">
                       <Button color="danger" variant="light" onPress={onClose}>
                         Cerrar

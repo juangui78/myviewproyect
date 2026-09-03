@@ -9,6 +9,7 @@ dbConnected();
 export async function GET(request, { params }) {
 
     try{
+        await dbConnected();
         const { id } = params
 
         const schema = z.string().regex(/^[a-f\d]{24}$/i, "Invalid ObjectId")

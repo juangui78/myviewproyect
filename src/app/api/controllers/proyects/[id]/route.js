@@ -9,6 +9,7 @@ dbConnected();
 export async function GET(request, {params}) { 
 
     try {
+        await dbConnected();
         const { id } = params
 
         const schema = z.string().regex(/^[a-f\d]{24}$/i, "Invalid ObjectId")
@@ -20,7 +21,12 @@ export async function GET(request, {params}) {
 
         //all its right
         const proyect = await Proyect.findById(id, { __v: 0, idCompany: 0 })
-        return NextResponse.json(proyect, { status: 200 })
+        return NextResponse.json(proyect, { 
+            status: 200,
+            headers: {
+                'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600'
+            }
+        });
 
     } catch (error) {
         return NextResponse.json({message: 'Error'}, { status: 500 })
@@ -29,6 +35,7 @@ export async function GET(request, {params}) {
 
 export async function PUT(request, { params }) {
     try {
+        await dbConnected();
         const { id } = params;
         const body = await request.json();
 
@@ -41,8 +48,11 @@ export async function PUT(request, { params }) {
 
         const updateSchema = z.object({
             name: z.string().max(100).optional(),
+            city: z.string().max(100).optional(),
+            department: z.string().max(100).optional(),
             address: z.string().max(300).optional(),
             description: z.string().max(500).optional(),
+            urlImage: z.string().max(1000).optional(),
         });
 
         const resultUpdate = updateSchema.safeParse(body);

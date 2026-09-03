@@ -131,16 +131,16 @@ const Page = () => {
           topContent={topContent}
         >
           <TableHeader>
-            <TableColumn>Nombre</TableColumn>
-            <TableColumn>Telefono</TableColumn>
-            <TableColumn>Correo</TableColumn>
-            <TableColumn>Departamento</TableColumn>
-            <TableColumn>Ciudad</TableColumn>
-            <TableColumn>Alcance geográfico</TableColumn>
-            <TableColumn>Tipo de propiedades</TableColumn>
-            <TableColumn>Enfoque de mercado</TableColumn>
-            <TableColumn>Estado</TableColumn>
-            <TableColumn>Acciones</TableColumn>
+            <TableColumn key="name" isRowHeader>Nombre</TableColumn>
+            <TableColumn key="cell">Telefono</TableColumn>
+            <TableColumn key="email">Correo</TableColumn>
+            <TableColumn key="department">Departamento</TableColumn>
+            <TableColumn key="city">Ciudad</TableColumn>
+            <TableColumn key="geographicScope">Alcance geográfico</TableColumn>
+            <TableColumn key="propertyType">Tipo de propiedades</TableColumn>
+            <TableColumn key="marketApproach">Enfoque de mercado</TableColumn>
+            <TableColumn key="status">Estado</TableColumn>
+            <TableColumn key="actions">Acciones</TableColumn>
           </TableHeader>
           <TableBody
             emptyContent="No hay inmobiliarias registradas"

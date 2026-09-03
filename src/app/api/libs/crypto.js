@@ -20,6 +20,14 @@ export const encrypt = (value) => { //encrypt values from the server
 }
 
 export const decrypt = (value) => { //decryp
-    const decrypted = CryptoJS.AES.decrypt(decodeURIComponent(value), CRYPTO_KEY).toString(CryptoJS.enc.Utf8);
-    return decrypted;
+    if (!value) return "";
+    try {
+        const decoded = decodeURIComponent(value);
+        const safeValue = decoded.replace(/ /g, "+");
+        const decrypted = CryptoJS.AES.decrypt(safeValue, CRYPTO_KEY).toString(CryptoJS.enc.Utf8);
+        return decrypted;
+    } catch (error) {
+        console.error("Error al desencriptar:", error);
+        return "";
+    }
 }

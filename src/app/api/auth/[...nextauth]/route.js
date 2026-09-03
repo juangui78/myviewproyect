@@ -16,6 +16,7 @@ const AuthOptions ={
         password :{label: "Password", type: "password" },
       },
       async authorize(credentials, req) {
+        await dbConnected();
         
         const userFound = await User.findOne(
           {email : credentials?.email},

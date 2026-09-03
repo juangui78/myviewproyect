@@ -20,7 +20,7 @@ export default function History({ idProyect, onModelSelect }) {
   useEffect(() => {
     const loadModels = async () => {
       try {
-        const response = await axios.get(`/api/controllers/models_/${idProyect}/allmodels`);
+        const response = await axios.get(`/api/controllers/models_/${idProyect}/allmodels?t=${Date.now()}`);
         const data = response.data;
         setModels(data);
         setLoading(false);

@@ -9,6 +9,7 @@ dbConnected();
 export async function GET(request, { params }) {
   const { id } = await params;
   try {
+    await dbConnected();
     const findProyect = await Proyect.findById(decrypt(id), {_id : 1});
 
     if (findProyect){
@@ -44,6 +45,7 @@ export async function GET(request, { params }) {
     });
   
   } catch (error) {
-    return NextResponse.json({message: 'Invalid Id'}).status(500);
+    console.error("Error in GET /api/controllers/models_/[id]:", error);
+    return NextResponse.json({message: 'Invalid Id'}, { status: 500 });
   }
 }

@@ -34,7 +34,7 @@ export default function Terrains({ terrains, onSelectTerrain }) {
     // Transformar los terrenos en filas para la tabla
     const rows = terrains.map((terrain) => ({
         key: terrain.id.toString(),
-        name: `Terreno ${terrain.id}`,
+        name: terrain.name || `Terreno ${terrain.id}`,
         area: calculateArea(terrain.markers).toFixed(2), // Calcular el área y formatear a 2 decimales
     }));
 

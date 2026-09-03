@@ -27,6 +27,7 @@ const proyectSchema = z
 
 export async function POST(request) {
   try {
+    await dbConnected();
     const getData = await request.json();
     const result = proyectSchema.safeParse(getData);
 
@@ -61,6 +62,7 @@ export async function POST(request) {
 export async function GET(request) { //get all proyects by id_company and search
   
   try {
+    await dbConnected();
     const { searchParams } = new URL(request.url);
     const idCompany = searchParams.get('id_company');
     const search = searchParams.get('search');

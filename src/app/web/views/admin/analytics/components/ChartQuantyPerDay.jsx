@@ -21,34 +21,65 @@ ChartJS.register(
   Legend,
 );
 
-export const options = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: "top",
-    },
-    title: {
-      display: true,
-    },
-  },
-};
-
 const ChartQuantyPerDay = ({ data }) => {
   const dataInfo = {
-    labels: data.labels,
+    labels: data?.labels || [],
     datasets: [
       {
-        label: "# de entradas",
-        data: data.values,
-        borderColor: "rgba(75,192,192,1)",
-        backgroundColor: "rgba(75,192,192,0.2)",
-        pointBackgroundColor: "white",
-        pointBorderColor: "blue",
-        pointRadius: 6,
-        tension: 0.3, // suaviza las líneas
+        label: "Entradas por día",
+        data: data?.values || [],
+        borderColor: "rgba(12, 219, 255, 1)",
+        backgroundColor: "rgba(12, 219, 255, 0.15)",
+        pointBackgroundColor: "#fff",
+        pointBorderColor: "rgba(12, 219, 255, 1)",
+        pointHoverBackgroundColor: "rgba(12, 219, 255, 1)",
+        pointHoverBorderColor: "#fff",
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true,
+        tension: 0.3,
       },
     ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false, // Hide legend since there's only one line
+      },
+      tooltip: {
+        enabled: true,
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          color: "rgba(255, 255, 255, 0.05)",
+        },
+        ticks: {
+          color: "rgba(255, 255, 255, 0.6)",
+          font: {
+            size: 10,
+            family: "Outfit, Inter, sans-serif"
+          }
+        }
+      },
+      y: {
+        grid: {
+          color: "rgba(255, 255, 255, 0.05)",
+        },
+        ticks: {
+          color: "rgba(255, 255, 255, 0.6)",
+          font: {
+            size: 10,
+            family: "Outfit, Inter, sans-serif"
+          },
+          precision: 0
+        }
+      }
+    }
   };
 
   return <Line options={options} data={dataInfo} />;

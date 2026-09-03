@@ -12,6 +12,13 @@ const InteractiveBlobs = () => {
     const smoothY = useSpring(mouseY, springConfig);
 
     useEffect(() => {
+        // En móviles/pantallas táctiles o si el usuario prefiere movimiento reducido, evitamos el listener continuo
+        if (typeof window === "undefined") return;
+        const isFinePointer = window.matchMedia("(pointer: fine)").matches;
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        
+        if (!isFinePointer || prefersReducedMotion) return;
+
         const handleMouseMove = (e) => {
             // Normalizamos la posición del mouse entre -1 y 1
             const { innerWidth, innerHeight } = window;
@@ -21,7 +28,7 @@ const InteractiveBlobs = () => {
             mouseY.set(y);
         };
 
-        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mousemove", handleMouseMove, { passive: true });
         return () => window.removeEventListener("mousemove", handleMouseMove);
     }, [mouseX, mouseY]);
 
@@ -53,4 +60,4 @@ const InteractiveBlobs = () => {
     );
 };
 
-export default InteractiveBlobs;
+export default React.memo(InteractiveBlobs);

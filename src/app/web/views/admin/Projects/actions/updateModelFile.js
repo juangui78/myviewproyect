@@ -24,6 +24,8 @@ export async function updateModelFile(idProject, idModel, name, finalUrl, versio
                     name: name,
                     "model.url": finalUrl,
                     version_notes: version_notes,
+                    notes_updated_at: version_notes ? new Date() : undefined,
+                    updated_at: new Date(),
                     update_date: new Date()
                 }
             },

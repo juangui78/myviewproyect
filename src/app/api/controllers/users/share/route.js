@@ -13,6 +13,7 @@ dbConnected();
 
 export async function POST(request) { // send data to share model to user at email
     try {
+        await dbConnected();
 
         //get data from request and validate
         //=======================================================================================
@@ -172,7 +173,7 @@ export async function GET(request){
         //generate qr code
         const qrCode = await QRCode.toDataURL(urlShare)
 
-        return NextResponse.json({ qrCode }, { status: 200 })
+        return NextResponse.json({ qrCode, urlShare }, { status: 200 })
 
     }catch(error){
         return NextResponse.json({ message: "Error del servidor, vuelva a intentar." }, { status: 500 })

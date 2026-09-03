@@ -29,6 +29,8 @@ export async function addNewModel(idProject, idModel, name, finalUrl, version_no
             },
             idProyect: idProject,
             version_notes: version_notes,
+            notes_updated_at: version_notes ? new Date() : undefined,
+            updated_at: new Date(),
             terrains: []
         })
 
