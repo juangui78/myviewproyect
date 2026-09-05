@@ -2,9 +2,58 @@ import React, { useMemo, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { Html, Line } from '@react-three/drei';
 
-const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onClick }) => {
+const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onClick, status = 'disponible' }) => {
   const [area, setArea] = useState(0);
   const [hovered, setHovered] = useState(false);
+
+  // Paleta reactiva según el estado comercial del terreno
+  const theme = useMemo(() => {
+    switch (status) {
+      case 'reservado':
+        return {
+          label: 'Reservado',
+          badgeBg: 'rgba(245, 165, 36, 0.25)',
+          badgeBorder: '#F5A524',
+          badgeText: '#FFB74D',
+          glowColor: '#F5A524',
+          lineNormal: '#F5A524',
+          lineHover: '#FFD54F',
+          meshNormal: '#D97706',
+          meshHover: '#F5A524',
+          dotColor: '#FFE082',
+          textColor: '#FFB74D',
+        };
+      case 'vendido':
+        return {
+          label: 'Vendido',
+          badgeBg: 'rgba(239, 68, 68, 0.25)',
+          badgeBorder: '#EF4444',
+          badgeText: '#F87171',
+          glowColor: '#DC2626',
+          lineNormal: '#EF4444',
+          lineHover: '#F87171',
+          meshNormal: '#991B1B',
+          meshHover: '#DC2626',
+          dotColor: '#FCA5A5',
+          textColor: '#F87171',
+        };
+      case 'disponible':
+      default:
+        return {
+          label: 'Disponible',
+          badgeBg: 'rgba(0, 198, 98, 0.25)',
+          badgeBorder: '#00C662',
+          badgeText: '#00FF7F',
+          glowColor: '#0CDBFF',
+          lineNormal: '#0CDBFF',
+          lineHover: '#00FF7F',
+          meshNormal: '#00C662',
+          meshHover: '#0CDBFF',
+          dotColor: '#FFFFFF',
+          textColor: '#0CDBFF',
+        };
+    }
+  }, [status]);
 
   // Puntos originales para cálculo
   const originalPoints = useMemo(() => {
@@ -68,19 +117,57 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
     return geometry;
   }, [originalPoints]);
 
-  // Calcular el centroide geométrico del polígono de área para ubicar el texto
+  // Calcular el centroide geométrico real del polígono de área para ubicar el texto
   const centroid = useMemo(() => {
     if (originalPoints.length === 0) return [0, 0, 0];
-    let sumX = 0;
+    const n = originalPoints.length;
+
+    // Altura promedio (Y)
     let sumY = 0;
-    let sumZ = 0;
+    originalPoints.forEach(p => {
+      sumY += p.y;
+    });
+    const avgY = sumY / n;
+
+    if (n < 3) {
+      let sumX = 0, sumZ = 0;
+      originalPoints.forEach(p => {
+        sumX += p.x;
+        sumZ += p.z;
+      });
+      return [sumX / n, avgY, sumZ / n];
+    }
+
+    // Centroide de polígono 2D en plano X-Z (Teorema de Green / Shoelace)
+    let signedAreaTimes2 = 0;
+    let cxSum = 0;
+    let czSum = 0;
+
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      const xi = originalPoints[i].x;
+      const zi = originalPoints[i].z;
+      const xj = originalPoints[j].x;
+      const zj = originalPoints[j].z;
+
+      const factor = xi * zj - xj * zi;
+      signedAreaTimes2 += factor;
+      cxSum += (xi + xj) * factor;
+      czSum += (zi + zj) * factor;
+    }
+
+    if (Math.abs(signedAreaTimes2) > 1e-6) {
+      const sixA = 3 * signedAreaTimes2;
+      return [cxSum / sixA, avgY, czSum / sixA];
+    }
+
+    // Fallback a promedio de vértices si el polígono es colineal o degenerado
+    let sumX = 0, sumZ = 0;
     originalPoints.forEach(p => {
       sumX += p.x;
-      sumY += p.y;
       sumZ += p.z;
     });
-    const n = originalPoints.length;
-    return [sumX / n, sumY / n, sumZ / n];
+    return [sumX / n, avgY, sumZ / n];
   }, [originalPoints]);
 
   // Calcular la distancia entre cada par de puntos consecutivos
@@ -147,7 +234,7 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
       {closedPoints.length > 1 && (
         <Line
           points={closedPoints}
-          color="#0CDBFF"
+          color={hovered ? theme.lineHover : theme.glowColor}
           lineWidth={6}
           transparent={true}
           opacity={hovered ? 0.75 : 0.35}
@@ -156,11 +243,11 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
         />
       )}
 
-      {/* Línea central nítida cian/esmeralda */}
+      {/* Línea central nítida con color del estado */}
       {closedPoints.length > 1 && (
         <Line
           points={closedPoints}
-          color={hovered ? "#00C662" : "#0CDBFF"}
+          color={hovered ? theme.lineHover : theme.lineNormal}
           lineWidth={2.5}
           depthTest={false}
           renderOrder={9999}
@@ -171,11 +258,11 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
       {elevatedPoints.map((pt, idx) => (
         <mesh key={idx} position={[pt.x, pt.y, pt.z]} renderOrder={10000}>
           <sphereGeometry args={[hovered ? 0.14 : 0.09, 12, 12]} />
-          <meshBasicMaterial color="#FFFFFF" depthTest={false} />
+          <meshBasicMaterial color={hovered ? theme.dotColor : "#FFFFFF"} depthTest={false} />
         </mesh>
       ))}
 
-      {/* Relleno translúcido del terreno con interacción hover */}
+      {/* Relleno translúcido del terreno con interacción hover reactiva al estado */}
       {customGeometry && (
         <mesh
           geometry={customGeometry}
@@ -191,9 +278,9 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
           onClick={onClick}
         >
           <meshBasicMaterial
-            color={hovered ? "#0CDBFF" : "#00C662"}
+            color={hovered ? theme.meshHover : theme.meshNormal}
             transparent={true}
-            opacity={hovered ? 0.22 : 0.10}
+            opacity={hovered ? 0.28 : 0.12}
             side={THREE.DoubleSide}
             depthWrite={false}
           />
@@ -201,6 +288,7 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
       )}
       {markers.length > 0 && (
         <Html
+          center
           position={[
             centroid[0],
             centroid[1] + 0.3,
@@ -216,14 +304,36 @@ const AreaVisual = ({ markers, areaCalculated, pjname, lineHeightOffset = 0, onC
             whiteSpace: 'nowrap',
             cursor: 'pointer',
             textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.7)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
           }}
           onClick={onClick}
           >
-            <div style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#0CDBFF' }}>
+            <div style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.08em', textTransform: 'uppercase', color: theme.textColor }}>
               {pjname || "Área"}
             </div>
             <div style={{ fontSize: '15px', fontWeight: '800', color: 'white', marginTop: '2px' }}>
               {(pjname === "Concepcion" ? 3.333 : area).toFixed(2)} m²
+            </div>
+            <div style={{
+              marginTop: '4px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '2px 7px',
+              borderRadius: '8px',
+              fontSize: '9px',
+              fontWeight: '800',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              backgroundColor: theme.badgeBg,
+              border: `1px solid ${theme.badgeBorder}`,
+              color: theme.badgeText,
+              backdropFilter: 'blur(4px)',
+            }}>
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: theme.badgeText }} />
+              {theme.label}
             </div>
           </div>
         </Html>

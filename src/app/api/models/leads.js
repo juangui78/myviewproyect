@@ -6,7 +6,7 @@ const Schema = mongoose.Schema;
 const leadsSchema = new Schema({
   name: {
     type: String,
-    required: true
+    required: false
   },
   email: {
     type: String,

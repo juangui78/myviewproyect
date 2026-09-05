@@ -49,6 +49,7 @@ const DistanceVisual = ({ markers, lineHeightOffset = 0 }) => {
             renderOrder={9999}
           />
           <Html
+            center
             position={[measurementData.middlePoint.x, measurementData.middlePoint.y + 0.3, measurementData.middlePoint.z]}
             style={{ pointerEvents: 'none' }}
             zIndexRange={[0, 5000]}

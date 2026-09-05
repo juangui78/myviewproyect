@@ -39,6 +39,7 @@ export default function ProyectoPresentationClient({ initialProjectData, id }) {
   const [isSubmittingLead, setIsSubmittingLead] = useState(false);
   const [leadContextTerrain, setLeadContextTerrain] = useState(null);
   const [countryCode, setCountryCode] = useState("+57");
+  const [leadFormError, setLeadFormError] = useState("");
 
   const encryptedId = useMemo(() => (id ? encrypt(id) : ""), [id]);
 
@@ -148,10 +149,11 @@ export default function ProyectoPresentationClient({ initialProjectData, id }) {
   };
 
   const handleSendLead = async () => {
-    if (!leadName || !leadEmail || !leadPhone) {
-      toast.error("Por favor, completa los campos Nombre, Correo y Teléfono.");
+    if (!leadName?.trim() || !leadEmail?.trim() || !leadPhone?.trim()) {
+      setLeadFormError("¡Hola! Por favor indícanos tu nombre, correo y teléfono para poder contactarte.");
       return;
     }
+    setLeadFormError("");
     setIsSubmittingLead(true);
     try {
       let finalPhone = leadPhone.trim().replace(/\s+/g, "");
@@ -165,8 +167,8 @@ export default function ProyectoPresentationClient({ initialProjectData, id }) {
       }
 
       const res = await createLead({
-        name: leadName,
-        email: leadEmail,
+        name: leadName.trim(),
+        email: leadEmail.trim(),
         phone: finalPhone,
         message: leadMessage,
         idProyect: id,
@@ -196,10 +198,10 @@ export default function ProyectoPresentationClient({ initialProjectData, id }) {
   return (
     <div className="bg-[#02121B] bg-[url(/images/op11.webp)] bg-no-repeat bg-cover overflow-hidden min-h-screen text-white relative font-sans">
       <InteractiveBlobs />
-      <Toaster position="top-right" closeButton richColors theme="dark" />
+      <Toaster position="top-right" closeButton richColors theme="dark" containerStyle={{ zIndex: 999999 }} />
 
-      <div className="overflow-y-auto h-screen scrollbar relative z-10 p-4 md:p-8">
-        <div className="max-w-6xl mx-auto">
+      <div className="overflow-y-auto h-screen scrollbar relative z-10 py-6 md:py-8">
+        <div className="w-[95%] xl:w-[85%] 2xl:w-[75%] max-w-6xl mx-auto px-4">
           {/* Header */}
           <div className="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
             <Link href="/" className="flex items-center">
@@ -628,6 +630,12 @@ export default function ProyectoPresentationClient({ initialProjectData, id }) {
                 <p className="text-xs text-white/60 mb-2">
                   Déjanos tus datos de contacto y un asesor de ventas se comunicará contigo lo antes posible para brindarte una atención personalizada.
                 </p>
+                {leadFormError && (
+                  <div className="bg-amber-500/15 border border-amber-500/35 text-amber-200 text-xs px-3.5 py-2.5 rounded-2xl flex items-center gap-2.5 mb-1">
+                    <span className="text-base flex-shrink-0">👋</span>
+                    <span className="leading-snug">{leadFormError}</span>
+                  </div>
+                )}
                 {leadContextTerrain && (
                   <div className="p-3 bg-[#0CDBFF]/10 border border-[#0CDBFF]/25 rounded-xl flex justify-between items-center">
                     <div>
@@ -642,13 +650,15 @@ export default function ProyectoPresentationClient({ initialProjectData, id }) {
                   </div>
                 )}
                 <Input
-                  label="Nombre Completo"
+                  label="Nombre"
                   placeholder="Ej. Juan Pérez"
                   labelPlacement="outside"
                   variant="bordered"
                   value={leadName}
-                  onValueChange={setLeadName}
-                  isRequired
+                  onValueChange={(val) => {
+                    setLeadName(val);
+                    if (leadFormError) setLeadFormError("");
+                  }}
                   className="text-white"
                 />
                 <Input
@@ -658,12 +668,14 @@ export default function ProyectoPresentationClient({ initialProjectData, id }) {
                   labelPlacement="outside"
                   variant="bordered"
                   value={leadEmail}
-                  onValueChange={setLeadEmail}
-                  isRequired
+                  onValueChange={(val) => {
+                    setLeadEmail(val);
+                    if (leadFormError) setLeadFormError("");
+                  }}
                   className="text-white"
                 />
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs text-white font-semibold">Teléfono / Celular <span className="text-red-500">*</span></label>
+                  <label className="text-xs text-white/80 font-medium">Teléfono / Celular</label>
                   <div className="flex gap-2">
                     <select
                       value={countryCode}
@@ -684,8 +696,10 @@ export default function ProyectoPresentationClient({ initialProjectData, id }) {
                       type="tel"
                       variant="bordered"
                       value={leadPhone}
-                      onValueChange={setLeadPhone}
-                      isRequired
+                      onValueChange={(val) => {
+                        setLeadPhone(val);
+                        if (leadFormError) setLeadFormError("");
+                      }}
                       className="flex-1 text-white"
                     />
                   </div>

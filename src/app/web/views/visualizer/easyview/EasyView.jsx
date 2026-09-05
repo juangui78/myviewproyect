@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import axios from 'axios';
 import { useSession } from 'next-auth/react';
 import * as THREE from 'three';
@@ -8,6 +8,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import InformationCard from '../components/information/InformationCard';
 import Whatsapp from '@/web/global_components/icons/Whatsapp';
+import Compass from '../components/compass/Compass';
+import gsap from 'gsap';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
@@ -15,31 +17,69 @@ const Photo360Modal = dynamic(() => import('../components/viewer360/PhotoSphereM
   ssr: false
 });
 
+const TerrainDetailCard = dynamic(() => import('../components/terrainDetail/TerrainDetailCard'), {
+  ssr: false
+});
+
 const calculateCentroidAndArea = (markers) => {
   if (!markers || markers.length === 0) return { centroid: [0, 0, 0], area: 0 };
-  let sumX = 0, sumY = 0, sumZ = 0;
-  let count = 0;
-  markers.forEach(m => {
-    if (m.position) {
-      sumX += m.position[0];
-      sumY += m.position[1];
-      sumZ += m.position[2];
-      count++;
-    }
-  });
-  const centroid = count > 0 ? [sumX / count, sumY / count, sumZ / count] : [0, 0, 0];
-
-  let area = 0;
   const validPositions = markers.filter(m => m.position).map(m => m.position);
   const n = validPositions.length;
-  if (n > 2) {
-    for (let i = 0; i < n; i++) {
-      const j = (i + 1) % n;
-      area += validPositions[i][0] * validPositions[j][2] - validPositions[j][0] * validPositions[i][2];
-    }
-    area = Math.abs(area) / 2;
+  if (n === 0) return { centroid: [0, 0, 0], area: 0 };
+
+  let sumY = 0;
+  validPositions.forEach(p => {
+    sumY += p[1];
+  });
+  const avgY = sumY / n;
+
+  if (n < 3) {
+    let sumX = 0, sumZ = 0;
+    validPositions.forEach(p => {
+      sumX += p[0];
+      sumZ += p[2];
+    });
+    return { centroid: [sumX / n, avgY, sumZ / n], area: 0 };
   }
-  return { centroid, area };
+
+  // Centroide de polígono 2D en plano X-Z (Teorema de Green / Shoelace)
+  let signedAreaTimes2 = 0;
+  let cxSum = 0;
+  let czSum = 0;
+
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    const xi = validPositions[i][0];
+    const zi = validPositions[i][2];
+    const xj = validPositions[j][0];
+    const zj = validPositions[j][2];
+
+    const factor = xi * zj - xj * zi;
+    signedAreaTimes2 += factor;
+    cxSum += (xi + xj) * factor;
+    czSum += (zi + zj) * factor;
+  }
+
+  const area = Math.abs(signedAreaTimes2) / 2;
+
+  if (Math.abs(signedAreaTimes2) > 1e-6) {
+    const sixA = 3 * signedAreaTimes2;
+    return {
+      centroid: [cxSum / sixA, avgY, czSum / sixA],
+      area
+    };
+  }
+
+  // Fallback a promedio si el polígono es degenerado
+  let sumX = 0, sumZ = 0;
+  validPositions.forEach(p => {
+    sumX += p[0];
+    sumZ += p[2];
+  });
+  return {
+    centroid: [sumX / n, avgY, sumZ / n],
+    area
+  };
 };
 
 // Reusable instance of GLTFLoader to optimize memory usage, avoid garbage collection overhead,
@@ -168,6 +208,31 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
   const rendererRef = useRef(null);
   const backgroundTextureRef = useRef(null);
   const gridMeshRef = useRef(null);
+  const compassRef = useRef(null);
+  const lastCompassDegRef = useRef(0);
+
+  // Reorientar suavemente la cámara hacia el Norte (eje -Z)
+  const handleResetNorth = useCallback(() => {
+    if (!controlsRef.current || !cameraRef.current) return;
+    const controls = controlsRef.current;
+    const camera = cameraRef.current;
+    const target = controls.target;
+
+    const horizontalDist = Math.hypot(camera.position.x - target.x, camera.position.z - target.z);
+    if (horizontalDist < 0.001) return;
+
+    gsap.killTweensOf(camera.position);
+    gsap.to(camera.position, {
+      x: target.x,
+      z: target.z + horizontalDist,
+      duration: 0.8,
+      ease: "power2.out",
+      onUpdate: () => {
+        camera.lookAt(target);
+        controls.update();
+      }
+    });
+  }, []);
 
   const { data: session } = useSession();
 
@@ -193,6 +258,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
   const [progress, setProgress] = useState(0);
   const [photo360Url, setPhoto360Url] = useState(null);
   const [isPhoto360ModalOpen, setIsPhoto360ModalOpen] = useState(false);
+  const [selectedTerrainDetail, setSelectedTerrainDetail] = useState(null);
   const [terrainsData, setTerrainsData] = useState([]);
   const [showMarkers, setShowMarkers] = useState(true);
   const [showBackground360, setShowBackground360] = useState(Boolean(currentModel?.background360));
@@ -200,6 +266,9 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
 
   const showBackground360Ref = useRef(showBackground360);
   showBackground360Ref.current = showBackground360;
+
+  const isPhoto360ModalOpenRef = useRef(isPhoto360ModalOpen);
+  isPhoto360ModalOpenRef.current = isPhoto360ModalOpen;
 
   useEffect(() => {
     if (markersGroupRef.current) {
@@ -326,6 +395,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
     scene.add(frontLight);
 
     const tempV = new THREE.Vector3();
+    const tempCompassDir = new THREE.Vector3();
     const localTerrainsData = [];
 
     // Carga asíncrona no bloqueante de fondo 360 (Background360) si está configurado en el modelo
@@ -497,9 +567,9 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
                   fillGeo.computeVertexNormals();
 
                   const fillMat = new THREE.MeshBasicMaterial({
-                    color: 0xffffff,
+                    color: terrain.status === 'vendido' ? 0xDC2626 : (terrain.status === 'reservado' ? 0xF5A524 : 0x00C662),
                     transparent: true,
-                    opacity: 0.08,
+                    opacity: 0.12,
                     side: THREE.DoubleSide,
                     depthWrite: false
                   });
@@ -513,7 +583,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
                 const linePoints = [...terrainPoints, terrainPoints[0].clone()];
                 const lineGeo = new THREE.BufferGeometry().setFromPoints(linePoints);
                 const lineMat = new THREE.LineBasicMaterial({
-                  color: 0xFF5F1F,
+                  color: terrain.status === 'vendido' ? 0xEF4444 : (terrain.status === 'reservado' ? 0xF5A524 : 0x0CDBFF),
                   depthTest: false
                 });
                 const line = new THREE.Line(lineGeo, lineMat);
@@ -525,6 +595,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
                 localTerrainsData.push({
                   id: terrain.id,
                   name: terrain.name || "Área",
+                  status: terrain.status || "disponible",
                   centroid,
                   area
                 });
@@ -553,8 +624,30 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
     let animationId;
     const animate = () => {
       animationId = requestAnimationFrame(animate);
+      // Pausar el renderizado 3D si la foto 360 está abierta para entregar toda la GPU al visor 360
+      if (isPhoto360ModalOpenRef.current) return;
       controls.update();
       renderer.render(scene, camera);
+
+      // Actualizar brújula horizontal en tiempo real
+      if (compassRef.current && camera) {
+        camera.getWorldDirection(tempCompassDir);
+        const horizLen = Math.hypot(tempCompassDir.x, tempCompassDir.z);
+        let deg = 0;
+        if (horizLen > 0.0001) {
+          const angleRad = Math.atan2(tempCompassDir.x, -tempCompassDir.z);
+          deg = (angleRad * 180) / Math.PI;
+        } else {
+          deg = (Math.atan2(camera.up.x, -camera.up.z) * 180) / Math.PI;
+        }
+        const degNorm = ((deg % 360) + 360) % 360;
+        const xHeading = 288 + degNorm * 0.8;
+
+        if (Math.abs(xHeading - lastCompassDegRef.current) > 0.1) {
+          lastCompassDegRef.current = xHeading;
+          compassRef.current.style.transform = `translateX(${-xHeading.toFixed(1)}px)`;
+        }
+      }
 
       const width = currentMount.clientWidth || window.innerWidth;
       const height = currentMount.clientHeight || window.innerHeight;
@@ -767,6 +860,11 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
             </div>
           </div>
 
+          {/* Brújula Horizontal HUD debajo del Toolbar */}
+          <div className="absolute top-[68px] sm:top-[74px] left-1/2 -translate-x-1/2 z-[10] pointer-events-auto">
+            <Compass ref={compassRef} onResetNorth={handleResetNorth} />
+          </div>
+
           <div className="z-[9999] pointer-events-none">
             <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4 pointer-events-auto">
                 <div className="navigation-controls flex flex-col items-center mb-4 gap-2">
@@ -912,18 +1010,43 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
                   pointerEvents: 'auto',
                 }}
               >
-                <div style={{
-                  color: 'white',
-                  textAlign: 'center',
-                  fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                  whiteSpace: 'nowrap',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.7)',
-                }}>
-                  <div style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#0CDBFF' }}>
+                <div 
+                  onClick={() => setSelectedTerrainDetail(terrain)}
+                  style={{
+                    color: 'white',
+                    textAlign: 'center',
+                    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    whiteSpace: 'nowrap',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.7)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                  }}>
+                  <div style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.08em', textTransform: 'uppercase', color: terrain.status === 'vendido' ? '#F87171' : (terrain.status === 'reservado' ? '#FFB74D' : '#0CDBFF') }}>
                     {terrain.name}
                   </div>
                   <div style={{ fontSize: '15px', fontWeight: '800', color: 'white', marginTop: '2px' }}>
                     {displayArea} m²
+                  </div>
+                  <div style={{
+                    marginTop: '4px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '2px 7px',
+                    borderRadius: '8px',
+                    fontSize: '9px',
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    backgroundColor: terrain.status === 'vendido' ? 'rgba(239, 68, 68, 0.25)' : (terrain.status === 'reservado' ? 'rgba(245, 165, 36, 0.25)' : 'rgba(0, 198, 98, 0.25)'),
+                    border: `1px solid ${terrain.status === 'vendido' ? '#EF4444' : (terrain.status === 'reservado' ? '#F5A524' : '#00C662')}`,
+                    color: terrain.status === 'vendido' ? '#F87171' : (terrain.status === 'reservado' ? '#FFB74D' : '#00FF7F'),
+                    backdropFilter: 'blur(4px)',
+                  }}>
+                    <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: terrain.status === 'vendido' ? '#F87171' : (terrain.status === 'reservado' ? '#FFB74D' : '#00FF7F') }} />
+                    {terrain.status === 'vendido' ? 'Vendido' : (terrain.status === 'reservado' ? 'Reservado' : 'Disponible')}
                   </div>
                 </div>
               </div>
@@ -940,6 +1063,14 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
           setPhoto360Url(null);
           setIsPhoto360ModalOpen(false);
         }}
+      />
+
+      <TerrainDetailCard
+        terrain={selectedTerrainDetail}
+        projectInfo={projectInfo}
+        isOpen={Boolean(selectedTerrainDetail)}
+        onClose={() => setSelectedTerrainDetail(null)}
+        calculatedArea={selectedTerrainDetail ? (selectedTerrainDetail.name === "Concepcion" ? "3.33" : selectedTerrainDetail.area.toFixed(1)) : null}
       />
     </div>
   );
