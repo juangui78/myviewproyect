@@ -3,8 +3,7 @@ import React, { forwardRef } from 'react';
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Environment, OrbitControls, useProgress, TransformControls, Grid } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { Suspense, useEffect } from "react";
-import { useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { Button, Spinner, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input } from "@nextui-org/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -40,6 +39,12 @@ import Background360 from './components/background360/Background360';
 const Photo360Modal = dynamic(() => import('./components/viewer360/PhotoSphereModal'), {
     ssr: false
 });
+
+const TerrainDetailCard = dynamic(() => import('./components/terrainDetail/TerrainDetailCard'), {
+    ssr: false
+});
+
+import Compass, { CompassSync } from './components/compass/Compass';
 
 const BackArrowIcon = ({ className = "w-4 h-4" }) => (
   <svg 
@@ -621,11 +626,37 @@ const App = () => {
     const [view360Markers, setView360Markers] = useState([]);
     const [addView360Mode, setAddView360Mode] = useState(false);
     const [isPhoto360ModalOpen, setIsPhoto360ModalOpen] = useState(false);
+    const [activeTerrainForDetail, setActiveTerrainForDetail] = useState(null);
+    const [terrainAreasMap, setTerrainAreasMap] = useState({});
     const [currentIndexModel, setCurrentIndexModel] = useState(0);
     const [cameraState, setCameraState] = useState(null);
     const [isUserControlling, setIsUserControlling] = useState(false);
     const [lastCameraView, setLastCameraView] = useState(0);
     const orbitControlsRef = React.useRef();
+    const compassRef = React.useRef(null);
+
+    // Reorientar suavemente la cámara hacia el Norte (eje -Z) con rotación azimutal a 0
+    const handleResetNorth = useCallback(() => {
+        if (!orbitControlsRef.current) return;
+        const controls = orbitControlsRef.current;
+        const camera = controls.object;
+        const target = controls.target;
+
+        const horizontalDist = Math.hypot(camera.position.x - target.x, camera.position.z - target.z);
+        if (horizontalDist < 0.001) return;
+
+        gsap.killTweensOf(camera.position);
+        gsap.to(camera.position, {
+            x: target.x,
+            z: target.z + horizontalDist,
+            duration: 0.8,
+            ease: "power2.out",
+            onUpdate: () => {
+                camera.lookAt(target);
+                controls.update();
+            }
+        });
+    }, []);
     const isInitialLoadRef = React.useRef(true);
     const transformControlsRef = React.useRef();
     const [selectedMarkerObj, setSelectedMarkerObj] = useState(null);
@@ -807,6 +838,8 @@ const App = () => {
         if (currentTerrainMarkers.length > 2) {
             const newTerrain = {
                 id: terrains.length + 1, // ID único para el terreno
+                name: `Terreno ${terrains.length + 1}`,
+                status: "disponible",
                 type: "default", // Puedes cambiar esto para permitir al usuario seleccionar el tipo
                 markers: currentTerrainMarkers, // Marcadores del terreno
             };
@@ -886,6 +919,14 @@ const App = () => {
 
     // Función para recibir el área calculada desde AreaVisual
     const handleAreaCalculated = (calculatedArea) => {
+        setAreaCalculated(calculatedArea);
+    };
+
+    const handleTerrainAreaCalculated = (terrainId, calculatedArea) => {
+        setTerrainAreasMap(prev => ({
+            ...prev,
+            [terrainId]: (calculatedArea === 3.333 ? 3.333 : calculatedArea).toFixed(1)
+        }));
         setAreaCalculated(calculatedArea);
     };
 
@@ -1471,6 +1512,20 @@ const App = () => {
         ));
     };
 
+    const handleUpdateTerrainStatus = (newStatus) => {
+        if (!selectedTerrain) return;
+
+        setSelectedTerrain(prev => prev ? { ...prev, status: newStatus } : null);
+
+        setTerrains(prev => prev.map(t =>
+            t.id === selectedTerrain.id ? { ...t, status: newStatus } : t
+        ));
+
+        setAllTerrains(prev => prev.map(t =>
+            t.id === selectedTerrain.id ? { ...t, status: newStatus } : t
+        ));
+    };
+
     const handleDeleteMarkerFromTerrain = (markerId) => {
         if (!selectedTerrain) return;
 
@@ -1843,7 +1898,7 @@ const App = () => {
 
     return (
         <div className="flex flex-col items-center h-screen max-h-screen w-full overflow-hidden fixed inset-0 select-none">
-            <Toaster richColors closeButton position="bottom-right" duration={10000} />
+            <Toaster richColors closeButton position="bottom-right" duration={10000} containerStyle={{ zIndex: 999999 }} />
 
             {/* div de carga inicial */}
 
@@ -1942,6 +1997,13 @@ const App = () => {
                 </div>
             </div>
 
+            {/* Brújula Horizontal HUD debajo del Toolbar */}
+            {isModelLoaded && (
+                <div className={`absolute left-1/2 -translate-x-1/2 z-[10] pointer-events-auto transition-all duration-200 ${currentView === 'free' ? 'top-[132px]' : 'top-[68px] sm:top-[74px]'}`}>
+                    <Compass ref={compassRef} onResetNorth={handleResetNorth} />
+                </div>
+            )}
+
 
 
 
@@ -1980,6 +2042,7 @@ const App = () => {
                         )}
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
                             <Canvas
+                                frameloop={isPhoto360ModalOpen ? "never" : "always"}
                                 style={{ cursor: currentView === 'free' ? 'none' : (editMarkersMode ? 'crosshair' : 'default') }}
                                 dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]}
                                 ref={objectRef}
@@ -2004,6 +2067,7 @@ const App = () => {
                                 <CameraViewManager cameraView={cameraView} />
                                 <ViewManager viewType={currentView} orbitControlsRef={orbitControlsRef} />
                                 <FirstPersonNavigation enabled={currentView === 'free'} orbitControlsRef={orbitControlsRef} onExit={() => setCurrentView('3d')} />
+                                <CompassSync compassRef={compassRef} />
                                 {/* <CameraDebugger /> */}
 
                                 {editMarkersMode && (
@@ -2126,13 +2190,16 @@ const App = () => {
                                         {terrain.markers.length > 2 && (
                                             <AreaVisual
                                                 pjname={terrain.name || "Área"}
+                                                status={terrain.status || "disponible"}
                                                 terrains={terrains}
                                                 markers={terrain.markers}
-                                                areaCalculated={handleAreaCalculated}
+                                                areaCalculated={(val) => handleTerrainAreaCalculated(terrain.id, val)}
                                                 onClick={() => {
                                                     if (isEditingMode) {
                                                         setSelectedTerrain(terrain);
                                                         setSelectedMarker(null);
+                                                    } else {
+                                                        setActiveTerrainForDetail(terrain);
                                                     }
                                                 }}
                                             />
@@ -2282,7 +2349,7 @@ const App = () => {
                                 </div>
                             }
 
-                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 flex flex-col items-end gap-3">
+                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 pointer-events-auto">
                                 <a
                                     href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                                     target="_blank"
@@ -2313,6 +2380,14 @@ const App = () => {
                             setPhoto360Url(null);
                             setIsPhoto360ModalOpen(false);
                         }}
+                    />
+
+                    <TerrainDetailCard
+                        terrain={activeTerrainForDetail}
+                        projectInfo={projectInfo}
+                        isOpen={Boolean(activeTerrainForDetail)}
+                        onClose={() => setActiveTerrainForDetail(null)}
+                        calculatedArea={activeTerrainForDetail ? terrainAreasMap[activeTerrainForDetail.id] : null}
                     />
 
                     {isEditingMode && (
@@ -2510,6 +2585,45 @@ const App = () => {
                                             label: "text-white/70 text-[10px]"
                                         }}
                                     />
+
+                                    <div className="flex flex-col gap-1.5 mt-2">
+                                        <label className="text-[10px] text-white/70 font-semibold">Estado Comercial:</label>
+                                        <div className="grid grid-cols-3 gap-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleUpdateTerrainStatus('disponible')}
+                                                className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all border ${
+                                                    (selectedTerrain.status || 'disponible') === 'disponible'
+                                                        ? 'bg-emerald-500/25 border-emerald-400 text-emerald-300 shadow-[0_0_10px_rgba(0,255,127,0.2)]'
+                                                        : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white'
+                                                }`}
+                                            >
+                                                🟢 Disp.
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleUpdateTerrainStatus('reservado')}
+                                                className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all border ${
+                                                    selectedTerrain.status === 'reservado'
+                                                        ? 'bg-amber-500/25 border-amber-400 text-amber-300 shadow-[0_0_10px_rgba(245,165,36,0.2)]'
+                                                        : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white'
+                                                }`}
+                                            >
+                                                🟡 Res.
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleUpdateTerrainStatus('vendido')}
+                                                className={`py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all border ${
+                                                    selectedTerrain.status === 'vendido'
+                                                        ? 'bg-red-500/25 border-red-400 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.2)]'
+                                                        : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white'
+                                                }`}
+                                            >
+                                                🔴 Vend.
+                                            </button>
+                                        </div>
+                                    </div>
 
                                     <div className="flex flex-col gap-1">
                                         <div className="flex justify-between items-center">

@@ -7,13 +7,16 @@ export async function createLead(leadData) {
     await dbConnected();
     const { name, email, phone, message, idProyect, idCompany, terrainId, terrainName } = leadData;
 
-    if (!name || !email || !phone || !idProyect || !idCompany) {
-      return { success: false, message: "Nombre, Correo y Teléfono son obligatorios para enviar tu solicitud." };
+    if (!name?.trim() || !email?.trim() || !phone?.trim() || !idProyect || !idCompany) {
+      return { 
+        success: false, 
+        message: "¡Hola! Por favor indícanos tu nombre, correo y teléfono para poder brindarte una atención personalizada." 
+      };
     }
 
     const newLead = new Leads({
-      name,
-      email,
+      name: name.trim(),
+      email: email.trim(),
       phone,
       message,
       idProyect,

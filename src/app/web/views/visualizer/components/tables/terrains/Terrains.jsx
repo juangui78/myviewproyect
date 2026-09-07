@@ -27,16 +27,43 @@ const columns = [
         key: "area",
         label: "Área (m²)",
     },
+    {
+        key: "status",
+        label: "Estado",
+    },
 ];
 
 // Componente Terrains
 export default function Terrains({ terrains, onSelectTerrain }) {
     // Transformar los terrenos en filas para la tabla
-    const rows = terrains.map((terrain) => ({
-        key: terrain.id.toString(),
-        name: terrain.name || `Terreno ${terrain.id}`,
-        area: calculateArea(terrain.markers).toFixed(2), // Calcular el área y formatear a 2 decimales
-    }));
+    const rows = terrains.map((terrain) => {
+        const st = terrain.status || 'disponible';
+        let statusBadge = (
+            <span className="text-[10px] font-bold text-[#00FF7F] bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded-md">
+                Disponible
+            </span>
+        );
+        if (st === 'reservado') {
+            statusBadge = (
+                <span className="text-[10px] font-bold text-[#FFB74D] bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded-md">
+                    Reservado
+                </span>
+            );
+        } else if (st === 'vendido') {
+            statusBadge = (
+                <span className="text-[10px] font-bold text-[#F87171] bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded-md">
+                    Vendido
+                </span>
+            );
+        }
+
+        return {
+            key: terrain.id.toString(),
+            name: terrain.name || `Terreno ${terrain.id}`,
+            area: calculateArea(terrain.markers).toFixed(2),
+            status: statusBadge,
+        };
+    });
 
     
     

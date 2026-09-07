@@ -3,8 +3,7 @@ import React, { forwardRef } from 'react';
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Environment, OrbitControls, useProgress, Grid } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { Suspense, useEffect } from "react";
-import { useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { Button } from "@nextui-org/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -38,6 +37,8 @@ import Background360 from '../components/background360/Background360';
 const Photo360Modal = dynamic(() => import('../components/viewer360/PhotoSphereModal'), {
     ssr: false
 });
+
+import Compass, { CompassSync } from '../components/compass/Compass';
 
 
 const BackArrowIcon = ({ className = "w-4 h-4" }) => (
@@ -628,6 +629,30 @@ const App = () => {
     const [isUserControlling, setIsUserControlling] = useState(false);
     const [lastCameraView, setLastCameraView] = useState(0);
     const orbitControlsRef = React.useRef();
+    const compassRef = React.useRef(null);
+
+    // Reorientar suavemente la cámara hacia el Norte (eje -Z) con rotación azimutal a 0
+    const handleResetNorth = useCallback(() => {
+        if (!orbitControlsRef.current) return;
+        const controls = orbitControlsRef.current;
+        const camera = controls.object;
+        const target = controls.target;
+
+        const horizontalDist = Math.hypot(camera.position.x - target.x, camera.position.z - target.z);
+        if (horizontalDist < 0.001) return;
+
+        gsap.killTweensOf(camera.position);
+        gsap.to(camera.position, {
+            x: target.x,
+            z: target.z + horizontalDist,
+            duration: 0.8,
+            ease: "power2.out",
+            onUpdate: () => {
+                camera.lookAt(target);
+                controls.update();
+            }
+        });
+    }, []);
     const [background360, setBackground360] = useState(null);
     const [background360Rotation, setBackground360Rotation] = useState(0);
     const [background360RotationX, setBackground360RotationX] = useState(0);
@@ -1302,6 +1327,13 @@ const App = () => {
                 </div>
             </div>
 
+            {/* Brújula Horizontal HUD debajo del Toolbar */}
+            {isModelLoaded && (
+                <div className={`absolute left-1/2 -translate-x-1/2 z-[10] pointer-events-auto transition-all duration-200 ${currentView === 'free' ? 'top-[132px]' : 'top-[68px] sm:top-[74px]'}`}>
+                    <Compass ref={compassRef} onResetNorth={handleResetNorth} />
+                </div>
+            )}
+
             {/* Se condiciona el renderizado general no safari */}
 
             {!isSafariMobile && isModelLoaded && (
@@ -1336,6 +1368,7 @@ const App = () => {
                         )}
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
                             <Canvas
+                                frameloop={isPhoto360ModalOpen ? "never" : "always"}
                                 style={{ cursor: currentView === 'free' ? 'none' : (editMarkersMode ? 'crosshair' : 'default') }}
                                 dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]} ref={objectRef} gl={{
                                 antialias: !(isSafariMobile || isInstagramBrowser),
@@ -1360,6 +1393,7 @@ const App = () => {
                                 <CameraViewManager cameraView={cameraView} />
                                 <ViewManager viewType={currentView} orbitControlsRef={orbitControlsRef} />
                                 <FirstPersonNavigation enabled={currentView === 'free'} orbitControlsRef={orbitControlsRef} onExit={() => setCurrentView('3d')} />
+                                <CompassSync compassRef={compassRef} />
                                 {/* <CameraDebugger /> */}
 
                                 {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} onAddView360Marker={handleAddView360Marker} addView360Mode={addView360Mode} />}
@@ -1410,6 +1444,7 @@ const App = () => {
                                         {terrain.markers.length > 2 && (
                                             <AreaVisual
                                                 pjname={pjname}
+                                                status={terrain.status || "disponible"}
                                                 terrains={terrains}
                                                 markers={terrain.markers}
                                                 areaCalculated={handleAreaCalculated}
@@ -1492,7 +1527,7 @@ const App = () => {
                                 </div>
                             }
 
-                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
+                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 pointer-events-auto">
                                 <a
                                     href="https://wa.me/+573192067689" // Reemplaza con tu número de WhatsApp
                                     target="_blank"
