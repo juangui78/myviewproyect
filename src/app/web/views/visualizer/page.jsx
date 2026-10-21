@@ -1,9 +1,9 @@
 'use client'
 import React, { forwardRef } from 'react';
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { Environment, OrbitControls, useProgress, TransformControls, Grid } from "@react-three/drei";
+import { Environment, OrbitControls, PointerLockControls, useProgress, TransformControls, Grid } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { Button, Spinner, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input } from "@nextui-org/react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -45,6 +45,8 @@ const TerrainDetailCard = dynamic(() => import('./components/terrainDetail/Terra
 });
 
 import Compass, { CompassSync } from './components/compass/Compass';
+import Minimap, { MinimapSync } from './components/minimap/Minimap';
+import { getCameraWorldAzimuthDeg, getNorthResetCameraPosition, normalizeDegrees, computeModelBoundsAndFootprint } from './utils/northUtils';
 
 const BackArrowIcon = ({ className = "w-4 h-4" }) => (
   <svg 
@@ -68,6 +70,59 @@ const ModelComponent = forwardRef(({ gltf }, ref) => {
 });
 
 ModelComponent.displayName = 'ModelComponent';
+
+const CaptureHelper = ({ onReady }) => {
+    const { gl, scene } = useThree();
+    useEffect(() => {
+        if (onReady) {
+            onReady(() => {
+                try {
+                    // Calcular Bounding Box real de la escena
+                    const box = new THREE.Box3().setFromObject(scene);
+                    const center = new THREE.Vector3();
+                    box.getCenter(center);
+                    const size = new THREE.Vector3();
+                    box.getSize(size);
+
+                    const halfW = Math.max(size.x, 1) / 2 * 1.08;
+                    const halfD = Math.max(size.z, 1) / 2 * 1.08;
+
+                    // Cámara ortográfica cenital (top-down perfecta, sin perspectiva)
+                    const orthoCamera = new THREE.OrthographicCamera(
+                        -halfW, halfW,    // left, right
+                         halfD, -halfD,   // top, bottom  (Z negativo = adelante en SVG)
+                        0.01,
+                        Math.max(size.y, 1) * 3 + 500
+                    );
+                    // Posicionar directamente sobre el centro, mirando hacia abajo
+                    orthoCamera.position.set(center.x, box.max.y + Math.max(size.y, 1) * 2, center.z);
+                    orthoCamera.up.set(0, 0, -1); // Norte apunta hacia -Z en Three.js
+                    orthoCamera.lookAt(center);
+                    orthoCamera.updateMatrixWorld();
+
+                    // Guardar tamaño original del canvas y ampliar para mayor resolución
+                    const canvas = gl.domElement;
+                    const origW = canvas.width;
+                    const origH = canvas.height;
+                    const captureW = 1024;
+                    const captureH = Math.round(captureW * (halfD / halfW));
+                    gl.setSize(captureW, captureH, false);
+
+                    gl.render(scene, orthoCamera);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+                    // Restaurar tamaño original
+                    gl.setSize(origW, origH, false);
+                    return dataUrl;
+                } catch (e) {
+                    console.warn("Error capturing orthographic snapshot:", e);
+                    return null;
+                }
+            });
+        }
+    }, [gl, scene, onReady]);
+    return null;
+};
 
 const FadedGrid = () => {
     const shaderMaterial = React.useMemo(() => {
@@ -269,6 +324,12 @@ const ViewManager = React.memo(({ viewType, orbitControlsRef }) => {
         if (!orbitControlsRef || !orbitControlsRef.current) return;
         const controls = orbitControlsRef.current;
 
+        // Si estamos en vista libre, desactivar OrbitControls y no interferir con la cámara
+        if (viewType === 'free') {
+            controls.enabled = false;
+            return;
+        }
+
         // Mantener el vector superior constante para evitar rotaciones y volteos extraños
         camera.up.set(0, 1, 0);
 
@@ -306,12 +367,15 @@ const ViewManager = React.memo(({ viewType, orbitControlsRef }) => {
                 }
             });
 
-            // Posicionamos con un offset mínimo en Z de 0.001 para que la cámara no quede perfectamente vertical 
-            // respecto al vector superior [0, 1, 0], previniendo giros bruscos del gimbal lock.
+            // Preservar el rumbo azimutal actual de la cámara con un offset mínimo para evitar gimbal lock
+            const currentAzimuthRad = (getCameraWorldAzimuthDeg(camera) * Math.PI) / 180;
+            const offsetX = -Math.sin(currentAzimuthRad) * 0.01;
+            const offsetZ = Math.cos(currentAzimuthRad) * 0.01;
+
             gsap.to(camera.position, {
-                x: target.x,
+                x: target.x + offsetX,
                 y: targetY,
-                z: target.z + 0.001,
+                z: target.z + offsetZ,
                 duration: 1.2,
                 ease: "power2.inOut",
                 onUpdate: () => {
@@ -385,9 +449,10 @@ const ViewManager = React.memo(({ viewType, orbitControlsRef }) => {
             });
         } else {
             // Re-habilitar rotación de cámara y restaurar click izquierdo a rotación orbital
+            // minPolarAngle = 0.05 (~2.8°) evita que la cámara entre en el polo exacto (gimbal lock) al inclinar hacia arriba
             controls.enableRotate = true;
-            controls.minPolarAngle = 0;
-            controls.maxPolarAngle = Math.PI;
+            controls.minPolarAngle = 0.05;
+            controls.maxPolarAngle = Math.PI - 0.05;
             controls.mouseButtons = {
                 LEFT: THREE.MOUSE.ROTATE,
                 MIDDLE: THREE.MOUSE.DOLLY,
@@ -442,155 +507,139 @@ const ViewManager = React.memo(({ viewType, orbitControlsRef }) => {
 
 ViewManager.displayName = 'ViewManager';
 
-const FirstPersonNavigation = React.memo(({ enabled, orbitControlsRef, onExit }) => {
-    const { camera, gl } = useThree();
+const FirstPersonNavigation = React.memo(({ enabled, onExit }) => {
+    const { gl } = useThree();
+    const controlsRef = React.useRef();
     const keysPressed = React.useRef({});
-    const isDragging = React.useRef(false);
-    const previousMousePosition = React.useRef({ x: 0, y: 0 });
-    const euler = React.useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
 
     useEffect(() => {
         if (!enabled) return;
 
-        // Deshabilitar OrbitControls mientras navegamos en Primera Persona
-        if (orbitControlsRef && orbitControlsRef.current) {
-            orbitControlsRef.current.enabled = false;
+        // Quitar el foco de cualquier botón previo (como el dropdown de la barra de herramientas)
+        if (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
         }
-
-        euler.current.setFromQuaternion(camera.quaternion, 'YXZ');
 
         const handleKeyDown = (e) => {
             if (e.key === 'Escape' || e.key === 'Esc') {
-                if (document.pointerLockElement) document.exitPointerLock?.();
-                onExit?.();
+                if (document.pointerLockElement) {
+                    document.exitPointerLock?.();
+                } else {
+                    onExit?.();
+                }
                 return;
             }
             if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
-            keysPressed.current[e.key.toLowerCase()] = true;
+
+            const key = e.key.toLowerCase();
+            const isNavKey = e.code === 'Space' || e.key === ' ' || 
+                ['w', 'a', 's', 'd', 'q', 'e', 'shift', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key);
+
+            // Bloquear en fase de captura para que ningún botón de la UI (ej. dropdown de NextUI) reciba la tecla
+            if (isNavKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof e.stopImmediatePropagation === 'function') {
+                    e.stopImmediatePropagation();
+                }
+            }
+
+            keysPressed.current[key] = true;
+            if (e.code === 'Space' || e.key === ' ') {
+                keysPressed.current[' '] = true;
+            }
         };
 
         const handleKeyUp = (e) => {
-            keysPressed.current[e.key.toLowerCase()] = false;
-        };
+            const key = e.key.toLowerCase();
+            const isNavKey = e.code === 'Space' || e.key === ' ' || 
+                ['w', 'a', 's', 'd', 'q', 'e', 'shift', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key);
 
-        const handleMouseDown = (e) => {
-            if (e.button === 0 || e.button === 2) {
-                isDragging.current = true;
-                previousMousePosition.current = { x: e.clientX, y: e.clientY };
+            if (isNavKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof e.stopImmediatePropagation === 'function') {
+                    e.stopImmediatePropagation();
+                }
             }
-        };
 
-        const handleMouseUp = () => {
-            isDragging.current = false;
-        };
-
-        const handleMouseMove = (e) => {
-            if (!isDragging.current && document.pointerLockElement !== gl.domElement) return;
-
-            const movementX = document.pointerLockElement === gl.domElement 
-                ? e.movementX 
-                : e.clientX - previousMousePosition.current.x;
-            const movementY = document.pointerLockElement === gl.domElement 
-                ? e.movementY 
-                : e.clientY - previousMousePosition.current.y;
-
-            previousMousePosition.current = { x: e.clientX, y: e.clientY };
-
-            const sensitivity = 0.0025;
-            euler.current.y -= movementX * sensitivity; // Yaw (rotación horizontal)
-            euler.current.x -= movementY * sensitivity; // Pitch (rotación vertical)
-
-            // Limitar la inclinación vertical para evitar giros inversos (gimbal lock)
-            euler.current.x = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, euler.current.x));
-
-            camera.quaternion.setFromEuler(euler.current);
-        };
-
-        const handleCanvasClick = () => {
-            if (document.pointerLockElement !== gl.domElement) {
-                gl.domElement.requestPointerLock?.();
+            if (e.code === 'Space' || e.key === ' ') {
+                keysPressed.current[' '] = false;
             }
+            keysPressed.current[key] = false;
         };
 
-        const handlePointerLockChange = () => {
-            if (document.pointerLockElement !== gl.domElement && enabled) {
-                onExit?.();
-            }
+        const handleWheel = (e) => {
+            const controls = controlsRef.current;
+            if (!controls) return;
+            const distance = (e.deltaY < 0 ? 1 : -1) * 12;
+            controls.moveForward(distance);
         };
 
+        window.addEventListener('keydown', handleKeyDown, true);
+        window.addEventListener('keyup', handleKeyUp, true);
         const domElem = gl.domElement;
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-        domElem.addEventListener('mousedown', handleMouseDown);
-        window.addEventListener('mouseup', handleMouseUp);
-        window.addEventListener('mousemove', handleMouseMove);
-        domElem.addEventListener('click', handleCanvasClick);
-        document.addEventListener('pointerlockchange', handlePointerLockChange);
+        domElem.addEventListener('wheel', handleWheel, { passive: true });
+
+        // Intentar fijar el puntero suavemente al entrar
+        const timer = setTimeout(() => {
+            try {
+                controlsRef.current?.lock();
+            } catch (_) {}
+        }, 120);
 
         return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-            domElem.removeEventListener('mousedown', handleMouseDown);
-            window.removeEventListener('mouseup', handleMouseUp);
-            window.removeEventListener('mousemove', handleMouseMove);
-            domElem.removeEventListener('click', handleCanvasClick);
-            document.removeEventListener('pointerlockchange', handlePointerLockChange);
-            if (document.pointerLockElement === gl.domElement) {
+            clearTimeout(timer);
+            window.removeEventListener('keydown', handleKeyDown, true);
+            window.removeEventListener('keyup', handleKeyUp, true);
+            domElem.removeEventListener('wheel', handleWheel);
+            if (document.pointerLockElement) {
                 document.exitPointerLock?.();
             }
             keysPressed.current = {};
-            isDragging.current = false;
-
-            // Al salir de primera persona, restaurar OrbitControls apuntando hacia la dirección donde mira la cámara
-            if (orbitControlsRef && orbitControlsRef.current) {
-                const dir = new THREE.Vector3();
-                camera.getWorldDirection(dir);
-                orbitControlsRef.current.target.copy(camera.position).addScaledVector(dir, 20);
-                orbitControlsRef.current.enabled = true;
-                orbitControlsRef.current.update();
-            }
         };
-    }, [enabled, camera, gl.domElement, orbitControlsRef, onExit]);
+    }, [enabled, gl.domElement, onExit]);
 
     useFrame((state, delta) => {
         if (!enabled) return;
+        const controls = controlsRef.current;
+        if (!controls) return;
 
+        const safeDelta = Math.min(delta, 0.1);
         const speedMultiplier = keysPressed.current['shift'] ? 2.5 : 1.0;
-        const moveSpeed = 16 * speedMultiplier * delta;
+        const moveSpeed = 65 * speedMultiplier * safeDelta;
 
-        const dir = new THREE.Vector3();
-        camera.getWorldDirection(dir);
-
-        const forward = dir.clone().normalize();
-        const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
-
-        const moveVector = new THREE.Vector3(0, 0, 0);
-
+        // Desplazamiento horizontal sobre el plano del terreno (WASD)
         if (keysPressed.current['w'] || keysPressed.current['arrowup']) {
-            moveVector.addScaledVector(forward, moveSpeed);
+            controls.moveForward(moveSpeed);
         }
         if (keysPressed.current['s'] || keysPressed.current['arrowdown']) {
-            moveVector.addScaledVector(forward, -moveSpeed);
-        }
-        if (keysPressed.current['a'] || keysPressed.current['arrowleft']) {
-            moveVector.addScaledVector(right, -moveSpeed);
+            controls.moveForward(-moveSpeed);
         }
         if (keysPressed.current['d'] || keysPressed.current['arrowright']) {
-            moveVector.addScaledVector(right, moveSpeed);
+            controls.moveRight(moveSpeed);
         }
-        if (keysPressed.current['q'] || keysPressed.current[' ']) {
-            moveVector.y += moveSpeed;
-        }
-        if (keysPressed.current['e']) {
-            moveVector.y -= moveSpeed;
+        if (keysPressed.current['a'] || keysPressed.current['arrowleft']) {
+            controls.moveRight(-moveSpeed);
         }
 
-        if (moveVector.lengthSq() > 0) {
-            camera.position.add(moveVector);
+        // Elevación vertical (Q / Espacio = subir, E = bajar)
+        if (keysPressed.current['q'] || keysPressed.current[' ']) {
+            state.camera.position.y += moveSpeed;
+        }
+        if (keysPressed.current['e']) {
+            state.camera.position.y -= moveSpeed;
         }
     });
 
-    return null;
+    if (!enabled) return null;
+
+    return (
+        <PointerLockControls
+            ref={controlsRef}
+            selector="#visualizer-canvas"
+        />
+    );
 });
 
 FirstPersonNavigation.displayName = 'FirstPersonNavigation';
@@ -633,30 +682,239 @@ const App = () => {
     const [isUserControlling, setIsUserControlling] = useState(false);
     const [lastCameraView, setLastCameraView] = useState(0);
     const orbitControlsRef = React.useRef();
-    const compassRef = React.useRef(null);
+    const lastOrbitTargetRef = React.useRef(null);
 
-    // Reorientar suavemente la cámara hacia el Norte (eje -Z) con rotación azimutal a 0
+    const handleExitFreeView = useCallback(() => {
+        if (typeof document !== 'undefined' && document.pointerLockElement) {
+            document.exitPointerLock?.();
+        }
+        if (orbitControlsRef.current?.object) {
+            const cam = orbitControlsRef.current.object;
+            const dir = new THREE.Vector3();
+            cam.getWorldDirection(dir);
+            lastOrbitTargetRef.current = cam.position.clone().addScaledVector(dir, 30);
+        }
+        setCurrentView('3d');
+    }, []);
+    const compassRef = React.useRef(null);
+    const minimapRadarRef = React.useRef(null);
+    const captureSnapshotRef = React.useRef(null);
+    const [modelBounds, setModelBounds] = useState(null);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const [pdfPreview, setPdfPreview] = useState(null);
+
+    const handleClosePdfPreview = useCallback(() => {
+        setPdfPreview(prev => {
+            if (prev?.url) URL.revokeObjectURL(prev.url);
+            return null;
+        });
+    }, []);
+
+    const handleDownloadPdfPreview = useCallback(() => {
+        if (!pdfPreview?.doc) return;
+        pdfPreview.doc.save(pdfPreview.fileName);
+        toast.success("Plano descargado con éxito");
+    }, [pdfPreview]);
+
+    // Liberar la URL temporal del PDF al desmontar
+    const pdfPreviewUrlRef = React.useRef(null);
+    useEffect(() => {
+        pdfPreviewUrlRef.current = pdfPreview?.url || null;
+    }, [pdfPreview]);
+    useEffect(() => {
+        return () => {
+            if (pdfPreviewUrlRef.current) URL.revokeObjectURL(pdfPreviewUrlRef.current);
+        };
+    }, []);
+    const [northOffset, setNorthOffset] = useState(0);
+    const [originalNorthOffset, setOriginalNorthOffset] = useState(0);
+
+    const cameraTweenRef = React.useRef(null);
+
+    // Reorientar suavemente la cámara hacia el Norte real sincronizado (northOffset)
     const handleResetNorth = useCallback(() => {
         if (!orbitControlsRef.current) return;
         const controls = orbitControlsRef.current;
         const camera = controls.object;
         const target = controls.target;
 
-        const horizontalDist = Math.hypot(camera.position.x - target.x, camera.position.z - target.z);
-        if (horizontalDist < 0.001) return;
+        if (controls.enabled === false) {
+            // En vista libre (primera persona), rotar en el sitio hacia el Norte real
+            const rad = (normalizeDegrees(northOffset) * Math.PI) / 180;
+            const lookTarget = new THREE.Vector3(
+                camera.position.x + Math.sin(rad) * 20,
+                camera.position.y,
+                camera.position.z - Math.cos(rad) * 20
+            );
+            camera.lookAt(lookTarget);
+            return;
+        }
 
+        if (cameraTweenRef.current) {
+            cameraTweenRef.current.kill();
+            cameraTweenRef.current = null;
+        }
         gsap.killTweensOf(camera.position);
-        gsap.to(camera.position, {
-            x: target.x,
-            z: target.z + horizontalDist,
+        gsap.killTweensOf(controls.target);
+
+        const rawDist = Math.hypot(camera.position.x - target.x, camera.position.z - target.z);
+        const horizontalDist = Math.max(rawDist, 0.01);
+        const startAzimuthDeg = getCameraWorldAzimuthDeg(camera);
+        const targetAzimuthDeg = normalizeDegrees(northOffset);
+        const deltaDeg = ((targetAzimuthDeg - startAzimuthDeg) % 360 + 540) % 360 - 180;
+
+        const proxy = { t: 0 };
+        cameraTweenRef.current = gsap.to(proxy, {
+            t: 1,
             duration: 0.8,
             ease: "power2.out",
             onUpdate: () => {
+                const currentDeg = startAzimuthDeg + deltaDeg * proxy.t;
+                const rad = (currentDeg * Math.PI) / 180;
+                camera.position.x = target.x - horizontalDist * Math.sin(rad);
+                camera.position.z = target.z + horizontalDist * Math.cos(rad);
                 camera.lookAt(target);
                 controls.update();
             }
         });
-    }, []);
+    }, [northOffset]);
+
+    // Cálculo dinámico del Bounding Box y escala para el Minimapa 2D
+    const minimapBounds = useMemo(() => {
+        const list = (allTerrains && allTerrains.length > 0) ? allTerrains : terrains;
+        let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+
+        if (list && list.length > 0) {
+            list.forEach(t => {
+                (t.markers || []).forEach(m => {
+                    const x = Array.isArray(m?.position) ? m.position[0] : (m?.x ?? m?.[0]);
+                    const z = Array.isArray(m?.position) ? m.position[2] : (m?.z ?? m?.[2]);
+                    if (typeof x === 'number' && typeof z === 'number') {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (z < minZ) minZ = z;
+                        if (z > maxZ) maxZ = z;
+                    }
+                });
+            });
+        }
+
+        if (minX !== Infinity && maxX !== -Infinity) {
+            const width = Math.max(maxX - minX, 1);
+            const depth = Math.max(maxZ - minZ, 1);
+            const scale = Math.min(140 / width, 140 / depth);
+            return {
+                minX, maxX, minZ, maxZ,
+                centerX: (minX + maxX) / 2,
+                centerZ: (minZ + maxZ) / 2,
+                width, depth,
+                scale
+            };
+        }
+
+        if (modelBounds) {
+            const width = Math.max(modelBounds.width, 1);
+            const depth = Math.max(modelBounds.depth, 1);
+            // Escalar a 140px sobre el lienzo de 200x200 para que la planta general coincida a escala real con el modelo
+            const scale = Math.min(140 / width, 140 / depth);
+            return {
+                ...modelBounds,
+                width,
+                depth,
+                scale
+            };
+        }
+
+        return {
+            centerX: 0,
+            centerZ: 0,
+            width: 100,
+            depth: 100,
+            scale: 1.4
+        };
+    }, [allTerrains, terrains, modelBounds]);
+
+    // Teletransporte fluido ubicando directamente el foco (controls.target) en (targetX, targetZ)
+    // con interpolación atómica sincronizada para evitar giros o saltos en la brújula
+    const handleMinimapTeleport = useCallback((targetX, targetZ) => {
+        if (!orbitControlsRef.current) return;
+        const controls = orbitControlsRef.current;
+        const camera = controls.object;
+
+        const currentAzimuthRad = (getCameraWorldAzimuthDeg(camera) * Math.PI) / 180;
+        const ux = Math.sin(currentAzimuthRad);
+        const uz = -Math.cos(currentAzimuthRad);
+
+        if (cameraTweenRef.current) {
+            cameraTweenRef.current.kill();
+            cameraTweenRef.current = null;
+        }
+        gsap.killTweensOf(camera.position);
+        gsap.killTweensOf(controls.target);
+
+        if (controls.enabled === false) {
+            // Vista libre: mover la cámara directamente a la posición del puntero
+            cameraTweenRef.current = gsap.to(camera.position, {
+                x: targetX,
+                z: targetZ,
+                duration: 1.0,
+                ease: "power2.inOut"
+            });
+            return;
+        }
+
+        const startTargetX = controls.target.x;
+        const startTargetY = controls.target.y;
+        const startTargetZ = controls.target.z;
+        const startCamX = camera.position.x;
+        const startCamY = camera.position.y;
+        const startCamZ = camera.position.z;
+
+        const rawHorizDist = Math.hypot(startTargetX - startCamX, startTargetZ - startCamZ);
+
+        let endTargetY = startTargetY;
+        let endCamX;
+        let endCamY = startCamY;
+        let endCamZ;
+
+        if (rawHorizDist < 0.05) {
+            // Vista en planta (cenital): colocar cámara y target verticalmente sobre el punto preservando el rumbo
+            endCamX = targetX - ux * 0.01;
+            endCamZ = targetZ - uz * 0.01;
+        } else {
+            // En vista 3D / Isométrica: ubicar el foco (controls.target) en (targetX, targetZ)
+            // y posicionar la cámara enfocando ese punto desde una distancia cercana sin alterar su rumbo
+            const modelSpan = Math.max(modelBounds?.width || 60, modelBounds?.depth || 60);
+            const focusDist = Math.min(Math.max(rawHorizDist, modelSpan * 0.12, 4), modelSpan * 0.35);
+            endTargetY = modelBounds?.centerY ?? startTargetY;
+            const currentHeightOffset = Math.max(startCamY - startTargetY, modelSpan * 0.15, 5);
+            const clampedHeightOffset = Math.min(currentHeightOffset, modelSpan * 0.45);
+            endCamY = endTargetY + clampedHeightOffset;
+            endCamX = targetX - ux * focusDist;
+            endCamZ = targetZ - uz * focusDist;
+        }
+
+        const proxy = { t: 0 };
+        cameraTweenRef.current = gsap.to(proxy, {
+            t: 1,
+            duration: 1.0,
+            ease: "power2.inOut",
+            onUpdate: () => {
+                const p = proxy.t;
+                controls.target.set(
+                    startTargetX + (targetX - startTargetX) * p,
+                    startTargetY + (endTargetY - startTargetY) * p,
+                    startTargetZ + (targetZ - startTargetZ) * p
+                );
+                camera.position.set(
+                    startCamX + (endCamX - startCamX) * p,
+                    startCamY + (endCamY - startCamY) * p,
+                    startCamZ + (endCamZ - startCamZ) * p
+                );
+                controls.update();
+            }
+        });
+    }, [modelBounds]);
     const isInitialLoadRef = React.useRef(true);
     const transformControlsRef = React.useRef();
     const [selectedMarkerObj, setSelectedMarkerObj] = useState(null);
@@ -1014,6 +1272,14 @@ const App = () => {
                         setOriginalBackground360RotationX(0);
                     }
 
+                    if (response.data[safeIndex]?.northOffset !== undefined) {
+                        setNorthOffset(response.data[safeIndex].northOffset);
+                        setOriginalNorthOffset(response.data[safeIndex].northOffset);
+                    } else {
+                        setNorthOffset(0);
+                        setOriginalNorthOffset(0);
+                    }
+
                     // Inicializa photo360Url con la URL del primer marcador 360 si existe
                     if (response.data[safeIndex]?.markers?.length > 0) {
                         console.log("Cargando marcadores desde BD:", response.data[safeIndex].markers);
@@ -1129,9 +1395,12 @@ const App = () => {
                     const optimizedGltf = preprocessLoadedGltf(gltfLoaded);
                     setGltf(optimizedGltf);
 
-                    // Calcular límites de altura
-                    const box = new THREE.Box3().setFromObject(optimizedGltf.scene);
-                    setHeightBounds({ min: box.min.y, max: box.max.y });
+                    // Calcular límites ajustados y silueta 2D real del modelo
+                    const computedBounds = computeModelBoundsAndFootprint(optimizedGltf.scene);
+                    if (computedBounds) {
+                        setHeightBounds({ min: computedBounds.minY, max: computedBounds.maxY });
+                        setModelBounds(computedBounds);
+                    }
 
                     setIsModelLoaded(true);
                     setIsLoadingScreenVisible(false); // Oculta la pantalla de carga
@@ -1153,6 +1422,14 @@ const App = () => {
                     } else {
                         setBackground360RotationX(0);
                         setOriginalBackground360RotationX(0);
+                    }
+
+                    if (currentModel.northOffset !== undefined) {
+                        setNorthOffset(currentModel.northOffset);
+                        setOriginalNorthOffset(currentModel.northOffset);
+                    } else {
+                        setNorthOffset(0);
+                        setOriginalNorthOffset(0);
                     }
 
                     if (currentModel.terrains) {
@@ -1183,31 +1460,40 @@ const App = () => {
             if (!isInitialLoadRef.current) {
                 return;
             }
-            if (currentModel?.defaultCamera) {
-                let attempts = 0;
-                const applyCamera = () => {
-                    if (orbitControlsRef.current) {
-                        const controls = orbitControlsRef.current;
-                        const camera = controls.object;
+            let attempts = 0;
+            const applyCamera = () => {
+                if (orbitControlsRef.current) {
+                    const controls = orbitControlsRef.current;
+                    const camera = controls.object;
+                    if (currentModel?.defaultCamera?.position?.length === 3) {
                         const { position, target } = currentModel.defaultCamera;
-                        if (position && position.length === 3) {
-                            camera.position.set(position[0], position[1], position[2]);
-                        }
+                        camera.position.set(position[0], position[1], position[2]);
                         if (target && target.length === 3) {
                             controls.target.set(target[0], target[1], target[2]);
                         }
-                        camera.updateProjectionMatrix();
-                        controls.update();
-                    } else if (attempts < 15) {
-                        attempts++;
-                        setTimeout(applyCamera, 100);
+                    } else if (modelBounds) {
+                        // Si no hay defaultCamera guardada, ubicar la cámara centrada sobre el modelo real
+                        const span = Math.max(modelBounds.width, modelBounds.depth, 20);
+                        const rad = (normalizeDegrees(currentModel?.northOffset || 0) * Math.PI) / 180;
+                        const dist = span * 0.45;
+                        controls.target.set(modelBounds.centerX, modelBounds.centerY || 0, modelBounds.centerZ);
+                        camera.position.set(
+                            modelBounds.centerX - dist * Math.sin(rad),
+                            (modelBounds.maxY || 10) + span * 0.45,
+                            modelBounds.centerZ + dist * Math.cos(rad)
+                        );
                     }
-                };
-                setTimeout(applyCamera, 100);
-            }
+                    camera.updateProjectionMatrix();
+                    controls.update();
+                } else if (attempts < 15) {
+                    attempts++;
+                    setTimeout(applyCamera, 100);
+                }
+            };
+            setTimeout(applyCamera, 100);
             isInitialLoadRef.current = false;
         }
-    }, [isModelLoaded, currentModel]);
+    }, [isModelLoaded, currentModel, modelBounds]);
 
     // Función para cargar un modelo específico
     const loadModel = (model) => {
@@ -1244,9 +1530,12 @@ const App = () => {
                 setCurrentModelUrl(modelUrl);
                 setCurrentModelId(model.key || model._id);
 
-                // Calcular límites de altura para el nuevo modelo
-                const box = new THREE.Box3().setFromObject(optimizedGltf.scene);
-                setHeightBounds({ min: box.min.y, max: box.max.y });
+                // Calcular límites ajustados y silueta 2D real para el nuevo modelo
+                const computedBounds = computeModelBoundsAndFootprint(optimizedGltf.scene);
+                if (computedBounds) {
+                    setHeightBounds({ min: computedBounds.minY, max: computedBounds.maxY });
+                    setModelBounds(computedBounds);
+                }
 
                 if (model.terrains && model.terrains.length > 0) {
                     setTerrains(model.terrains);
@@ -1259,6 +1548,14 @@ const App = () => {
                 } else {
                     setDefaultCamera(null);
                     setOriginalDefaultCamera(null);
+                }
+
+                if (model.northOffset !== undefined) {
+                    setNorthOffset(model.northOffset);
+                    setOriginalNorthOffset(model.northOffset);
+                } else {
+                    setNorthOffset(0);
+                    setOriginalNorthOffset(0);
                 }
 
                 if (model.markers && model.markers.length > 0) {
@@ -1351,6 +1648,7 @@ const App = () => {
                 defaultCamera: defaultCamera,
                 background360Rotation: background360Rotation,
                 background360RotationX: background360RotationX,
+                northOffset: northOffset,
             });
             console.log('Terrenos guardados:', response.data);
             setOriginalTerrains(allTerrains);
@@ -1358,19 +1656,22 @@ const App = () => {
             setOriginalDefaultCamera(defaultCamera);
             setOriginalBackground360Rotation(background360Rotation);
             setOriginalBackground360RotationX(background360RotationX);
+            setOriginalNorthOffset(northOffset);
 
-            // Sincronizar todos los modelos cargados localmente con el mismo fondo y rotaciones
+            // Sincronizar todos los modelos cargados localmente con el mismo fondo, rotaciones y norte
             setModels(prev => prev.map(m => ({
                 ...m,
                 background360: background360,
                 background360Rotation: background360Rotation,
-                background360RotationX: background360RotationX
+                background360RotationX: background360RotationX,
+                northOffset: northOffset
             })));
             setcurrentModel(prev => prev ? {
                 ...prev,
                 background360: background360,
                 background360Rotation: background360Rotation,
-                background360RotationX: background360RotationX
+                background360RotationX: background360RotationX,
+                northOffset: northOffset
             } : null);
 
             setSelectedMarker(null);
@@ -1395,6 +1696,58 @@ const App = () => {
         );
     };
 
+    const handleExportSchematicPdf = useCallback(async () => {
+        const sourceTerrains = (allTerrains && allTerrains.length > 0) ? allTerrains : terrains;
+        const hasTerrains = sourceTerrains && sourceTerrains.length > 0;
+
+        // Combinar con las áreas calculadas en tiempo real por AreaVisual si existen
+        const terrainsWithAreas = hasTerrains ? sourceTerrains.map(t => ({
+            ...t,
+            areaCalculated: terrainAreasMap[t.id] ? Number(terrainAreasMap[t.id]) : (t.areaCalculated || 0)
+        })) : [];
+
+        setIsGeneratingPdf(true);
+        const toastId = toast.loading(hasTerrains ? "Generando vista previa del plano esquemático..." : "Generando vista previa del plano general...");
+
+        // Capturar snapshot de alta calidad del canvas 3D
+        let snapshot = null;
+        if (captureSnapshotRef.current) {
+            try {
+                snapshot = captureSnapshotRef.current();
+            } catch (e) {
+                console.warn("No se pudo capturar snapshot del modelo:", e);
+            }
+        }
+
+        try {
+            const { generateSchematicFloorPlanPdf } = await import('./utils/schematicPdfGenerator');
+            const result = await generateSchematicFloorPlanPdf({
+                projectInfo,
+                terrains: terrainsWithAreas,
+                modelName: currentModel?.name || pjname || "Proyecto",
+                modelSnapshot: snapshot,
+                modelBounds,
+                northOffset,
+                autoDownload: false
+            });
+
+            // Generar URL temporal del PDF para mostrar la vista previa antes de descargar
+            const blob = result.doc.output('blob');
+            const url = URL.createObjectURL(blob);
+            setPdfPreview(prev => {
+                if (prev?.url) URL.revokeObjectURL(prev.url);
+                return { url, fileName: result.fileName, doc: result.doc, totalLotes: result.totalLotes };
+            });
+
+            toast.success(hasTerrains ? `Vista previa lista (${result.totalLotes} lotes)` : "Vista previa del plano lista", { id: toastId });
+        } catch (error) {
+            console.error("Error al exportar plano esquemático:", error);
+            toast.error(error.message || "No se pudo generar el plano esquemático.", { id: toastId });
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    }, [allTerrains, terrains, terrainAreasMap, projectInfo, currentModel, pjname, modelBounds, northOffset]);
+
     const handleToggleEditingMode = () => {
         if (!isEditingMode) {
             setOriginalTerrains(allTerrains);
@@ -1415,6 +1768,7 @@ const App = () => {
             setDefaultCamera(originalDefaultCamera);
             setBackground360Rotation(originalBackground360Rotation);
             setBackground360RotationX(originalBackground360RotationX);
+            setNorthOffset(originalNorthOffset);
             setCurrentTerrainMarkers([]);
             setMarkers([]);
             setSelectedMarker(null);
@@ -1590,6 +1944,14 @@ const App = () => {
 
         setDefaultCamera({ position, target });
         toast.success("Posición de cámara capturada localmente. Haz clic en 'Guardar Cambios' para persistir.");
+    };
+
+    const handleSetCurrentAsNorth = () => {
+        if (!orbitControlsRef.current) return;
+        const camera = orbitControlsRef.current.object;
+        const azimuth = Math.round(getCameraWorldAzimuthDeg(camera));
+        setNorthOffset(azimuth);
+        toast.success(`Norte calibrado a ${azimuth}°. Haz clic en 'Guardar Cambios' para persistir.`);
     };
 
     const selectedInfo = getSelectedMarkerItem();
@@ -1885,7 +2247,8 @@ const App = () => {
         JSON.stringify(view360Markers) !== JSON.stringify(originalView360Markers) ||
         JSON.stringify(defaultCamera) !== JSON.stringify(originalDefaultCamera) ||
         background360Rotation !== originalBackground360Rotation ||
-        background360RotationX !== originalBackground360RotationX;
+        background360RotationX !== originalBackground360RotationX ||
+        northOffset !== originalNorthOffset;
 
     const selectedMarkerPosition = getSelectedMarkerPosition();
 
@@ -1976,7 +2339,23 @@ const App = () => {
                             isElevationMode={isElevationMode}
                             onToggleElevation={() => setIsElevationMode(!isElevationMode)}
                             currentView={currentView}
-                            onChangeView={setCurrentView}
+                            onChangeView={(view) => {
+                                if (view === 'free') {
+                                    setIsAutoRotate(false);
+                                    if (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.blur === 'function') {
+                                        document.activeElement.blur();
+                                    }
+                                    setTimeout(() => {
+                                        try {
+                                            const canvas = document.querySelector('canvas');
+                                            if (canvas && document.pointerLockElement !== canvas) {
+                                                canvas.requestPointerLock?.();
+                                            }
+                                        } catch (_) {}
+                                    }, 50);
+                                }
+                                setCurrentView(view);
+                            }}
                             canEdit={!isPublish}
                             isEditingMode={isEditingMode}
                             onToggleEditingMode={handleToggleEditingMode}
@@ -1993,16 +2372,64 @@ const App = () => {
                         currentModel={currentModel}
                         session={session}
                         onUpdateModelNotes={handleUpdateModelNotes}
+                        onExportSchematicPdf={isModelLoaded ? handleExportSchematicPdf : undefined}
+                        isGeneratingPdf={isGeneratingPdf}
                     />
                 </div>
             </div>
 
             {/* Brújula Horizontal HUD debajo del Toolbar */}
             {isModelLoaded && (
-                <div className={`absolute left-1/2 -translate-x-1/2 z-[10] pointer-events-auto transition-all duration-200 ${currentView === 'free' ? 'top-[132px]' : 'top-[68px] sm:top-[74px]'}`}>
+                <div className="absolute left-1/2 -translate-x-1/2 z-[10] pointer-events-auto top-[68px] sm:top-[74px]">
                     <Compass ref={compassRef} onResetNorth={handleResetNorth} />
                 </div>
             )}
+
+            {/* Vista previa del Plano Esquemático (PDF) antes de descargar */}
+            <Modal
+                isOpen={!!pdfPreview}
+                onClose={handleClosePdfPreview}
+                size="5xl"
+                scrollBehavior="inside"
+                backdrop="blur"
+                classNames={{
+                    base: "bg-[#061626] border border-white/15 text-white max-h-[92vh]",
+                    header: "border-b border-white/10",
+                    footer: "border-t border-white/10",
+                    closeButton: "text-white/70 hover:bg-white/10"
+                }}
+            >
+                <ModalContent>
+                    <ModalHeader className="flex flex-col gap-0.5">
+                        <span className="text-base font-bold">Vista previa del plano</span>
+                        <span className="text-xs font-normal text-white/50">
+                            {pdfPreview?.totalLotes ? `${pdfPreview.totalLotes} lotes` : 'Planta general del proyecto'} · {pdfPreview?.fileName}
+                        </span>
+                    </ModalHeader>
+                    <ModalBody className="p-0">
+                        {pdfPreview?.url && (
+                            <iframe
+                                src={`${pdfPreview.url}#toolbar=0&navpanes=0&view=FitH`}
+                                title="Vista previa del plano esquemático"
+                                className="w-full h-[70vh] bg-white"
+                            />
+                        )}
+                    </ModalBody>
+                    <ModalFooter className="flex items-center justify-between gap-2">
+                        <span className="hidden sm:inline text-[11px] text-white/40">
+                            ¿No ves la vista previa en tu dispositivo? Descárgalo directamente.
+                        </span>
+                        <div className="flex gap-2 ml-auto">
+                            <Button variant="flat" className="bg-white/10 text-white" onPress={handleClosePdfPreview}>
+                                Cerrar
+                            </Button>
+                            <Button className="bg-cyan-500 text-black font-bold" onPress={handleDownloadPdfPreview}>
+                                Descargar PDF
+                            </Button>
+                        </div>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
 
 
 
@@ -2015,33 +2442,30 @@ const App = () => {
                     <div className='flex w-full h-full relative'>
                         {currentView === 'free' && (
                             <>
-                                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 bg-black/80 backdrop-blur-md border border-[#0CDBFF]/50 text-white px-4 py-2.5 rounded-full text-xs font-medium flex items-center gap-3 shadow-[0_0_20px_rgba(12,219,255,0.3)] pointer-events-auto">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-[#0CDBFF] animate-pulse flex-shrink-0" />
-                                    <span>🎮 <strong>Vista Libre:</strong> Clic para fijar ratón | <strong>WASD / Flechas</strong> Avanzar | <strong>Q / Espacio</strong> Subir | <strong>E</strong> Bajar | Presiona <strong>ESC</strong> para salir</span>
+                                <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-30 bg-black/60 backdrop-blur-md border border-white/15 text-white/90 px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-2.5 shadow-2xl pointer-events-auto select-none">
+                                    <span className="w-2 h-2 rounded-full bg-[#0CDBFF] shadow-[0_0_6px_rgba(12,219,255,0.8)] animate-pulse shrink-0" />
+                                    <span className="text-white/80 text-[11px] sm:text-xs">
+                                        <strong className="text-white font-semibold">WASD</strong> Moverse <span className="text-white/30">·</span> <strong className="text-white font-semibold">Espacio</strong> Subir <span className="text-white/30">·</span> <strong className="text-white font-semibold">E</strong> Bajar
+                                    </span>
                                     <button 
-                                        onClick={() => {
-                                            if (document.pointerLockElement) document.exitPointerLock?.();
-                                            setCurrentView('3d');
-                                        }}
-                                        className="ml-2 bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-xs font-bold transition-colors border border-white/10"
+                                        onClick={handleExitFreeView}
+                                        className="ml-1 bg-white/10 hover:bg-white/20 text-white px-2.5 py-0.5 rounded-full text-[11px] font-bold transition-all border border-white/15 hover:border-white/30"
                                     >
                                         Salir (ESC)
                                     </button>
                                 </div>
 
-                                {/* Puntero central de alta visibilidad: 2 líneas en cruz con contraste */}
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none flex items-center justify-center w-6 h-6">
-                                    {/* Línea horizontal */}
-                                    <div className="absolute w-4 h-[2px] bg-[#0CDBFF] rounded-full shadow-[0_0_4px_rgba(0,0,0,1)] border border-black" />
-                                    {/* Línea vertical */}
-                                    <div className="absolute h-4 w-[2px] bg-[#0CDBFF] rounded-full shadow-[0_0_4px_rgba(0,0,0,1)] border border-black" />
-                                    {/* Punto central diminuto de contraste */}
-                                    <div className="absolute w-1 h-1 rounded-full bg-white border border-black shadow-[0_0_2px_rgba(0,0,0,1)]" />
+                                {/* Puntero central sutil y discreto */}
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none flex items-center justify-center w-5 h-5">
+                                    <div className="absolute w-3.5 h-[1.5px] bg-[#0CDBFF]/80 rounded-full shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
+                                    <div className="absolute h-3.5 w-[1.5px] bg-[#0CDBFF]/80 rounded-full shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
+                                    <div className="absolute w-1 h-1 rounded-full bg-white shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
                                 </div>
                             </>
                         )}
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
                             <Canvas
+                                id="visualizer-canvas"
                                 frameloop={isPhoto360ModalOpen ? "never" : "always"}
                                 style={{ cursor: currentView === 'free' ? 'none' : (editMarkersMode ? 'crosshair' : 'default') }}
                                 dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]}
@@ -2066,8 +2490,10 @@ const App = () => {
 
                                 <CameraViewManager cameraView={cameraView} />
                                 <ViewManager viewType={currentView} orbitControlsRef={orbitControlsRef} />
-                                <FirstPersonNavigation enabled={currentView === 'free'} orbitControlsRef={orbitControlsRef} onExit={() => setCurrentView('3d')} />
-                                <CompassSync compassRef={compassRef} />
+                                <FirstPersonNavigation enabled={currentView === 'free'} onExit={handleExitFreeView} />
+                                <CompassSync compassRef={compassRef} northOffset={northOffset} />
+                                <MinimapSync radarRef={minimapRadarRef} bounds={minimapBounds} />
+                                <CaptureHelper onReady={(fn) => { captureSnapshotRef.current = fn; }} />
                                 {/* <CameraDebugger /> */}
 
                                 {editMarkersMode && (
@@ -2236,18 +2662,28 @@ const App = () => {
                                 {gltf && <ModelComponent gltf={gltf} ref={objectRef} />}
                                 {/* <CameraPositioner /> */}
                                 {/* <CameraController terrain={selectedTerrain} /> */}
-                                <OrbitControls
-                                    makeDefault
-                                    ref={orbitControlsRef}
-                                    minDistance={0}
-                                    minPolarAngle={0}
-                                    maxPolarAngle={Math.PI / 2}
-                                    enableDamping={true}
-                                    dampingFactor={0.05}
-                                    autoRotate={isAutoRotate}
-                                    autoRotateSpeed={1.5}
-                                    onStart={() => setIsAutoRotate(false)}
-                                />
+                                {currentView !== 'free' && (
+                                    <OrbitControls
+                                        makeDefault
+                                        ref={(controls) => {
+                                            if (controls) {
+                                                orbitControlsRef.current = controls;
+                                                if (lastOrbitTargetRef.current) {
+                                                    controls.target.copy(lastOrbitTargetRef.current);
+                                                    controls.update();
+                                                }
+                                            }
+                                        }}
+                                        minDistance={0.5}
+                                        minPolarAngle={0.05}
+                                        maxPolarAngle={Math.PI / 2}
+                                        enableDamping={true}
+                                        dampingFactor={0.05}
+                                        autoRotate={isAutoRotate}
+                                        autoRotateSpeed={1.5}
+                                        onStart={() => setIsAutoRotate(false)}
+                                    />
+                                )}
                                 {background360 && showBackground360 ? (
                                     <>
                                         <Background360 url={background360} rotation={background360Rotation} rotationX={background360RotationX} />
@@ -2273,8 +2709,18 @@ const App = () => {
                                     <span className="text-white text-sm font-medium tracking-wide">Cargando modelo...</span>
                                 </div>
                             )}
-                            {isModelLoaded &&
-                                <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4">
+                            {isModelLoaded && (
+                                <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4 flex flex-col items-start gap-1">
+                                    <Minimap
+                                        terrains={allTerrains.length > 0 ? allTerrains : terrains}
+                                        bounds={minimapBounds}
+                                        radarRef={minimapRadarRef}
+                                        onTeleport={handleMinimapTeleport}
+                                        onResetView={handleResetNorth}
+                                        northOffset={northOffset}
+                                        isModelLoaded={isModelLoaded}
+                                        projectName={pjname || projectInfo?.name}
+                                    />
                                     <div className="navigation-controls flex flex-col items-center mb-4 gap-2">
                                         <div className="flex flex-col items-center mb-1">
                                             <span className="text-[12px] uppercase tracking-wider text-white font-bold mb-0.5 drop-shadow-md">
@@ -2347,7 +2793,7 @@ const App = () => {
                                         Cambiar Vista
                                     </Button> */}
                                 </div>
-                            }
+                            )}
 
                             <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 pointer-events-auto">
                                 <a
@@ -2511,6 +2957,33 @@ const App = () => {
                                     onClick={handleSetDefaultCamera}
                                 >
                                     📸 Guardar Vista Actual por Defecto
+                                </Button>
+                            </div>
+
+                            <div className="flex flex-col gap-2 border-t border-white/10 pt-2.5">
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-xs text-white/60 font-semibold">Orientación del Norte:</label>
+                                        <span className="text-[11px] font-mono text-[#0CDBFF]">{Math.round(normalizeDegrees(northOffset))}°</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="359"
+                                        value={Math.round(normalizeDegrees(northOffset))}
+                                        onChange={(e) => {
+                                            setNorthOffset(parseFloat(e.target.value) || 0);
+                                        }}
+                                        className="w-full cursor-pointer accent-[#0CDBFF]"
+                                    />
+                                </div>
+                                <Button
+                                    size="sm"
+                                    variant="bordered"
+                                    className="text-white border-white/20 hover:bg-white/10 text-xs font-semibold"
+                                    onClick={handleSetCurrentAsNorth}
+                                >
+                                    🧭 Fijar Vista Actual como Norte
                                 </Button>
                             </div>
 

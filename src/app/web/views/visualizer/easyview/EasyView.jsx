@@ -9,6 +9,7 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import InformationCard from '../components/information/InformationCard';
 import Whatsapp from '@/web/global_components/icons/Whatsapp';
 import Compass from '../components/compass/Compass';
+import { getCompassHeadingDeg, getNorthResetCameraPosition } from '../utils/northUtils';
 import gsap from 'gsap';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -210,21 +211,22 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
   const gridMeshRef = useRef(null);
   const compassRef = useRef(null);
   const lastCompassDegRef = useRef(0);
+  const northOffsetRef = useRef(currentModel?.northOffset || 0);
+  northOffsetRef.current = currentModel?.northOffset || 0;
 
-  // Reorientar suavemente la cámara hacia el Norte (eje -Z)
+  // Reorientar suavemente la cámara hacia el Norte real sincronizado
   const handleResetNorth = useCallback(() => {
     if (!controlsRef.current || !cameraRef.current) return;
     const controls = controlsRef.current;
     const camera = cameraRef.current;
     const target = controls.target;
 
-    const horizontalDist = Math.hypot(camera.position.x - target.x, camera.position.z - target.z);
-    if (horizontalDist < 0.001) return;
+    const nextPos = getNorthResetCameraPosition(target, camera.position, northOffsetRef.current);
 
     gsap.killTweensOf(camera.position);
     gsap.to(camera.position, {
-      x: target.x,
-      z: target.z + horizontalDist,
+      x: nextPos.x,
+      z: nextPos.z,
       duration: 0.8,
       ease: "power2.out",
       onUpdate: () => {
@@ -366,7 +368,9 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.enablePan = true; 
+    controls.enablePan = true;
+    controls.minPolarAngle = 0.05;
+    controls.maxPolarAngle = Math.PI - 0.05;
 
     cameraRef.current = camera;
     controlsRef.current = controls;
@@ -622,6 +626,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
 
     // 4. Render Loop
     let animationId;
+    let unwrappedCompassDeg = null;
     const animate = () => {
       animationId = requestAnimationFrame(animate);
       // Pausar el renderizado 3D si la foto 360 está abierta para entregar toda la GPU al visor 360
@@ -629,21 +634,21 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
       controls.update();
       renderer.render(scene, camera);
 
-      // Actualizar brújula horizontal en tiempo real
+      // Actualizar brújula horizontal en tiempo real con el Norte sincronizado e histéresis continua
       if (compassRef.current && camera) {
-        camera.getWorldDirection(tempCompassDir);
-        const horizLen = Math.hypot(tempCompassDir.x, tempCompassDir.z);
-        let deg = 0;
-        if (horizLen > 0.0001) {
-          const angleRad = Math.atan2(tempCompassDir.x, -tempCompassDir.z);
-          deg = (angleRad * 180) / Math.PI;
+        const degNorm = getCompassHeadingDeg(camera, northOffsetRef.current);
+        if (unwrappedCompassDeg === null) {
+          unwrappedCompassDeg = degNorm;
         } else {
-          deg = (Math.atan2(camera.up.x, -camera.up.z) * 180) / Math.PI;
+          const delta = ((degNorm - unwrappedCompassDeg) % 360 + 540) % 360 - 180;
+          let nextDeg = unwrappedCompassDeg + delta;
+          if (nextDeg > 540) nextDeg -= 360;
+          else if (nextDeg < -180) nextDeg += 360;
+          unwrappedCompassDeg = nextDeg;
         }
-        const degNorm = ((deg % 360) + 360) % 360;
-        const xHeading = 288 + degNorm * 0.8;
+        const xHeading = 288 + unwrappedCompassDeg * 0.8;
 
-        if (Math.abs(xHeading - lastCompassDegRef.current) > 0.1) {
+        if (Math.abs(xHeading - lastCompassDegRef.current) > 0.08) {
           lastCompassDegRef.current = xHeading;
           compassRef.current.style.transform = `translateX(${-xHeading.toFixed(1)}px)`;
         }

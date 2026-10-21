@@ -15,15 +15,25 @@ export async function getProjectPresentationData(id) {
       .sort({ creation_date: -1 })
       .lean();
 
-    if (getModel && (getModel.background360Rotation === undefined || getModel.background360Rotation === 0)) {
+    if (getModel && (getModel.background360Rotation === undefined || getModel.background360Rotation === 0 || getModel.northOffset === undefined || getModel.northOffset === 0)) {
       const calibratedModel = await Model.findOne({
         idProyect: idProyect,
-        background360Rotation: { $exists: true, $ne: 0 }
+        $or: [
+          { background360Rotation: { $exists: true, $ne: 0 } },
+          { northOffset: { $exists: true, $ne: 0 } }
+        ]
       }).lean();
 
       if (calibratedModel) {
-        getModel.background360Rotation = calibratedModel.background360Rotation;
-        getModel.background360RotationX = calibratedModel.background360RotationX || 0;
+        if (!getModel.background360Rotation && calibratedModel.background360Rotation) {
+          getModel.background360Rotation = calibratedModel.background360Rotation;
+        }
+        if (!getModel.background360RotationX && calibratedModel.background360RotationX) {
+          getModel.background360RotationX = calibratedModel.background360RotationX || 0;
+        }
+        if (!getModel.northOffset && calibratedModel.northOffset) {
+          getModel.northOffset = calibratedModel.northOffset;
+        }
         if (!getModel.background360) {
           getModel.background360 = calibratedModel.background360;
         }

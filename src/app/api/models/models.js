@@ -54,6 +54,11 @@ const models_schema = new Schema({
     required: false,
     default: 0
   },
+  northOffset: {
+    type: Number,
+    required: false,
+    default: 0
+  },
   creation_date: {
     type: Date,
     default: Date.now

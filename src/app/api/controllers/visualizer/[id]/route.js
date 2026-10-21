@@ -18,16 +18,26 @@ export async function GET(request, {params}) {
         if (findProyect) {
             const idProyect = findProyect?._id;
             let getModel = await Model.findOne({idProyect: idProyect},  { __v : 0, idProyect: 0}).sort({ creation_date : -1 });
-            if (getModel && (getModel.background360Rotation === undefined || getModel.background360Rotation === 0)) {
+            if (getModel && (getModel.background360Rotation === undefined || getModel.background360Rotation === 0 || getModel.northOffset === undefined || getModel.northOffset === 0)) {
                 // Buscar si algún otro modelo del proyecto tiene calibración
                 const calibratedModel = await Model.findOne({ 
                     idProyect: idProyect, 
-                    background360Rotation: { $exists: true, $ne: 0 } 
+                    $or: [
+                        { background360Rotation: { $exists: true, $ne: 0 } },
+                        { northOffset: { $exists: true, $ne: 0 } }
+                    ]
                 });
                 if (calibratedModel) {
                     getModel = getModel.toObject();
-                    getModel.background360Rotation = calibratedModel.background360Rotation;
-                    getModel.background360RotationX = calibratedModel.background360RotationX || 0;
+                    if (!getModel.background360Rotation && calibratedModel.background360Rotation) {
+                        getModel.background360Rotation = calibratedModel.background360Rotation;
+                    }
+                    if (!getModel.background360RotationX && calibratedModel.background360RotationX) {
+                        getModel.background360RotationX = calibratedModel.background360RotationX || 0;
+                    }
+                    if (!getModel.northOffset && calibratedModel.northOffset) {
+                        getModel.northOffset = calibratedModel.northOffset;
+                    }
                     if (!getModel.background360) {
                         getModel.background360 = calibratedModel.background360;
                     }
@@ -62,7 +72,7 @@ export async function POST(request, { params }) {
     try {
         await dbConnected();
         
-        const { terrains, modelID, view360Markers, version_notes, updated_by, defaultCamera, background360Rotation, background360RotationX } = await request.json();
+        const { terrains, modelID, view360Markers, version_notes, updated_by, defaultCamera, background360Rotation, background360RotationX, northOffset } = await request.json();
         console.log('aqui llega el ID: ', modelID);
         console.log('Terrains received:', terrains);
         console.log('aqui llegan los markers 360: ', view360Markers);
@@ -71,6 +81,7 @@ export async function POST(request, { params }) {
         console.log('Default camera received:', defaultCamera);
         console.log('Background 360 rotation received:', background360Rotation);
         console.log('Background 360 rotation X received:', background360RotationX);
+        console.log('North offset received:', northOffset);
         
         // Encuentra el proyecto y actualiza los terrenos
         const model = await Model.findById(modelID);
@@ -94,6 +105,9 @@ export async function POST(request, { params }) {
         if (background360RotationX !== undefined) {
             model.background360RotationX = background360RotationX;
         }
+        if (northOffset !== undefined) {
+            model.northOffset = Number(northOffset) || 0;
+        }
         if (version_notes !== undefined) {
             model.version_notes = version_notes;
             if (updated_by) model.updated_by = updated_by;
@@ -102,14 +116,17 @@ export async function POST(request, { params }) {
         model.updated_at = new Date();
         await model.save();
 
-        // Propagar background360 y sus rotaciones a todos los modelos del proyecto
-        if (background360Rotation !== undefined || background360RotationX !== undefined) {
+        // Propagar background360, sus rotaciones y el norte a todos los modelos del proyecto
+        if (background360Rotation !== undefined || background360RotationX !== undefined || northOffset !== undefined) {
             const updateFields = {};
             if (background360Rotation !== undefined) {
                 updateFields.background360Rotation = background360Rotation;
             }
             if (background360RotationX !== undefined) {
                 updateFields.background360RotationX = background360RotationX;
+            }
+            if (northOffset !== undefined) {
+                updateFields.northOffset = Number(northOffset) || 0;
             }
             if (model.background360) {
                 updateFields.background360 = model.background360;
