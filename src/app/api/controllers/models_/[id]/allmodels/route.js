@@ -20,20 +20,27 @@ export async function GET(request, { params }) {
         if (models && models.length > 0) {
             // Buscar si alguno tiene calibración
             const calibratedModel = models.find(m => m.background360Rotation !== undefined && m.background360Rotation !== 0);
-            if (calibratedModel) {
-                const rotation = calibratedModel.background360Rotation;
-                const rotationX = calibratedModel.background360RotationX || 0;
-                const bg360 = calibratedModel.background360;
+            const calibratedNorthModel = models.find(m => m.northOffset !== undefined && m.northOffset !== 0);
+            if (calibratedModel || calibratedNorthModel) {
+                const rotation = calibratedModel?.background360Rotation || 0;
+                const rotationX = calibratedModel?.background360RotationX || 0;
+                const bg360 = calibratedModel?.background360;
+                const northOffsetVal = calibratedNorthModel?.northOffset || 0;
 
                 models.forEach(m => {
-                    if (m.background360Rotation === undefined || m.background360Rotation === 0) {
-                        m.background360Rotation = rotation;
+                    if (calibratedModel) {
+                        if (m.background360Rotation === undefined || m.background360Rotation === 0) {
+                            m.background360Rotation = rotation;
+                        }
+                        if (m.background360RotationX === undefined || m.background360RotationX === 0) {
+                            m.background360RotationX = rotationX;
+                        }
+                        if (!m.background360) {
+                            m.background360 = bg360;
+                        }
                     }
-                    if (m.background360RotationX === undefined || m.background360RotationX === 0) {
-                        m.background360RotationX = rotationX;
-                    }
-                    if (!m.background360) {
-                        m.background360 = bg360;
+                    if (calibratedNorthModel && (m.northOffset === undefined || m.northOffset === 0)) {
+                        m.northOffset = northOffsetVal;
                     }
                 });
             }

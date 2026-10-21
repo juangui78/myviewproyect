@@ -98,18 +98,28 @@ const ClickHandler = ({ onAddMarker, onAddView360Marker, addView360Mode }) => {
     const [hoverPoint, setHoverPoint] = useState(null);
     const [mouseScreenPos, setMouseScreenPos] = useState({ x: 0, y: 0 });
     const magnifierCanvasRef = useRef(null);
+    const raycasterRef = useRef(null);
+    const mouseVecRef = useRef(new THREE.Vector2());
+
+    const getRaycaster = () => {
+        if (!raycasterRef.current) {
+            raycasterRef.current = new THREE.Raycaster();
+            raycasterRef.current.firstHitOnly = true;
+        }
+        return raycasterRef.current;
+    };
 
     const handleCanvasClick = (event) => {
         if (event.button !== 0) return;
         const canvas = gl.domElement;
         const rect = canvas.getBoundingClientRect();
 
-        const mouse = new THREE.Vector2(
+        const mouse = mouseVecRef.current.set(
             ((event.clientX - rect.left) / rect.width) * 2 - 1,
             -((event.clientY - rect.top) / rect.height) * 2 + 1
         );
 
-        const raycaster = new THREE.Raycaster();
+        const raycaster = getRaycaster();
         raycaster.setFromCamera(mouse, camera);
 
         const intersects = raycaster.intersectObjects(scene.children, true)
@@ -137,12 +147,12 @@ const ClickHandler = ({ onAddMarker, onAddView360Marker, addView360Mode }) => {
 
             setMouseScreenPos({ x: event.clientX, y: event.clientY });
 
-            const mouse = new THREE.Vector2(
+            const mouse = mouseVecRef.current.set(
                 (mouseX / rect.width) * 2 - 1,
                 -(mouseY / rect.height) * 2 + 1
             );
 
-            const raycaster = new THREE.Raycaster();
+            const raycaster = getRaycaster();
             raycaster.setFromCamera(mouse, camera);
 
             const intersects = raycaster.intersectObjects(scene.children, true)

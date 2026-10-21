@@ -58,6 +58,25 @@ const GridIcon = ({ className }) => (
   </svg>
 );
 
+const FloorPlanIcon = ({ className }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M3 9h18" />
+    <path d="M9 21V9" />
+    <path d="M15 9v4" />
+    <path d="M9 15h6" />
+  </svg>
+);
+
 const Toolbar = ({
   onToggleLight,
   onMeasureDistance,
@@ -79,7 +98,9 @@ const Toolbar = ({
   onToggleAutoRotate,
   showBackground360 = true,
   onToggleBackground360,
-  hasBackground360 = false
+  hasBackground360 = false,
+  onExportSchematicPdf,
+  isGeneratingPdf = false
 }) => {
   const toolbarRef = useRef(null);
   const [showLeftFade, setShowLeftFade] = useState(false);
@@ -267,6 +288,22 @@ const Toolbar = ({
           </Dropdown>
         </div>
       </Tooltip>
+
+      {onExportSchematicPdf && (
+        <Tooltip content={isGeneratingPdf ? "Generando PDF..." : "Descargar Plano Esquemático (PDF)"} placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">
+          <Button
+            isIconOnly
+            size="md"
+            variant="light"
+            aria-label="Descargar Plano Esquemático (PDF)"
+            isLoading={isGeneratingPdf}
+            onClick={onExportSchematicPdf}
+            className="text-white hover:bg-white/20 rounded-full transition-colors h-8 w-8 shrink-0 hover:text-[#0CDBFF]"
+          >
+            <FloorPlanIcon className="w-5 h-5 drop-shadow-sm" />
+          </Button>
+        </Tooltip>
+      )}
 
       {canEdit && (
         <Tooltip content="Gestionar Marcadores" placement='bottom' className="text-black bg-white/90 backdrop-blur shadow-sm">

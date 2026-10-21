@@ -25,6 +25,14 @@ const models_schema = new Schema({
     url: {
       type: String,
       required: true
+    },
+    previewUrl: {
+      type: String,
+      required: false
+    },
+    mobileUrl: {
+      type: String,
+      required: false
     }
   },
   idProyect: {
@@ -50,6 +58,11 @@ const models_schema = new Schema({
     default: 0
   },
   background360RotationX: {
+    type: Number,
+    required: false,
+    default: 0
+  },
+  northOffset: {
     type: Number,
     required: false,
     default: 0

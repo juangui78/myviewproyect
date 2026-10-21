@@ -1,8 +1,10 @@
 'use client'
 import React, { forwardRef } from 'react';
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { Environment, OrbitControls, useProgress, Grid } from "@react-three/drei";
+import { Environment, OrbitControls, PointerLockControls, useProgress, Grid } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { Button } from "@nextui-org/react";
 import Link from "next/link";
@@ -39,6 +41,7 @@ const Photo360Modal = dynamic(() => import('../components/viewer360/PhotoSphereM
 });
 
 import Compass, { CompassSync } from '../components/compass/Compass';
+import { getNorthResetCameraPosition, normalizeDegrees } from '../utils/northUtils';
 
 
 const BackArrowIcon = ({ className = "w-4 h-4" }) => (
@@ -191,11 +194,42 @@ const CameraDebugger = () => {
 // Reusable instance of GLTFLoader to optimize memory usage, avoid garbage collection overhead,
 // and reuse the same instance/workers across multiple loads.
 let globalGltfLoader = null;
-const getGltfLoader = () => {
+let globalKtx2Loader = null;
+const getGltfLoader = (renderer = null) => {
     if (typeof window === 'undefined') return null;
     if (!globalGltfLoader) {
         globalGltfLoader = new GLTFLoader();
         globalGltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('/draco/');
+        globalGltfLoader.setDRACOLoader(dracoLoader);
+
+        globalKtx2Loader = new KTX2Loader();
+        globalKtx2Loader.setTranscoderPath('/basis/');
+        try {
+            if (renderer) {
+                globalKtx2Loader.detectSupport(renderer);
+            } else {
+                const probeCanvas = document.createElement('canvas');
+                const glCtx = probeCanvas.getContext('webgl2') || probeCanvas.getContext('webgl');
+                if (glCtx) {
+                    const astcExt = glCtx.getExtension('WEBGL_compressed_texture_astc');
+                    globalKtx2Loader.workerConfig = {
+                        astcSupported: !!astcExt,
+                        astcHDRSupported: !!(astcExt && typeof astcExt.getSupportedProfiles === 'function' && astcExt.getSupportedProfiles().includes('hdr')),
+                        etc1Supported: !!glCtx.getExtension('WEBGL_compressed_texture_etc1'),
+                        etc2Supported: !!glCtx.getExtension('WEBGL_compressed_texture_etc'),
+                        dxtSupported: !!glCtx.getExtension('WEBGL_compressed_texture_s3tc'),
+                        bptcSupported: !!glCtx.getExtension('EXT_texture_compression_bptc'),
+                        pvrtcSupported: !!(glCtx.getExtension('WEBGL_compressed_texture_pvrtc') || glCtx.getExtension('WEBKIT_WEBGL_compressed_texture_pvrtc')),
+                    };
+                }
+            }
+        } catch (_) {}
+        globalGltfLoader.setKTX2Loader(globalKtx2Loader);
+    } else if (renderer && globalKtx2Loader) {
+        try { globalKtx2Loader.detectSupport(renderer); } catch (_) {}
     }
     return globalGltfLoader;
 };
@@ -266,6 +300,12 @@ const ViewManager = React.memo(({ viewType, orbitControlsRef }) => {
     useEffect(() => {
         if (!orbitControlsRef || !orbitControlsRef.current) return;
         const controls = orbitControlsRef.current;
+
+        // Si estamos en vista libre, desactivar OrbitControls y no interferir con la cámara
+        if (viewType === 'free') {
+            controls.enabled = false;
+            return;
+        }
 
         // Mantener el vector superior constante para evitar rotaciones y volteos extraños
         camera.up.set(0, 1, 0);
@@ -384,8 +424,8 @@ const ViewManager = React.memo(({ viewType, orbitControlsRef }) => {
         } else {
             // Re-habilitar rotación de cámara y restaurar click izquierdo a rotación orbital
             controls.enableRotate = true;
-            controls.minPolarAngle = 0;
-            controls.maxPolarAngle = Math.PI;
+            controls.minPolarAngle = 0.05;
+            controls.maxPolarAngle = Math.PI - 0.05;
             controls.mouseButtons = {
                 LEFT: THREE.MOUSE.ROTATE,
                 MIDDLE: THREE.MOUSE.DOLLY,
@@ -440,155 +480,139 @@ const ViewManager = React.memo(({ viewType, orbitControlsRef }) => {
 
 ViewManager.displayName = 'ViewManager';
 
-const FirstPersonNavigation = React.memo(({ enabled, orbitControlsRef, onExit }) => {
-    const { camera, gl } = useThree();
+const FirstPersonNavigation = React.memo(({ enabled, onExit }) => {
+    const { gl } = useThree();
+    const controlsRef = React.useRef();
     const keysPressed = React.useRef({});
-    const isDragging = React.useRef(false);
-    const previousMousePosition = React.useRef({ x: 0, y: 0 });
-    const euler = React.useRef(new THREE.Euler(0, 0, 0, 'YXZ'));
 
     useEffect(() => {
         if (!enabled) return;
 
-        // Deshabilitar OrbitControls mientras navegamos en Primera Persona
-        if (orbitControlsRef && orbitControlsRef.current) {
-            orbitControlsRef.current.enabled = false;
+        // Quitar el foco de cualquier botón previo (como el dropdown de la barra de herramientas)
+        if (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
         }
-
-        euler.current.setFromQuaternion(camera.quaternion, 'YXZ');
 
         const handleKeyDown = (e) => {
             if (e.key === 'Escape' || e.key === 'Esc') {
-                if (document.pointerLockElement) document.exitPointerLock?.();
-                onExit?.();
+                if (document.pointerLockElement) {
+                    document.exitPointerLock?.();
+                } else {
+                    onExit?.();
+                }
                 return;
             }
             if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
-            keysPressed.current[e.key.toLowerCase()] = true;
+
+            const key = e.key.toLowerCase();
+            const isNavKey = e.code === 'Space' || e.key === ' ' || 
+                ['w', 'a', 's', 'd', 'q', 'e', 'shift', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key);
+
+            // Bloquear en fase de captura para que ningún botón de la UI (ej. dropdown de NextUI) reciba la tecla
+            if (isNavKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof e.stopImmediatePropagation === 'function') {
+                    e.stopImmediatePropagation();
+                }
+            }
+
+            keysPressed.current[key] = true;
+            if (e.code === 'Space' || e.key === ' ') {
+                keysPressed.current[' '] = true;
+            }
         };
 
         const handleKeyUp = (e) => {
-            keysPressed.current[e.key.toLowerCase()] = false;
-        };
+            const key = e.key.toLowerCase();
+            const isNavKey = e.code === 'Space' || e.key === ' ' || 
+                ['w', 'a', 's', 'd', 'q', 'e', 'shift', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key);
 
-        const handleMouseDown = (e) => {
-            if (e.button === 0 || e.button === 2) {
-                isDragging.current = true;
-                previousMousePosition.current = { x: e.clientX, y: e.clientY };
+            if (isNavKey) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof e.stopImmediatePropagation === 'function') {
+                    e.stopImmediatePropagation();
+                }
             }
-        };
 
-        const handleMouseUp = () => {
-            isDragging.current = false;
-        };
-
-        const handleMouseMove = (e) => {
-            if (!isDragging.current && document.pointerLockElement !== gl.domElement) return;
-
-            const movementX = document.pointerLockElement === gl.domElement 
-                ? e.movementX 
-                : e.clientX - previousMousePosition.current.x;
-            const movementY = document.pointerLockElement === gl.domElement 
-                ? e.movementY 
-                : e.clientY - previousMousePosition.current.y;
-
-            previousMousePosition.current = { x: e.clientX, y: e.clientY };
-
-            const sensitivity = 0.0025;
-            euler.current.y -= movementX * sensitivity; // Yaw (rotación horizontal)
-            euler.current.x -= movementY * sensitivity; // Pitch (rotación vertical)
-
-            // Limitar la inclinación vertical para evitar giros inversos (gimbal lock)
-            euler.current.x = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, euler.current.x));
-
-            camera.quaternion.setFromEuler(euler.current);
-        };
-
-        const handleCanvasClick = () => {
-            if (document.pointerLockElement !== gl.domElement) {
-                gl.domElement.requestPointerLock?.();
+            if (e.code === 'Space' || e.key === ' ') {
+                keysPressed.current[' '] = false;
             }
+            keysPressed.current[key] = false;
         };
 
-        const handlePointerLockChange = () => {
-            if (document.pointerLockElement !== gl.domElement && enabled) {
-                onExit?.();
-            }
+        const handleWheel = (e) => {
+            const controls = controlsRef.current;
+            if (!controls) return;
+            const distance = (e.deltaY < 0 ? 1 : -1) * 12;
+            controls.moveForward(distance);
         };
 
+        window.addEventListener('keydown', handleKeyDown, true);
+        window.addEventListener('keyup', handleKeyUp, true);
         const domElem = gl.domElement;
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-        domElem.addEventListener('mousedown', handleMouseDown);
-        window.addEventListener('mouseup', handleMouseUp);
-        window.addEventListener('mousemove', handleMouseMove);
-        domElem.addEventListener('click', handleCanvasClick);
-        document.addEventListener('pointerlockchange', handlePointerLockChange);
+        domElem.addEventListener('wheel', handleWheel, { passive: true });
+
+        // Intentar fijar el puntero suavemente al entrar
+        const timer = setTimeout(() => {
+            try {
+                controlsRef.current?.lock();
+            } catch (_) {}
+        }, 120);
 
         return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-            domElem.removeEventListener('mousedown', handleMouseDown);
-            window.removeEventListener('mouseup', handleMouseUp);
-            window.removeEventListener('mousemove', handleMouseMove);
-            domElem.removeEventListener('click', handleCanvasClick);
-            document.removeEventListener('pointerlockchange', handlePointerLockChange);
-            if (document.pointerLockElement === gl.domElement) {
+            clearTimeout(timer);
+            window.removeEventListener('keydown', handleKeyDown, true);
+            window.removeEventListener('keyup', handleKeyUp, true);
+            domElem.removeEventListener('wheel', handleWheel);
+            if (document.pointerLockElement) {
                 document.exitPointerLock?.();
             }
             keysPressed.current = {};
-            isDragging.current = false;
-
-            // Al salir de primera persona, restaurar OrbitControls apuntando hacia la dirección donde mira la cámara
-            if (orbitControlsRef && orbitControlsRef.current) {
-                const dir = new THREE.Vector3();
-                camera.getWorldDirection(dir);
-                orbitControlsRef.current.target.copy(camera.position).addScaledVector(dir, 20);
-                orbitControlsRef.current.enabled = true;
-                orbitControlsRef.current.update();
-            }
         };
-    }, [enabled, camera, gl.domElement, orbitControlsRef, onExit]);
+    }, [enabled, gl.domElement, onExit]);
 
     useFrame((state, delta) => {
         if (!enabled) return;
+        const controls = controlsRef.current;
+        if (!controls) return;
 
+        const safeDelta = Math.min(delta, 0.1);
         const speedMultiplier = keysPressed.current['shift'] ? 2.5 : 1.0;
-        const moveSpeed = 16 * speedMultiplier * delta;
+        const moveSpeed = 65 * speedMultiplier * safeDelta;
 
-        const dir = new THREE.Vector3();
-        camera.getWorldDirection(dir);
-
-        const forward = dir.clone().normalize();
-        const right = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
-
-        const moveVector = new THREE.Vector3(0, 0, 0);
-
+        // Desplazamiento horizontal sobre el plano del terreno (WASD)
         if (keysPressed.current['w'] || keysPressed.current['arrowup']) {
-            moveVector.addScaledVector(forward, moveSpeed);
+            controls.moveForward(moveSpeed);
         }
         if (keysPressed.current['s'] || keysPressed.current['arrowdown']) {
-            moveVector.addScaledVector(forward, -moveSpeed);
-        }
-        if (keysPressed.current['a'] || keysPressed.current['arrowleft']) {
-            moveVector.addScaledVector(right, -moveSpeed);
+            controls.moveForward(-moveSpeed);
         }
         if (keysPressed.current['d'] || keysPressed.current['arrowright']) {
-            moveVector.addScaledVector(right, moveSpeed);
+            controls.moveRight(moveSpeed);
         }
-        if (keysPressed.current['q'] || keysPressed.current[' ']) {
-            moveVector.y += moveSpeed;
-        }
-        if (keysPressed.current['e']) {
-            moveVector.y -= moveSpeed;
+        if (keysPressed.current['a'] || keysPressed.current['arrowleft']) {
+            controls.moveRight(-moveSpeed);
         }
 
-        if (moveVector.lengthSq() > 0) {
-            camera.position.add(moveVector);
+        // Elevación vertical (Q / Espacio = subir, E = bajar)
+        if (keysPressed.current['q'] || keysPressed.current[' ']) {
+            state.camera.position.y += moveSpeed;
+        }
+        if (keysPressed.current['e']) {
+            state.camera.position.y -= moveSpeed;
         }
     });
 
-    return null;
+    if (!enabled) return null;
+
+    return (
+        <PointerLockControls
+            ref={controlsRef}
+            selector="#visualizer-canvas"
+        />
+    );
 });
 
 FirstPersonNavigation.displayName = 'FirstPersonNavigation';
@@ -629,22 +653,48 @@ const App = () => {
     const [isUserControlling, setIsUserControlling] = useState(false);
     const [lastCameraView, setLastCameraView] = useState(0);
     const orbitControlsRef = React.useRef();
-    const compassRef = React.useRef(null);
+    const lastOrbitTargetRef = React.useRef(null);
 
-    // Reorientar suavemente la cámara hacia el Norte (eje -Z) con rotación azimutal a 0
+    const handleExitFreeView = useCallback(() => {
+        if (typeof document !== 'undefined' && document.pointerLockElement) {
+            document.exitPointerLock?.();
+        }
+        if (orbitControlsRef.current?.object) {
+            const cam = orbitControlsRef.current.object;
+            const dir = new THREE.Vector3();
+            cam.getWorldDirection(dir);
+            lastOrbitTargetRef.current = cam.position.clone().addScaledVector(dir, 30);
+        }
+        setCurrentView('3d');
+    }, []);
+    const compassRef = React.useRef(null);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const [northOffset, setNorthOffset] = useState(0);
+
+    // Reorientar suavemente la cámara hacia el Norte real sincronizado (northOffset)
     const handleResetNorth = useCallback(() => {
         if (!orbitControlsRef.current) return;
         const controls = orbitControlsRef.current;
         const camera = controls.object;
         const target = controls.target;
 
-        const horizontalDist = Math.hypot(camera.position.x - target.x, camera.position.z - target.z);
-        if (horizontalDist < 0.001) return;
+        if (controls.enabled === false) {
+            const rad = (normalizeDegrees(northOffset) * Math.PI) / 180;
+            const lookTarget = new THREE.Vector3(
+                camera.position.x + Math.sin(rad) * 20,
+                camera.position.y,
+                camera.position.z - Math.cos(rad) * 20
+            );
+            camera.lookAt(lookTarget);
+            return;
+        }
+
+        const nextPos = getNorthResetCameraPosition(target, camera.position, northOffset);
 
         gsap.killTweensOf(camera.position);
         gsap.to(camera.position, {
-            x: target.x,
-            z: target.z + horizontalDist,
+            x: nextPos.x,
+            z: nextPos.z,
             duration: 0.8,
             ease: "power2.out",
             onUpdate: () => {
@@ -652,7 +702,7 @@ const App = () => {
                 controls.update();
             }
         });
-    }, []);
+    }, [northOffset]);
     const [background360, setBackground360] = useState(null);
     const [background360Rotation, setBackground360Rotation] = useState(0);
     const [background360RotationX, setBackground360RotationX] = useState(0);
@@ -879,6 +929,33 @@ const App = () => {
 
     console.log('info:', projectInfo);
 
+    const handleExportSchematicPdf = useCallback(async () => {
+        const sourceTerrains = (allTerrains && allTerrains.length > 0) ? allTerrains : terrains;
+        if (!sourceTerrains || sourceTerrains.length === 0) {
+            toast.info("Este proyecto aún no cuenta con terrenos o lotes delimitados para generar el plano.");
+            return;
+        }
+
+        setIsGeneratingPdf(true);
+        const toastId = toast.loading("Generando Plano Esquemático (PDF)...");
+
+        try {
+            const { generateSchematicFloorPlanPdf } = await import('../utils/schematicPdfGenerator');
+            const result = await generateSchematicFloorPlanPdf({
+                projectInfo,
+                terrains: sourceTerrains,
+                modelName: currentModel?.name || pjname || "Proyecto"
+            });
+
+            toast.success(`Plano esquemático descargado con éxito (${result.totalLotes} lotes)`, { id: toastId });
+        } catch (error) {
+            console.error("Error al exportar plano esquemático:", error);
+            toast.error(error.message || "No se pudo generar el plano esquemático.", { id: toastId });
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    }, [allTerrains, terrains, projectInfo, currentModel, pjname]);
+
     // traer todos los modelos del proyecto
     useEffect(() => {
         const fetchModels = async () => {
@@ -914,6 +991,12 @@ const App = () => {
                         setBackground360RotationX(response.data[safeIndex].background360RotationX);
                     } else {
                         setBackground360RotationX(0);
+                    }
+
+                    if (response.data[safeIndex]?.northOffset !== undefined) {
+                        setNorthOffset(response.data[safeIndex].northOffset);
+                    } else {
+                        setNorthOffset(0);
                     }
 
                     // Inicializa photo360Url con la URL del primer marcador 360 si existe
@@ -1032,6 +1115,12 @@ const App = () => {
                         setBackground360RotationX(currentModel.background360RotationX);
                     } else {
                         setBackground360RotationX(0);
+                    }
+
+                    if (currentModel.northOffset !== undefined) {
+                        setNorthOffset(currentModel.northOffset);
+                    } else {
+                        setNorthOffset(0);
                     }
                     // console.log('ID CARGADA:', projectId); // Usa la variable local
 
@@ -1203,6 +1292,7 @@ const App = () => {
                 view360Markers: view360Markers,
                 background360Rotation: background360Rotation,
                 background360RotationX: background360RotationX,
+                northOffset: northOffset,
             });
             console.log('Terrenos guardados:', response.data);
 
@@ -1211,13 +1301,15 @@ const App = () => {
                 ...m,
                 background360: background360,
                 background360Rotation: background360Rotation,
-                background360RotationX: background360RotationX
+                background360RotationX: background360RotationX,
+                northOffset: northOffset
             })));
             setcurrentModel(prev => prev ? {
                 ...prev,
                 background360: background360,
                 background360Rotation: background360Rotation,
-                background360RotationX: background360RotationX
+                background360RotationX: background360RotationX,
+                northOffset: northOffset
             } : null);
         } catch (error) {
             console.error('Error al guardar los terrenos:', error);
@@ -1314,12 +1406,30 @@ const App = () => {
                             lightMode={light}
                             showTerrains={toggleTerrains}
                             currentView={currentView}
-                            onChangeView={setCurrentView}
+                            onChangeView={(view) => {
+                                if (view === 'free') {
+                                    setIsAutoRotate(false);
+                                    if (typeof document !== 'undefined' && document.activeElement && typeof document.activeElement.blur === 'function') {
+                                        document.activeElement.blur();
+                                    }
+                                    setTimeout(() => {
+                                        try {
+                                            const canvas = document.querySelector('canvas');
+                                            if (canvas && document.pointerLockElement !== canvas) {
+                                                canvas.requestPointerLock?.();
+                                            }
+                                        } catch (_) {}
+                                    }, 50);
+                                }
+                                setCurrentView(view);
+                            }}
                             isAutoRotate={isAutoRotate}
                             onToggleAutoRotate={() => setIsAutoRotate(!isAutoRotate)}
                             showBackground360={showBackground360}
                             onToggleBackground360={() => setShowBackground360(!showBackground360)}
                             hasBackground360={!!background360}
+                            onExportSchematicPdf={handleExportSchematicPdf}
+                            isGeneratingPdf={isGeneratingPdf}
                         />}
                 </div>
                 <div className="pointer-events-auto shrink-0">
@@ -1329,7 +1439,7 @@ const App = () => {
 
             {/* Brújula Horizontal HUD debajo del Toolbar */}
             {isModelLoaded && (
-                <div className={`absolute left-1/2 -translate-x-1/2 z-[10] pointer-events-auto transition-all duration-200 ${currentView === 'free' ? 'top-[132px]' : 'top-[68px] sm:top-[74px]'}`}>
+                <div className="absolute left-1/2 -translate-x-1/2 z-[10] pointer-events-auto top-[68px] sm:top-[74px]">
                     <Compass ref={compassRef} onResetNorth={handleResetNorth} />
                 </div>
             )}
@@ -1341,33 +1451,30 @@ const App = () => {
                     <div className='flex w-full h-full relative'>
                         {currentView === 'free' && (
                             <>
-                                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-30 bg-black/80 backdrop-blur-md border border-[#0CDBFF]/50 text-white px-4 py-2.5 rounded-full text-xs font-medium flex items-center gap-3 shadow-[0_0_20px_rgba(12,219,255,0.3)] pointer-events-auto">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-[#0CDBFF] animate-pulse flex-shrink-0" />
-                                    <span>🎮 <strong>Vista Libre:</strong> Clic para fijar ratón | <strong>WASD / Flechas</strong> Avanzar | <strong>Q / Espacio</strong> Subir | <strong>E</strong> Bajar | Presiona <strong>ESC</strong> para salir</span>
+                                <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-30 bg-black/60 backdrop-blur-md border border-white/15 text-white/90 px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-2.5 shadow-2xl pointer-events-auto select-none">
+                                    <span className="w-2 h-2 rounded-full bg-[#0CDBFF] shadow-[0_0_6px_rgba(12,219,255,0.8)] animate-pulse shrink-0" />
+                                    <span className="text-white/80 text-[11px] sm:text-xs">
+                                        <strong className="text-white font-semibold">WASD</strong> Moverse <span className="text-white/30">·</span> <strong className="text-white font-semibold">Espacio</strong> Subir <span className="text-white/30">·</span> <strong className="text-white font-semibold">E</strong> Bajar
+                                    </span>
                                     <button 
-                                        onClick={() => {
-                                            if (document.pointerLockElement) document.exitPointerLock?.();
-                                            setCurrentView('3d');
-                                        }}
-                                        className="ml-2 bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded-full text-xs font-bold transition-colors border border-white/10"
+                                        onClick={handleExitFreeView}
+                                        className="ml-1 bg-white/10 hover:bg-white/20 text-white px-2.5 py-0.5 rounded-full text-[11px] font-bold transition-all border border-white/15 hover:border-white/30"
                                     >
                                         Salir (ESC)
                                     </button>
                                 </div>
 
-                                {/* Puntero central de alta visibilidad: 2 líneas en cruz con contraste */}
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none flex items-center justify-center w-6 h-6">
-                                    {/* Línea horizontal */}
-                                    <div className="absolute w-4 h-[2px] bg-[#0CDBFF] rounded-full shadow-[0_0_4px_rgba(0,0,0,1)] border border-black" />
-                                    {/* Línea vertical */}
-                                    <div className="absolute h-4 w-[2px] bg-[#0CDBFF] rounded-full shadow-[0_0_4px_rgba(0,0,0,1)] border border-black" />
-                                    {/* Punto central diminuto de contraste */}
-                                    <div className="absolute w-1 h-1 rounded-full bg-white border border-black shadow-[0_0_2px_rgba(0,0,0,1)]" />
+                                {/* Puntero central sutil y discreto */}
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none flex items-center justify-center w-5 h-5">
+                                    <div className="absolute w-3.5 h-[1.5px] bg-[#0CDBFF]/80 rounded-full shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
+                                    <div className="absolute h-3.5 w-[1.5px] bg-[#0CDBFF]/80 rounded-full shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
+                                    <div className="absolute w-1 h-1 rounded-full bg-white shadow-[0_0_2px_rgba(0,0,0,0.8)]" />
                                 </div>
                             </>
                         )}
                         <Suspense fallback={<LoadingScreen info={projectInfo} />}>
                             <Canvas
+                                id="visualizer-canvas"
                                 frameloop={isPhoto360ModalOpen ? "never" : "always"}
                                 style={{ cursor: currentView === 'free' ? 'none' : (editMarkersMode ? 'crosshair' : 'default') }}
                                 dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]} ref={objectRef} gl={{
@@ -1392,8 +1499,8 @@ const App = () => {
 
                                 <CameraViewManager cameraView={cameraView} />
                                 <ViewManager viewType={currentView} orbitControlsRef={orbitControlsRef} />
-                                <FirstPersonNavigation enabled={currentView === 'free'} orbitControlsRef={orbitControlsRef} onExit={() => setCurrentView('3d')} />
-                                <CompassSync compassRef={compassRef} />
+                                <FirstPersonNavigation enabled={currentView === 'free'} onExit={handleExitFreeView} />
+                                <CompassSync compassRef={compassRef} northOffset={northOffset} />
                                 {/* <CameraDebugger /> */}
 
                                 {editMarkersMode && <ClickHandler onAddMarker={handleAddMarker} objectRef={objectRef} onAddView360Marker={handleAddView360Marker} addView360Mode={addView360Mode} />}
@@ -1460,17 +1567,27 @@ const App = () => {
                                 {/* <CameraController terrain={selectedTerrain} /> */}
                                 {/* <OrbitControls minDistance={0} minPolarAngle={0} maxPolarAngle={Math.PI / 2} /> */}
                                 {/* <OrbitControlsWithDetection /> */}
-                                <OrbitControls
-                                    ref={orbitControlsRef}
-                                    minDistance={0}
-                                    minPolarAngle={0}
-                                    maxPolarAngle={Math.PI / 2}
-                                    enableDamping={true}
-                                    dampingFactor={0.05}
-                                    autoRotate={isAutoRotate}
-                                    autoRotateSpeed={1.5}
-                                    onStart={() => setIsAutoRotate(false)}
-                                />
+                                {currentView !== 'free' && (
+                                    <OrbitControls
+                                        ref={(controls) => {
+                                            if (controls) {
+                                                orbitControlsRef.current = controls;
+                                                if (lastOrbitTargetRef.current) {
+                                                    controls.target.copy(lastOrbitTargetRef.current);
+                                                    controls.update();
+                                                }
+                                            }
+                                        }}
+                                        minDistance={0.5}
+                                        minPolarAngle={0.05}
+                                        maxPolarAngle={Math.PI / 2}
+                                        enableDamping={true}
+                                        dampingFactor={0.05}
+                                        autoRotate={isAutoRotate}
+                                        autoRotateSpeed={1.5}
+                                        onStart={() => setIsAutoRotate(false)}
+                                    />
+                                )}
 
                                 {background360 && showBackground360 ? (
                                     <>

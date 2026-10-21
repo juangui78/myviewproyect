@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useMemo, useRef, forwardRef } from 'react';
+import React, { useRef, forwardRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
+import { getCompassHeadingDeg } from '../../utils/northUtils';
 
 /**
  * Compass Component (Cinta Horizontal / HUD Ribbon):
@@ -167,6 +167,21 @@ export const Compass = React.memo(forwardRef(function Compass({ onResetNorth, cl
           {renderCycle(0, 'c0')}
           {renderCycle(cycleWidth, 'c1')}
           {renderCycle(cycleWidth * 2, 'c2')}
+
+          {/* Marca de cierre en 1080° (final del 3er ciclo) */}
+          <text
+            x={cycleWidth * 3}
+            y={20}
+            textAnchor="middle"
+            fill="#EF4444"
+            fontSize="10"
+            fontWeight="900"
+            fontFamily="system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+            className="select-none"
+          >
+            N
+          </text>
+          <circle cx={cycleWidth * 3} cy={25} r={1.2} fill="#EF4444" />
         </svg>
       </div>
     </button>
@@ -178,35 +193,40 @@ Compass.displayName = "Compass";
 /**
  * Sincronizador de brújula horizontal para React Three Fiber (<Canvas>)
  * Lee el rumbo de la cámara en cada frame mediante useFrame y traslada
- * la cinta horizontalmente en el DOM sin provocar re-renders en React.
+ * la cinta horizontalmente en el DOM con seguimiento angular continuo e histéresis
+ * para evitar saltos o reinicios visuales al cruzar los 0° / 360° (Norte).
  */
-export function CompassSync({ compassRef }) {
+export function CompassSync({ compassRef, northOffset = 0 }) {
   const { camera } = useThree();
   const lastXRef = useRef(null);
-  const forward = useMemo(() => new THREE.Vector3(), []);
-  const cycleWidth = 360 * 0.8; // 288px
+  const unwrappedDegRef = useRef(null);
+  const pxPerDeg = 0.8;
+  const cycleWidth = 360 * pxPerDeg; // 288px
 
   useFrame(() => {
     if (!compassRef?.current) return;
-    camera.getWorldDirection(forward);
 
-    const horizLen = Math.hypot(forward.x, forward.z);
-    let deg = 0;
-    if (horizLen > 0.0001) {
-      // Ángulo azimutal en grados
-      const angleRad = Math.atan2(forward.x, -forward.z);
-      deg = (angleRad * 180) / Math.PI;
+    // Rumbo relativo al Norte real sincronizado [0, 360)
+    const degNorm = getCompassHeadingDeg(camera, northOffset);
+
+    if (unwrappedDegRef.current === null) {
+      unwrappedDegRef.current = degNorm;
     } else {
-      deg = (Math.atan2(camera.up.x, -camera.up.z) * 180) / Math.PI;
+      // Delta angular más corto en [-180, 180) para movimiento continuo sobre 0° (Norte)
+      const delta = ((degNorm - unwrappedDegRef.current) % 360 + 540) % 360 - 180;
+      let nextDeg = unwrappedDegRef.current + delta;
+
+      // Histéresis amplia [-180°, 540°] (720° de margen dentro de los 3 ciclos de 1080°)
+      if (nextDeg > 540) nextDeg -= 360;
+      else if (nextDeg < -180) nextDeg += 360;
+
+      unwrappedDegRef.current = nextDeg;
     }
 
-    // Normalizar a rango [0, 360)
-    const degNorm = ((deg % 360) + 360) % 360;
-
     // Posición centrada en el segundo ciclo (c1)
-    const xHeading = cycleWidth + degNorm * 0.8;
+    const xHeading = cycleWidth + unwrappedDegRef.current * pxPerDeg;
 
-    if (lastXRef.current === null || Math.abs(xHeading - lastXRef.current) > 0.1) {
+    if (lastXRef.current === null || Math.abs(xHeading - lastXRef.current) > 0.08) {
       lastXRef.current = xHeading;
       compassRef.current.style.transform = `translateX(${-xHeading.toFixed(1)}px)`;
     }
