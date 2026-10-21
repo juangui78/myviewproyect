@@ -790,8 +790,18 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelUrl]);
 
+  useEffect(() => {
+    const preventGestureZoom = (e) => e.preventDefault();
+    document.addEventListener('gesturestart', preventGestureZoom, { passive: false });
+    document.addEventListener('gesturechange', preventGestureZoom, { passive: false });
+    return () => {
+      document.removeEventListener('gesturestart', preventGestureZoom);
+      document.removeEventListener('gesturechange', preventGestureZoom);
+    };
+  }, []);
+
   return (
-    <div style={{ width: '100%', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ width: '100%', height: '100dvh', position: 'relative', overflow: 'hidden', touchAction: 'none', overscrollBehavior: 'none' }}>
       {isLoading && (
         <div style={{
           position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
