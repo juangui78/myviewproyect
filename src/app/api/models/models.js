@@ -25,6 +25,14 @@ const models_schema = new Schema({
     url: {
       type: String,
       required: true
+    },
+    previewUrl: {
+      type: String,
+      required: false
+    },
+    mobileUrl: {
+      type: String,
+      required: false
     }
   },
   idProyect: {

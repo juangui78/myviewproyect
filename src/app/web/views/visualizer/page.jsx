@@ -1,8 +1,10 @@
 'use client'
 import React, { forwardRef } from 'react';
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
-import { Environment, OrbitControls, PointerLockControls, useProgress, TransformControls, Grid } from "@react-three/drei";
+import { Environment, OrbitControls, PointerLockControls, useProgress, TransformControls, Grid, Bvh, AdaptiveDpr } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { Button, Spinner, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input } from "@nextui-org/react";
 import Link from "next/link";
@@ -65,7 +67,9 @@ const BackArrowIcon = ({ className = "w-4 h-4" }) => (
 
 const ModelComponent = forwardRef(({ gltf }, ref) => {
     return (
-        <primitive object={gltf.scene} ref={ref} scale={1} />
+        <Bvh firstHitOnly>
+            <primitive object={gltf.scene} ref={ref} scale={1} />
+        </Bvh>
     );
 });
 
@@ -246,13 +250,48 @@ export const DATARANDOM = [ // informacion quemada mas adelante cuadramos esto
 
 
 // Reusable instance of GLTFLoader to optimize memory usage, avoid garbage collection overhead,
-// and reuse the same instance/workers across multiple loads.
+// and reuse the same instance/workers across multiple loads (Meshopt + Draco + KTX2 Basis Universal).
 let globalGltfLoader = null;
-const getGltfLoader = () => {
+let globalKtx2Loader = null;
+const getGltfLoader = (renderer = null) => {
     if (typeof window === 'undefined') return null;
     if (!globalGltfLoader) {
         globalGltfLoader = new GLTFLoader();
         globalGltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('/draco/');
+        globalGltfLoader.setDRACOLoader(dracoLoader);
+
+        globalKtx2Loader = new KTX2Loader();
+        globalKtx2Loader.setTranscoderPath('/basis/');
+        try {
+            if (renderer) {
+                globalKtx2Loader.detectSupport(renderer);
+            } else {
+                const probeCanvas = document.createElement('canvas');
+                const glCtx = probeCanvas.getContext('webgl2') || probeCanvas.getContext('webgl');
+                if (glCtx) {
+                    const astcExt = glCtx.getExtension('WEBGL_compressed_texture_astc');
+                    globalKtx2Loader.workerConfig = {
+                        astcSupported: !!astcExt,
+                        astcHDRSupported: !!(astcExt && typeof astcExt.getSupportedProfiles === 'function' && astcExt.getSupportedProfiles().includes('hdr')),
+                        etc1Supported: !!glCtx.getExtension('WEBGL_compressed_texture_etc1'),
+                        etc2Supported: !!glCtx.getExtension('WEBGL_compressed_texture_etc'),
+                        dxtSupported: !!glCtx.getExtension('WEBGL_compressed_texture_s3tc'),
+                        bptcSupported: !!glCtx.getExtension('EXT_texture_compression_bptc'),
+                        pvrtcSupported: !!(glCtx.getExtension('WEBGL_compressed_texture_pvrtc') || glCtx.getExtension('WEBKIT_WEBGL_compressed_texture_pvrtc')),
+                    };
+                }
+            }
+        } catch (err) {
+            console.warn('KTX2 support probe warning:', err);
+        }
+        globalGltfLoader.setKTX2Loader(globalKtx2Loader);
+    } else if (renderer && globalKtx2Loader) {
+        try {
+            globalKtx2Loader.detectSupport(renderer);
+        } catch (_) {}
     }
     return globalGltfLoader;
 };
@@ -943,8 +982,14 @@ const App = () => {
     const [defaultCamera, setDefaultCamera] = useState(null);
     const [originalDefaultCamera, setOriginalDefaultCamera] = useState(null);
 
+    const [isStreamingHighRes, setIsStreamingHighRes] = useState(false);
+    const [streamingProgress, setStreamingProgress] = useState(0);
+    const [loadingProgress, setLoadingProgress] = useState(0);
+    const [loadingBytesInfo, setLoadingBytesInfo] = useState(null);
+    const activeLoadTokenRef = React.useRef(0);
+
     // Función profunda para liberar RAM / VRAM de ThreeJS
-    const disposeGLTF = (currentGltf) => {
+    const disposeGLTF = (currentGltf, clearCache = false) => {
         if (!currentGltf || !currentGltf.scene) return;
 
         currentGltf.scene.traverse((node) => {
@@ -972,13 +1017,13 @@ const App = () => {
             }
         });
 
-        // Forzar limpieza de texturas huérfanas o en caché si es posible
-        if (THREE.Cache && THREE.Cache.enabled) {
+        // Solo limpiar caché global cuando se indique explícitamente (al desmontar)
+        if (clearCache && THREE.Cache && THREE.Cache.enabled) {
             THREE.Cache.clear();
         }
     };
 
-    // Función para aplicar optimizaciones de renderizado
+    // Función para aplicar optimizaciones de renderizado (soporta KTX2 GPU-compressed y texturas estándar)
     const preprocessLoadedGltf = (gltfLoaded) => {
         const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
         const isMobile = isSafariMobile || isInstagramBrowser || /Mobi|Android/i.test(ua);
@@ -1001,12 +1046,18 @@ const App = () => {
 
                         const optimizeTexture = (tex) => {
                             if (tex) {
-                                // Limitar anisotropía en móviles para ahorrar fillrate, usar 2 en desktop para buena nitidez sin penalización
-                                tex.anisotropy = isMobile ? 1 : 2;
-                                tex.minFilter = THREE.LinearFilter;
-                                tex.magFilter = THREE.LinearFilter;
-                                if (isMobile) {
-                                    tex.generateMipmaps = false; // Ahorra mucha VRAM en móviles
+                                if (tex.isCompressedTexture) {
+                                    // Texturas KTX2 (Basis Universal) ya vienen comprimidas en VRAM con mipmaps por hardware
+                                    tex.anisotropy = isMobile ? 2 : 4;
+                                    tex.minFilter = (tex.mipmaps && tex.mipmaps.length > 1)
+                                        ? THREE.LinearMipmapLinearFilter
+                                        : THREE.LinearFilter;
+                                    tex.magFilter = THREE.LinearFilter;
+                                } else {
+                                    tex.anisotropy = isMobile ? 1 : 4;
+                                    tex.minFilter = isMobile ? THREE.LinearFilter : THREE.LinearMipmapLinearFilter;
+                                    tex.magFilter = THREE.LinearFilter;
+                                    tex.generateMipmaps = !isMobile;
                                 }
                             }
                         };
@@ -1022,6 +1073,15 @@ const App = () => {
         });
         return gltfLoaded;
     };
+
+    const resolveModelUrls = useCallback((modelObj) => {
+        const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+        const isMobile = isSafariMobile || isInstagramBrowser || /Mobi|Android|iPad|iPhone|iPod/i.test(ua);
+        const modelData = modelObj?.model || {};
+        const highUrl = (isMobile && modelData.mobileUrl) ? modelData.mobileUrl : modelData.url;
+        const previewUrl = (modelData.previewUrl && modelData.previewUrl !== highUrl) ? modelData.previewUrl : null;
+        return { highUrl, previewUrl, isMobile };
+    }, [isSafariMobile, isInstagramBrowser]);
 
     // const changeCameraView = useCameraView(); // Usa el hook personalizado
 
@@ -1239,6 +1299,7 @@ const App = () => {
 
                     setCurrentIndexModel(safeIndex);
                     setcurrentModel(response.data[safeIndex]);
+                    setBackground360(response.data[safeIndex]?.background360 || null);
 
                     if (response.data[safeIndex]?.terrains) {
                         setTerrains(response.data[safeIndex].terrains);
@@ -1376,83 +1437,198 @@ const App = () => {
         isInitialLoadRef.current = true;
     }, [idProyect]);
 
-    // useEffect para cargar el modelo inicial con proyecto actual
+    // Helper para aplicar metadatos del modelo y calcular sus límites
+    const applyModelMetadata = useCallback((modelObj, sceneObj, targetUrl) => {
+        const computedBounds = computeModelBoundsAndFootprint(sceneObj);
+        if (computedBounds) {
+            setHeightBounds({ min: computedBounds.minY, max: computedBounds.maxY });
+            setModelBounds(computedBounds);
+        }
 
+        setIsModelLoaded(true);
+        setIsLoadingScreenVisible(false);
+        setCurrentModelUrl(targetUrl);
+        setCurrentModelId(modelObj.key || modelObj._id);
+        setPjname(modelObj.name);
+        setBackground360(modelObj.background360 || null);
+
+        if (modelObj.background360Rotation !== undefined) {
+            setBackground360Rotation(modelObj.background360Rotation);
+            setOriginalBackground360Rotation(modelObj.background360Rotation);
+        } else {
+            setBackground360Rotation(0);
+            setOriginalBackground360Rotation(0);
+        }
+
+        if (modelObj.background360RotationX !== undefined) {
+            setBackground360RotationX(modelObj.background360RotationX);
+            setOriginalBackground360RotationX(modelObj.background360RotationX);
+        } else {
+            setBackground360RotationX(0);
+            setOriginalBackground360RotationX(0);
+        }
+
+        if (modelObj.northOffset !== undefined) {
+            setNorthOffset(modelObj.northOffset);
+            setOriginalNorthOffset(modelObj.northOffset);
+        } else {
+            setNorthOffset(0);
+            setOriginalNorthOffset(0);
+        }
+
+        if (modelObj.terrains && modelObj.terrains.length > 0) {
+            setTerrains(modelObj.terrains);
+            setAllTerrains(modelObj.terrains);
+        } else {
+            setTerrains([]);
+            setAllTerrains([]);
+        }
+
+        if (modelObj.markers && modelObj.markers.length > 0) {
+            setView360Markers(modelObj.markers);
+            setOriginalView360Markers(modelObj.markers);
+        } else {
+            setView360Markers([]);
+            setOriginalView360Markers([]);
+        }
+
+        if (modelObj.defaultCamera) {
+            setDefaultCamera(modelObj.defaultCamera);
+            setOriginalDefaultCamera(modelObj.defaultCamera);
+        } else {
+            setDefaultCamera(null);
+            setOriginalDefaultCamera(null);
+        }
+    }, []);
+
+    // Carga progresiva en 2 etapas (Preview instantáneo -> Modelo HD/KTX2 en segundo plano) o directa
+    const executeModelLoad = useCallback((modelObj, onFirstStageReady) => {
+        const { highUrl, previewUrl } = resolveModelUrls(modelObj);
+        if (!highUrl) return;
+
+        const loader = getGltfLoader();
+        if (!loader) return;
+
+        const loadToken = ++activeLoadTokenRef.current;
+        setLoadingProgress(0);
+        setLoadingBytesInfo(null);
+
+        const handleInitialProgress = (xhr) => {
+            if (activeLoadTokenRef.current !== loadToken) return;
+            if (xhr && xhr.total > 0) {
+                const pct = Math.min(100, Math.round((xhr.loaded / xhr.total) * 100));
+                setLoadingProgress(pct);
+                setLoadingBytesInfo({
+                    loadedMB: (xhr.loaded / 1048576).toFixed(2),
+                    totalMB: (xhr.total / 1048576).toFixed(2)
+                });
+            }
+        };
+
+        const loadHighResStage = (isBackgroundSwap) => {
+            if (isBackgroundSwap) {
+                setIsStreamingHighRes(true);
+                setStreamingProgress(0);
+            }
+            loader.load(
+                highUrl,
+                (gltfHigh) => {
+                    if (activeLoadTokenRef.current !== loadToken) {
+                        disposeGLTF(gltfHigh, false);
+                        return;
+                    }
+                    const optimizedHigh = preprocessLoadedGltf(gltfHigh);
+                    setGltf((prevGltf) => {
+                        if (prevGltf && prevGltf !== optimizedHigh) {
+                            setTimeout(() => disposeGLTF(prevGltf, false), 120);
+                        }
+                        return optimizedHigh;
+                    });
+
+                    if (isBackgroundSwap) {
+                        const computedBounds = computeModelBoundsAndFootprint(optimizedHigh.scene);
+                        if (computedBounds) {
+                            setHeightBounds({ min: computedBounds.minY, max: computedBounds.maxY });
+                            setModelBounds(computedBounds);
+                        }
+                        setIsStreamingHighRes(false);
+                        setStreamingProgress(100);
+                    } else {
+                        setIsStreamingHighRes(false);
+                        applyModelMetadata(modelObj, optimizedHigh.scene, highUrl);
+                        onFirstStageReady?.();
+                    }
+                },
+                (xhr) => {
+                    if (activeLoadTokenRef.current !== loadToken) return;
+                    if (isBackgroundSwap) {
+                        if (xhr && xhr.total > 0) {
+                            setStreamingProgress(Math.min(99, Math.round((xhr.loaded / xhr.total) * 100)));
+                        }
+                    } else {
+                        handleInitialProgress(xhr);
+                    }
+                },
+                (err) => {
+                    console.error("Error cargando modelo de alta resolución:", err);
+                    if (activeLoadTokenRef.current === loadToken) {
+                        setIsStreamingHighRes(false);
+                        setIsSwitchingModel(false);
+                    }
+                }
+            );
+        };
+
+        if (previewUrl) {
+            loader.load(
+                previewUrl,
+                (gltfPreview) => {
+                    if (activeLoadTokenRef.current !== loadToken) {
+                        disposeGLTF(gltfPreview, false);
+                        return;
+                    }
+                    const optimizedPreview = preprocessLoadedGltf(gltfPreview);
+                    setGltf((prevGltf) => {
+                        if (prevGltf && prevGltf !== optimizedPreview) {
+                            setTimeout(() => disposeGLTF(prevGltf, false), 120);
+                        }
+                        return optimizedPreview;
+                    });
+                    applyModelMetadata(modelObj, optimizedPreview.scene, highUrl);
+                    onFirstStageReady?.();
+
+                    // Iniciar streaming del modelo HD / KTX2 en segundo plano sin bloquear la interacción
+                    loadHighResStage(true);
+                },
+                handleInitialProgress,
+                (err) => {
+                    console.warn("Preview falló, cargando versión principal directamente:", err);
+                    if (activeLoadTokenRef.current === loadToken) {
+                        loadHighResStage(false);
+                    }
+                }
+            );
+        } else {
+            setIsStreamingHighRes(false);
+            loadHighResStage(false);
+        }
+    }, [resolveModelUrls, applyModelMetadata]);
+
+    // useEffect para cargar el modelo inicial con proyecto actual
     useEffect(() => {
         if (isSafariMobile || isInstagramBrowser) return; // ← salir temprano en Safari iOS
 
-        // Si hay un proyecto actual y el modelo aún no está cargado
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
-
-            if (modelLocation !== "") {
-                const loader = getGltfLoader();
-
-                // Guarda el ID antes de iniciar la carga asíncrona
-                const projectId = currentModel._id;
-
-                loader.load(modelLocation.url, (gltfLoaded) => {
-                    const optimizedGltf = preprocessLoadedGltf(gltfLoaded);
-                    setGltf(optimizedGltf);
-
-                    // Calcular límites ajustados y silueta 2D real del modelo
-                    const computedBounds = computeModelBoundsAndFootprint(optimizedGltf.scene);
-                    if (computedBounds) {
-                        setHeightBounds({ min: computedBounds.minY, max: computedBounds.maxY });
-                        setModelBounds(computedBounds);
-                    }
-
-                    setIsModelLoaded(true);
-                    setIsLoadingScreenVisible(false); // Oculta la pantalla de carga
-                    setCurrentModelUrl(modelLocation.url);
-                    setCurrentModelId(projectId);
-                    setPjname(currentModel.name)
-                    setBackground360(currentModel.background360 || null);
-                    if (currentModel.background360Rotation !== undefined) {
-                        setBackground360Rotation(currentModel.background360Rotation);
-                        setOriginalBackground360Rotation(currentModel.background360Rotation);
-                    } else {
-                        setBackground360Rotation(0);
-                        setOriginalBackground360Rotation(0);
-                    }
-
-                    if (currentModel.background360RotationX !== undefined) {
-                        setBackground360RotationX(currentModel.background360RotationX);
-                        setOriginalBackground360RotationX(currentModel.background360RotationX);
-                    } else {
-                        setBackground360RotationX(0);
-                        setOriginalBackground360RotationX(0);
-                    }
-
-                    if (currentModel.northOffset !== undefined) {
-                        setNorthOffset(currentModel.northOffset);
-                        setOriginalNorthOffset(currentModel.northOffset);
-                    } else {
-                        setNorthOffset(0);
-                        setOriginalNorthOffset(0);
-                    }
-
-                    if (currentModel.terrains) {
-                        setTerrains(currentModel.terrains);
-                        setAllTerrains(currentModel.terrains);
-                        setView360Markers(currentModel.markers || []);
-                    }
-
-                    if (currentModel.defaultCamera) {
-                        setDefaultCamera(currentModel.defaultCamera);
-                        setOriginalDefaultCamera(currentModel.defaultCamera);
-                    } else {
-                        setDefaultCamera(null);
-                        setOriginalDefaultCamera(null);
-                    }
-                });
+            if (modelLocation && modelLocation.url) {
+                executeModelLoad(currentModel);
             } else {
                 alert("No existe modelo");
             }
         }
 
         if (session !== null && session !== undefined) setIsPublish(false);
-    }, [currentModel, isModelLoaded, isSafariMobile, isInstagramBrowser]);
+    }, [currentModel, isModelLoaded, isSafariMobile, isInstagramBrowser, executeModelLoad, session]);
 
     // Aplicar cámara por defecto una vez cargado el modelo y los controles listos
     useEffect(() => {
@@ -1495,106 +1671,52 @@ const App = () => {
         }
     }, [isModelLoaded, currentModel, modelBounds]);
 
-    // Función para cargar un modelo específico
+    // Función para cargar un modelo específico sin dejar la escena en blanco
     const loadModel = (model) => {
-        // Capturar estado actual ANTES de cambiar el modelo
         const currentCameraState = captureCurrentCameraState();
 
         if (model && model.model && model.model.url) {
-            const modelUrl = model.model.url;
+            const { highUrl } = resolveModelUrls(model);
 
-            if (modelUrl === currentModelUrl) {
+            if (highUrl === currentModelUrl && (model.key || model._id) === currentModelId) {
                 console.log("El modelo ya está cargado.");
                 return;
             }
 
-            setTerrains([]);
-            setAllTerrains([]);
-            setView360Markers([]);
             setSelectedMarker(null);
             setIsSwitchingModel(true);
 
-            // 1. Limpiar el modelo actual en memoria RAM / CPU y Tarjeta Gráfica VRAM
-            if (gltf) {
-                disposeGLTF(gltf);
-                setGltf(null); // Desrenderiza el componente GLTF antiguo de inmediato
-            }
-
-            const loader = getGltfLoader();
-
-            loader.load(modelUrl, (gltfLoaded) => {
-                const optimizedGltf = preprocessLoadedGltf(gltfLoaded);
-                setGltf(optimizedGltf);
-
-                setIsModelLoaded(true);
-                setCurrentModelUrl(modelUrl);
-                setCurrentModelId(model.key || model._id);
-
-                // Calcular límites ajustados y silueta 2D real para el nuevo modelo
-                const computedBounds = computeModelBoundsAndFootprint(optimizedGltf.scene);
-                if (computedBounds) {
-                    setHeightBounds({ min: computedBounds.minY, max: computedBounds.maxY });
-                    setModelBounds(computedBounds);
-                }
-
-                if (model.terrains && model.terrains.length > 0) {
-                    setTerrains(model.terrains);
-                    setAllTerrains(model.terrains);
-                }
-
-                if (model.defaultCamera) {
-                    setDefaultCamera(model.defaultCamera);
-                    setOriginalDefaultCamera(model.defaultCamera);
-                } else {
-                    setDefaultCamera(null);
-                    setOriginalDefaultCamera(null);
-                }
-
-                if (model.northOffset !== undefined) {
-                    setNorthOffset(model.northOffset);
-                    setOriginalNorthOffset(model.northOffset);
-                } else {
-                    setNorthOffset(0);
-                    setOriginalNorthOffset(0);
-                }
-
-                if (model.markers && model.markers.length > 0) {
-                    setView360Markers(model.markers);
-                    setOriginalView360Markers(model.markers);
-                } else {
-                    setView360Markers([]);
-                    setOriginalView360Markers([]);
-                }
-
+            executeModelLoad(model, () => {
                 setIsSwitchingModel(false);
-
-                // Restaurar el estado de la cámara después del render
                 setTimeout(() => {
                     if (currentCameraState) {
                         restoreCameraState(currentCameraState);
                     }
-                }, 150);
-
-                console.log('Modelo cargado correctamente. ID:', model.key);
+                }, 100);
+                console.log('Modelo cargado correctamente. ID:', model.key || model._id);
             });
         } else {
             console.error("Estructura del modelo inválida o URL no definida", model);
         }
     };
 
-    // Pre-cargar imágenes 360 cuando se cargan los markers
+    // Pre-cargar imágenes 360 solo DESPUÉS de que el modelo 3D y el streaming HD hayan finalizado
     useEffect(() => {
-        if (isSafariMobile || isInstagramBrowser) return; // ← No pre-cargar imágenes pesadas en móviles
+        if (isSafariMobile || isInstagramBrowser) return;
+        if (!isModelLoaded || isStreamingHighRes) return;
 
         if (view360Markers.length > 0) {
-            view360Markers.forEach(marker => {
-                if (marker.photo360) {
-                    const img = new window.Image();
-                    img.src = marker.photo360;
-                }
-            });
+            const timer = setTimeout(() => {
+                view360Markers.forEach(marker => {
+                    if (marker.photo360) {
+                        const img = new window.Image();
+                        img.src = marker.photo360;
+                    }
+                });
+            }, 600);
+            return () => clearTimeout(timer);
         }
-    }, [view360Markers]);
+    }, [view360Markers, isModelLoaded, isStreamingHighRes, isSafariMobile, isInstagramBrowser]);
 
 
     useEffect(() => {
@@ -2273,8 +2395,21 @@ const App = () => {
                     <div>
                         < BlocksShuffle3 className="text-6xl text-black" />
                     </div>
-                    <div className='w-full text-center text-black'>
-                        <p>Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
+                    <div className='w-full max-w-xs px-4 flex flex-col items-center gap-2 text-center text-black'>
+                        <p className="text-sm font-medium">Cargando modelo, esto puede tomar un tiempo la primera vez.</p>
+                        {loadingProgress > 0 && (
+                            <div className="w-full flex flex-col items-center gap-1 mt-1">
+                                <div className="w-full h-2 bg-black/10 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-[#0CDBFF] transition-all duration-150 rounded-full"
+                                        style={{ width: `${loadingProgress}%` }}
+                                    />
+                                </div>
+                                <span className="text-xs font-mono text-black/70">
+                                    {loadingProgress}% {loadingBytesInfo ? `(${loadingBytesInfo.loadedMB} / ${loadingBytesInfo.totalMB} MB)` : ''}
+                                </span>
+                            </div>
+                        )}
                     </div>
                     <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 flex flex-col items-end gap-3">
                         <Link
@@ -2435,9 +2570,9 @@ const App = () => {
 
 
 
-            {/* Se condiciona el renderizado general no safari */}
+            {/* Se condiciona el renderizado general no safari (monta Canvas en paralelo para precargar shaders y entorno) */}
 
-            {!isSafariMobile && isModelLoaded && (
+            {!isSafariMobile && (isModelLoaded || currentModel) && (
                 <div className='flex w-full h-full flex-col sm:flex-row'>
                     <div className='flex w-full h-full relative'>
                         {currentView === 'free' && (
@@ -2483,8 +2618,10 @@ const App = () => {
                                     gl.toneMapping = THREE.LinearToneMapping
                                     gl.physicallyCorrectLights = true
                                     gl.toneMappingExposure = 1.25
+                                    getGltfLoader(gl)
                                 }}
                             >
+                                <AdaptiveDpr pixelated />
                                 <ambientLight intensity={1} />
                                 <directionalLight color="white" position={[0, 2, 50]} />
 
@@ -2685,15 +2822,17 @@ const App = () => {
                                     />
                                 )}
                                 {background360 && showBackground360 ? (
-                                    <>
+                                    <Suspense fallback={null}>
                                         <Background360 url={background360} rotation={background360Rotation} rotationX={background360RotationX} />
                                         <Environment preset={light} />
-                                    </>
+                                    </Suspense>
                                 ) : (
                                     <>
                                         <color attach="background" args={["#020b12"]} />
                                         <FadedGrid />
-                                        <Environment preset={light} />
+                                        <Suspense fallback={null}>
+                                            <Environment preset={light} />
+                                        </Suspense>
                                     </>
                                 )}
 
@@ -2703,6 +2842,14 @@ const App = () => {
 
 
                         <div className="z-[9999]">
+                            {isStreamingHighRes && !isSwitchingModel && (
+                                <div className="fixed bottom-4 right-20 flex items-center gap-2.5 bg-black/65 backdrop-blur-md border border-[#0CDBFF]/30 px-3.5 py-1.5 rounded-full shadow-lg z-[10000] pointer-events-none">
+                                    <span className="w-2 h-2 rounded-full bg-[#0CDBFF] animate-ping" />
+                                    <span className="text-white/90 text-xs font-medium tracking-wide">
+                                        Refinando modelo HD{streamingProgress > 0 ? ` · ${streamingProgress}%` : '...'}
+                                    </span>
+                                </div>
+                            )}
                             {isSwitchingModel && (
                                 <div className="fixed bottom-40 left-1/2 transform -translate-x-1/2 flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/20 px-6 py-2 rounded-full shadow-lg z-[10000]">
                                     <Spinner color="white" size="sm" />

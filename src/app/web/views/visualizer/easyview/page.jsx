@@ -65,7 +65,7 @@ function EasyViewContent() {
                     const selectedModel = modelsResponse.data[safeIndex];
                     setCurrentModel(selectedModel);
                     if (selectedModel?.model?.url) {
-                        setModelUrl(selectedModel.model.url);
+                        setModelUrl(selectedModel.model.mobileUrl || selectedModel.model.url);
                     }
                 }
             } catch (error) {

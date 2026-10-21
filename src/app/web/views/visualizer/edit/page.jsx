@@ -3,6 +3,8 @@ import React, { forwardRef } from 'react';
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { Environment, OrbitControls, PointerLockControls, useProgress, Grid } from "@react-three/drei";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { Button } from "@nextui-org/react";
 import Link from "next/link";
@@ -192,11 +194,42 @@ const CameraDebugger = () => {
 // Reusable instance of GLTFLoader to optimize memory usage, avoid garbage collection overhead,
 // and reuse the same instance/workers across multiple loads.
 let globalGltfLoader = null;
-const getGltfLoader = () => {
+let globalKtx2Loader = null;
+const getGltfLoader = (renderer = null) => {
     if (typeof window === 'undefined') return null;
     if (!globalGltfLoader) {
         globalGltfLoader = new GLTFLoader();
         globalGltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('/draco/');
+        globalGltfLoader.setDRACOLoader(dracoLoader);
+
+        globalKtx2Loader = new KTX2Loader();
+        globalKtx2Loader.setTranscoderPath('/basis/');
+        try {
+            if (renderer) {
+                globalKtx2Loader.detectSupport(renderer);
+            } else {
+                const probeCanvas = document.createElement('canvas');
+                const glCtx = probeCanvas.getContext('webgl2') || probeCanvas.getContext('webgl');
+                if (glCtx) {
+                    const astcExt = glCtx.getExtension('WEBGL_compressed_texture_astc');
+                    globalKtx2Loader.workerConfig = {
+                        astcSupported: !!astcExt,
+                        astcHDRSupported: !!(astcExt && typeof astcExt.getSupportedProfiles === 'function' && astcExt.getSupportedProfiles().includes('hdr')),
+                        etc1Supported: !!glCtx.getExtension('WEBGL_compressed_texture_etc1'),
+                        etc2Supported: !!glCtx.getExtension('WEBGL_compressed_texture_etc'),
+                        dxtSupported: !!glCtx.getExtension('WEBGL_compressed_texture_s3tc'),
+                        bptcSupported: !!glCtx.getExtension('EXT_texture_compression_bptc'),
+                        pvrtcSupported: !!(glCtx.getExtension('WEBGL_compressed_texture_pvrtc') || glCtx.getExtension('WEBKIT_WEBGL_compressed_texture_pvrtc')),
+                    };
+                }
+            }
+        } catch (_) {}
+        globalGltfLoader.setKTX2Loader(globalKtx2Loader);
+    } else if (renderer && globalKtx2Loader) {
+        try { globalKtx2Loader.detectSupport(renderer); } catch (_) {}
     }
     return globalGltfLoader;
 };

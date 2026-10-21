@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import InformationCard from '../components/information/InformationCard';
 import Whatsapp from '@/web/global_components/icons/Whatsapp';
@@ -86,11 +88,25 @@ const calculateCentroidAndArea = (markers) => {
 // Reusable instance of GLTFLoader to optimize memory usage, avoid garbage collection overhead,
 // and reuse the same instance/workers across multiple loads.
 let globalGltfLoader = null;
-const getGltfLoader = () => {
+let globalKtx2Loader = null;
+const getGltfLoader = (renderer = null) => {
     if (typeof window === 'undefined') return null;
     if (!globalGltfLoader) {
         globalGltfLoader = new GLTFLoader();
         globalGltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('/draco/');
+        globalGltfLoader.setDRACOLoader(dracoLoader);
+
+        globalKtx2Loader = new KTX2Loader();
+        globalKtx2Loader.setTranscoderPath('/basis/');
+        if (renderer) {
+            try { globalKtx2Loader.detectSupport(renderer); } catch (_) {}
+        }
+        globalGltfLoader.setKTX2Loader(globalKtx2Loader);
+    } else if (renderer && globalKtx2Loader) {
+        try { globalKtx2Loader.detectSupport(renderer); } catch (_) {}
     }
     return globalGltfLoader;
 };
@@ -121,11 +137,19 @@ const preprocessLoadedGltf = (gltfLoaded) => {
 
                     const optimizeTexture = (tex) => {
                         if (tex) {
-                            tex.anisotropy = isMobile ? 1 : 2;
-                            tex.minFilter = THREE.LinearFilter;
-                            tex.magFilter = THREE.LinearFilter;
-                            if (isMobile) {
-                                tex.generateMipmaps = false;
+                            if (tex.isCompressedTexture) {
+                                tex.anisotropy = isMobile ? 2 : 4;
+                                tex.minFilter = (tex.mipmaps && tex.mipmaps.length > 1)
+                                    ? THREE.LinearMipmapLinearFilter
+                                    : THREE.LinearFilter;
+                                tex.magFilter = THREE.LinearFilter;
+                            } else {
+                                tex.anisotropy = isMobile ? 1 : 2;
+                                tex.minFilter = THREE.LinearFilter;
+                                tex.magFilter = THREE.LinearFilter;
+                                if (isMobile) {
+                                    tex.generateMipmaps = false;
+                                }
                             }
                         }
                     };
@@ -447,7 +471,7 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
     }
 
     // 3. Carga del Modelo
-    const loader = getGltfLoader();
+    const loader = getGltfLoader(renderer);
     
     if (modelUrl) {
       setIsLoading(true);
