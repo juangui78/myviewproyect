@@ -2357,6 +2357,19 @@ const App = () => {
         }
     }, [isElevationMode, isWireframe, gltf, heightBounds]);
 
+    // Prevenir zoom nativo y desalineacion del viewport en moviles
+    useEffect(() => {
+        const preventGestureZoom = (e) => {
+            e.preventDefault();
+        };
+        document.addEventListener('gesturestart', preventGestureZoom, { passive: false });
+        document.addEventListener('gesturechange', preventGestureZoom, { passive: false });
+        return () => {
+            document.removeEventListener('gesturestart', preventGestureZoom);
+            document.removeEventListener('gesturechange', preventGestureZoom);
+        };
+    }, []);
+
     const getSelectedMarkerPosition = () => {
         const info = getSelectedMarkerItem();
         if (info && info.item) {
@@ -2382,7 +2395,7 @@ const App = () => {
 
 
     return (
-        <div className="flex flex-col items-center h-screen max-h-screen w-full overflow-hidden fixed inset-0 select-none">
+        <div className="flex flex-col items-center h-[100dvh] max-h-[100dvh] w-full overflow-hidden fixed inset-0 select-none touch-none overscroll-none">
             <Toaster richColors closeButton position="bottom-right" duration={10000} containerStyle={{ zIndex: 999999 }} />
 
             {/* div de carga inicial */}
@@ -2602,7 +2615,7 @@ const App = () => {
                             <Canvas
                                 id="visualizer-canvas"
                                 frameloop={isPhoto360ModalOpen ? "never" : "always"}
-                                style={{ cursor: currentView === 'free' ? 'none' : (editMarkersMode ? 'crosshair' : 'default') }}
+                                style={{ cursor: currentView === 'free' ? 'none' : (editMarkersMode ? 'crosshair' : 'default'), touchAction: 'none' }}
                                 dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]}
                                 ref={objectRef}
                                 camera={{ position: [0, 160, 0], fov: 75 }}
