@@ -361,7 +361,7 @@ export default function EasyView({ modelUrl, previewUrl = null, currentModel, pr
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
     // powerPreference: "low-power" ayuda en móviles, antialias en false reduce consumo de VRAM y GPU
-    const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "low-power", alpha: false }); 
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance", alpha: false }); 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limitar a un ratio de 2 para rendimiento
     
     renderer.toneMapping = THREE.LinearToneMapping;
