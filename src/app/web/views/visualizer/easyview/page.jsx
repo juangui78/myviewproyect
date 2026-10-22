@@ -73,7 +73,24 @@ function EasyViewContent() {
                 // Traer todos los modelos y seleccionar el índice correcto
                 const modelsResponse = await axios.get(`/api/controllers/models_/${idProyect}/allmodels?t=${Date.now()}`);
                 if (modelsResponse.data && modelsResponse.data.length > 0) {
-                    const safeIndex = Math.min(modelIndex, modelsResponse.data.length - 1);
+                    const queryIdx = searchParams.get("modelIndex");
+                    let safeIndex = 0;
+                    if (queryIdx !== null && queryIdx !== undefined && queryIdx !== '') {
+                        const parsed = parseInt(queryIdx, 10);
+                        safeIndex = (isNaN(parsed) || parsed < 0 || parsed >= modelsResponse.data.length) ? 0 : parsed;
+                    } else {
+                        const mobIdx = modelsResponse.data.findIndex(m => {
+                            const name = (m.name || '').toLowerCase();
+                            const url = (m.model?.url || '').toLowerCase();
+                            return name.includes('mobile') || name.includes('móvil') || url.includes('-mobile') || url.includes('mobile');
+                        });
+                        if (mobIdx !== -1) {
+                            safeIndex = mobIdx;
+                        } else {
+                            const withMobUrlIdx = modelsResponse.data.findIndex(m => Boolean(m.model?.mobileUrl));
+                            safeIndex = withMobUrlIdx !== -1 ? withMobUrlIdx : 0;
+                        }
+                    }
                     const selectedModel = modelsResponse.data[safeIndex];
                     setCurrentModel(selectedModel);
                     if (selectedModel?.model?.url) {

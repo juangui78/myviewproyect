@@ -115,7 +115,22 @@ export default function Minimap({
   projectName = '',
   className = 'relative mb-1.5'
 }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobi/i.test(navigator.userAgent);
+      return !isMobile;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobi/i.test(navigator.userAgent);
+      if (isMobile) {
+        setIsExpanded(false);
+      }
+    }
+  }, []);
   const [hoveredTerrain, setHoveredTerrain] = useState(null);
   const svgRef = useRef(null);
 
