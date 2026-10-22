@@ -6,21 +6,30 @@ import axios from "axios";
 import { decrypt } from '@/api/libs/crypto';
 
 const EasyView = dynamic(() => import('./EasyView'), {
-    ssr: false,
-    loading: () => (
-        <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#020b12', color: '#fff', fontFamily: 'sans-serif' }}>
+    ssr: false
+});
+
+function LoadingSpinner({ progress = 0 }) {
+    return (
+        <div style={{
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+            backgroundColor: '#020b12', zIndex: 50, color: '#fff', fontFamily: 'sans-serif'
+        }}>
             <div style={{
-                width: '50px', height: '50px', border: '4px solid rgba(255,255,255,0.1)',
-                borderTop: '4px solid #0CDBFF', borderRadius: '50%',
+                width: '45px', height: '45px', border: '3px solid rgba(255,255,255,0.1)',
+                borderTop: '3px solid #0CDBFF', borderRadius: '50%',
                 animation: 'spin 1s linear infinite', marginBottom: '16px'
             }} />
-            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>Iniciando EasyView optimizado...</p>
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)' }}>
+                {progress > 0 && progress < 100 ? `Cargando modelo 3D... ${progress}%` : 'Cargando modelo 3D...'}
+            </p>
             <style>{`
                 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
             `}</style>
         </div>
-    )
-});
+    );
+}
 
 function EasyViewContent() {
     const searchParams = useSearchParams();
@@ -33,6 +42,8 @@ function EasyViewContent() {
     const [currentModel, setCurrentModel] = useState(null);
     const [projectInfo, setProjectInfo] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isModelReady, setIsModelReady] = useState(false);
+    const [progress, setProgress] = useState(0);
 
     useEffect(() => {
         const fetchModel = async () => {
@@ -84,49 +95,39 @@ function EasyViewContent() {
         fetchModel();
     }, [encryptedId, modelIndex]);
 
-    if (loading) {
+    if (!loading && !modelUrl) {
         return (
-            <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#020b12', color: '#fff', fontFamily: 'sans-serif' }}>
-                <div style={{
-                    width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)',
-                    borderTop: '3px solid #0CDBFF', borderRadius: '50%',
-                    animation: 'spin 1s linear infinite', marginBottom: '14px'
-                }} />
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Cargando modelo 3D optimizado...</p>
-                <style>{`
-                    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                `}</style>
-            </div>
-        );
-    }
-
-    if (!modelUrl) {
-        return (
-            <div style={{ width: '100%', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#020b12', color: '#fff', fontFamily: 'sans-serif' }}>
+            <div style={{ width: '100%', height: '100dvh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#020b12', color: '#fff', fontFamily: 'sans-serif' }}>
                 <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>No se pudo cargar el modelo o no se encontró un ID válido.</p>
             </div>
         );
     }
 
+    const showLoader = loading || !isModelReady;
+
     return (
-        <EasyView 
-            key={encryptedId} 
-            modelUrl={modelUrl} 
-            previewUrl={previewUrl} 
-            currentModel={currentModel} 
-            projectInfo={projectInfo} 
-            projectId={decryptedId} 
-        />
+        <div style={{ width: '100%', height: '100dvh', position: 'relative', overflow: 'hidden', backgroundColor: '#020b12' }}>
+            {showLoader && <LoadingSpinner progress={progress} />}
+
+            {modelUrl && (
+                <EasyView 
+                    key={encryptedId} 
+                    modelUrl={modelUrl} 
+                    previewUrl={previewUrl} 
+                    currentModel={currentModel} 
+                    projectInfo={projectInfo} 
+                    projectId={decryptedId} 
+                    onReady={() => setIsModelReady(true)}
+                    onProgress={(p) => setProgress(p)}
+                />
+            )}
+        </div>
     );
 }
 
 export default function EasyViewPage() {
     return (
-        <Suspense fallback={
-            <div style={{ width: '100%', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#020b12', color: '#fff', fontFamily: 'sans-serif' }}>
-                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>Cargando...</p>
-            </div>
-        }>
+        <Suspense fallback={<LoadingSpinner progress={0} />}>
             <EasyViewContent />
         </Suspense>
     );
