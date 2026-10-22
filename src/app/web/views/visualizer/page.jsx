@@ -8,7 +8,7 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { Button, Spinner, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Input } from "@nextui-org/react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { upload360PhotoAction } from "../user/feed/actions/uploadImage";
 import Marker from "./components/markers/Markers";
@@ -1265,13 +1265,17 @@ const App = () => {
 
     useEffect(() => {
         const { isSafariMobile, isInstagramBrowser } = checkIsSafariOnIOS();
-        setIsSafariMobile(isSafariMobile);
-        setIsInstagramBrowser(isInstagramBrowser);
         if (isSafariMobile || isInstagramBrowser) {
-            setIsLoadingScreenVisible(false); // Muestra la pantalla de carga si es Safari iOS o Instagram
+            const currentId = searchParams.get("id") || "";
+            const currentModelIdx = searchParams.get("modelIndex") || "0";
+            const terrainId = searchParams.get("terrainId") || "";
+            const targetUrl = `/web/views/visualizer/easyview?id=${encodeURIComponent(currentId)}&modelIndex=${currentModelIdx}${terrainId ? `&terrainId=${encodeURIComponent(terrainId)}` : ''}`;
+            router.replace(targetUrl);
+            return;
         }
-
-    }, []);
+        setIsSafariMobile(false);
+        setIsInstagramBrowser(false);
+    }, [router, searchParams]);
 
     useEffect(() => {
         THREE.Cache.enabled = true;
@@ -3482,71 +3486,6 @@ const App = () => {
                         </ModalContent>
                     </Modal>
                 </div>)}
-
-
-            {isSafariMobile && (
-                <div className='bg-white text-black w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[24px] px-6'>
-                    <div>
-                        <BlocksShuffle3 className="text-6xl text-black" />
-                    </div>
-                    <div className='w-full text-center text-black px-4 flex flex-col gap-2 max-w-md'>
-                        <p className="font-semibold text-lg">Estamos trabajando para mejorar tu experiencia en este dispositivo.</p>
-                        <p className="text-sm text-gray-500">Para una mejor compatibilidad, te sugerimos utilizar Google Chrome o acceder desde un ordenador.</p>
-                    </div>
-                    <div>
-                        <Link
-                            href={`/web/views/visualizer/easyview?id=${encodeURIComponent(searchParams.get("id") || "")}&modelIndex=${currentIndexModel}`}
-                            className="flex items-center justify-center gap-2 px-8 h-12 bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-white font-semibold"
-                            title="Visualizar en EasyView"
-                        >
-                            <span>Visualizar</span>
-
-                        </Link>
-                    </div>
-                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
-                        <a
-                            href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                        >
-                            <Whatsapp className="text-white text-1xl" />
-                        </a>
-                    </div>
-                </div>
-            )}
-
-            {isInstagramBrowser && (
-                <div className='bg-white text-black w-full h-full absolute z-[100000000] flex flex-col justify-center items-center gap-[24px] px-6'>
-                    <div>
-                        <BlocksShuffle3 className="text-6xl text-black" />
-                    </div>
-                    <div className='w-full text-center text-black px-4 flex flex-col gap-2 max-w-md'>
-                        <p className="font-semibold text-lg">Estamos trabajando para mejorar tu experiencia en este dispositivo.</p>
-                        <p className="text-sm text-gray-500">Para una mejor compatibilidad, te sugerimos utilizar Google Chrome o acceder desde un ordenador.</p>
-                    </div>
-                    <div>
-                        <Link
-                            href={`/web/views/visualizer/easyview?id=${encodeURIComponent(searchParams.get("id") || "")}&modelIndex=${currentIndexModel}`}
-                            className="flex items-center justify-center gap-2 px-8 h-12 bg-blue-500 rounded-full shadow-lg hover:bg-blue-600 transition-colors text-white font-semibold"
-                            title="Visualizar en EasyView"
-                        >
-                            <span>Visualizar</span>
-                            <span className="text-xl">💡</span>
-                        </Link>
-                    </div>
-                    <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4">
-                        <a
-                            href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center w-12 h-12 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition-colors"
-                        >
-                            <Whatsapp className="text-white text-1xl" />
-                        </a>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

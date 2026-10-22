@@ -223,7 +223,7 @@ const createFadedGridMesh = (gridY = 0) => {
   return mesh;
 };
 
-export default function EasyView({ modelUrl, currentModel, projectInfo, projectId }) {
+export default function EasyView({ modelUrl, previewUrl = null, currentModel, projectInfo, projectId }) {
   const mountRef = useRef(null);
   const savedCameraStateRef = useRef(null);
   const cameraRef = useRef(null);
@@ -470,14 +470,42 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
       renderer.setClearColor(0x020b12, 1);
     }
 
-    // 3. Carga del Modelo
+    // 3. Carga del Modelo Progresivo (Preview -> Móvil KTX2 en segundo plano)
     const loader = getGltfLoader(renderer);
     
     if (modelUrl) {
       setIsLoading(true);
-      loader.load(modelUrl, (gltfLoaded) => {
+      let isSceneConfigured = false;
+      let previewSceneObject = null;
+
+      const handleGltfScene = (gltfLoaded, isPreview = false) => {
         const optimizedGltf = preprocessLoadedGltf(gltfLoaded);
-        scene.add(optimizedGltf.scene);
+
+        if (isPreview) {
+          previewSceneObject = optimizedGltf.scene;
+          scene.add(previewSceneObject);
+        } else {
+          if (previewSceneObject) {
+            scene.remove(previewSceneObject);
+            previewSceneObject.traverse((child) => {
+              if (child.isMesh) {
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) {
+                  const mats = Array.isArray(child.material) ? child.material : [child.material];
+                  mats.forEach(m => m.dispose());
+                }
+              }
+            });
+            previewSceneObject = null;
+          }
+          scene.add(optimizedGltf.scene);
+        }
+
+        if (isSceneConfigured) {
+          setIsLoading(false);
+          return;
+        }
+        isSceneConfigured = true;
         
         const box = new THREE.Box3().setFromObject(optimizedGltf.scene);
         if (gridMesh) {
@@ -634,15 +662,48 @@ export default function EasyView({ modelUrl, currentModel, projectInfo, projectI
 
         setTerrainsData(localTerrainsData);
         setIsLoading(false);
-      }, (xhr) => {
-        if (xhr.lengthComputable) {
-          const percentComplete = (xhr.loaded / xhr.total) * 100;
-          setProgress(Math.round(percentComplete));
-        }
-      }, (error) => {
-        console.error('Error al cargar el modelo 3D:', error);
-        setIsLoading(false);
-      });
+      };
+
+      if (previewUrl && previewUrl !== modelUrl) {
+        loader.load(
+          previewUrl,
+          (gltfPreview) => {
+            handleGltfScene(gltfPreview, true);
+            // Streaming en segundo plano de la versión móvil KTX2
+            loader.load(
+              modelUrl,
+              (gltfFinal) => {
+                handleGltfScene(gltfFinal, false);
+              },
+              undefined,
+              (err) => console.error('Error cargando versión completa en EasyView:', err)
+            );
+          },
+          (xhr) => {
+            if (xhr.lengthComputable) {
+              setProgress(Math.round((xhr.loaded / xhr.total) * 100));
+            }
+          },
+          (err) => {
+            console.warn('Fallo preview en EasyView, cargando principal directo:', err);
+            loader.load(modelUrl, (gltfFinal) => handleGltfScene(gltfFinal, false));
+          }
+        );
+      } else {
+        loader.load(
+          modelUrl,
+          (gltfFinal) => handleGltfScene(gltfFinal, false),
+          (xhr) => {
+            if (xhr.lengthComputable) {
+              setProgress(Math.round((xhr.loaded / xhr.total) * 100));
+            }
+          },
+          (err) => {
+            console.error('Error al cargar el modelo 3D en EasyView:', err);
+            setIsLoading(false);
+          }
+        );
+      }
     } else {
       // Posición por defecto si no hay modelo aún
       camera.position.set(0, 2, 5);

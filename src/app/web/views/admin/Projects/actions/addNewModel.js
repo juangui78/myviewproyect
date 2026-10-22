@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { dbConnected } from "@/api/libs/mongoose";
 import Model from "@/api/models/models";
 
-export async function addNewModel(idProject, idModel, name, finalUrl, version_notes) {
+export async function addNewModel(idProject, idModel, name, finalUrl, version_notes, previewUrl = null, mobileUrl = null) {
 
     try {
 
@@ -26,6 +26,8 @@ export async function addNewModel(idProject, idModel, name, finalUrl, version_no
             description: description,
             model: {
                 url: finalUrl,
+                ...(previewUrl ? { previewUrl } : {}),
+                ...(mobileUrl ? { mobileUrl } : {}),
             },
             idProyect: idProject,
             version_notes: version_notes,

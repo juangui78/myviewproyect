@@ -207,6 +207,11 @@ export default function NavBar({children}) {
               </Link>
             </NavbarItem>
             <NavbarItem>
+              <Link className={getLinkClasses("/web/views/admin/Projects")} href="/web/views/admin/Projects">
+                Dashboard
+              </Link>
+            </NavbarItem>
+            <NavbarItem>
               <Link className={getLinkClasses("/web/views/user/feed")} href="/web/views/user/feed">
                 Proyectos
               </Link>
@@ -274,20 +279,46 @@ export default function NavBar({children}) {
         <NavbarItem>
           <Popover 
             placement="bottom-end" 
+            offset={8}
+            shouldBlockScroll={false}
             onOpenChange={handleDropdownOpen}
+            motionProps={{
+              variants: {
+                enter: {
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                  transition: {
+                    duration: 0.15,
+                    ease: "easeOut",
+                  },
+                },
+                exit: {
+                  opacity: 0,
+                  y: -6,
+                  scale: 0.98,
+                  transition: {
+                    duration: 0.1,
+                    ease: "easeIn",
+                  },
+                },
+              },
+            }}
             classNames={{
               content: "max-h-[420px] overflow-hidden w-[360px] sm:w-[380px] bg-[#0E1622]/95 backdrop-blur-2xl border border-white/10 p-0 text-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)]"
             }}
           >
             <PopoverTrigger>
-              <button className="flex gap-4 items-center justify-center p-2 focus:outline-none cursor-pointer bg-transparent border-0 select-none">
-                {unreadCount > 0 ? (
-                  <Badge color="danger" content={unreadCount} shape="circle" size="sm">
-                    <Bell className="cursor-pointer text-white" />
-                  </Badge>
-                ) : (
+              <button className="flex items-center justify-center p-2 focus:outline-none cursor-pointer bg-transparent border-0 select-none transition-colors">
+                <Badge 
+                  color="danger" 
+                  content={unreadCount} 
+                  shape="circle" 
+                  size="sm"
+                  isInvisible={unreadCount === 0}
+                >
                   <Bell className="cursor-pointer text-white" />
-                )}
+                </Badge>
               </button>
             </PopoverTrigger>
             <PopoverContent>
@@ -383,11 +414,38 @@ export default function NavBar({children}) {
         </NavbarItem>
 
         <NavbarItem>
-          <Dropdown placement="bottom-end" classNames={{
-            content: "bg-[#0E1622]/95 backdrop-blur-2xl border border-white/10 text-white rounded-2xl shadow-2xl p-1.5 min-w-[250px]"
-          }}>
+          <Dropdown 
+            placement="bottom-end" 
+            offset={8}
+            shouldBlockScroll={false}
+            motionProps={{
+              variants: {
+                enter: {
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                  transition: {
+                    duration: 0.15,
+                    ease: "easeOut",
+                  },
+                },
+                exit: {
+                  opacity: 0,
+                  y: -6,
+                  scale: 0.98,
+                  transition: {
+                    duration: 0.1,
+                    ease: "easeIn",
+                  },
+                },
+              },
+            }}
+            classNames={{
+              content: "bg-[#0E1622]/95 backdrop-blur-2xl border border-white/10 text-white rounded-2xl shadow-2xl p-1.5 min-w-[250px]"
+            }}
+          >
             <DropdownTrigger>
-              <button className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-white/15 transition-all group cursor-pointer focus:outline-none select-none">
+              <button className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 hover:border-white/15 transition-colors group cursor-pointer focus:outline-none select-none">
                 <Avatar
                   className="transition-transform ring-2 ring-[#0CDBFF]/30 group-hover:ring-[#0CDBFF]/70"
                   size="sm"
@@ -453,6 +511,11 @@ export default function NavBar({children}) {
             <NavbarItem>
               <Link className={getLinkClasses("/web/views/superadmin/dashboard")} href="/web/views/superadmin/dashboard">
                 Superadmin
+              </Link>
+            </NavbarItem>
+            <NavbarItem>
+              <Link className={getLinkClasses("/web/views/admin/Projects")} href="/web/views/admin/Projects">
+                Dashboard
               </Link>
             </NavbarItem>
             <NavbarItem>

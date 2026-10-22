@@ -1,6 +1,7 @@
 "use server"
 import project from "@/api/models/proyect";
 import Analytics from "@/api/models/analytics";
+import Company from "@/api/models/company";
 import { dbConnected } from "@/api/libs/mongoose";
 import { decrypt } from "@/api/libs/crypto";
 
@@ -8,8 +9,16 @@ dbConnected();
 
 export async function getAllProjects(id) {
     try {
-        const idDecrypted = decrypt(id);
-        const projects = await project.find({ idCompany: idDecrypted }, { idCompany: 0,  creation_date: 0, __v : 0 }).lean();
+        await dbConnected();
+        let query = {};
+        if (id && id !== "ALL") {
+            const idDecrypted = decrypt(id);
+            if (idDecrypted) {
+                query = { idCompany: idDecrypted };
+            }
+        }
+        
+        const projects = await project.find(query, { creation_date: 0, __v : 0 }).populate("idCompany", "name").lean();
         
         // Fetch views from Analytics
         const projectIds = projects.map(proj => proj._id);
@@ -27,6 +36,8 @@ export async function getAllProjects(id) {
         const plainProjects = projects.map(proj => ({
             ...proj,
             _id: proj._id.toString(),
+            idCompany: proj.idCompany?._id ? proj.idCompany._id.toString() : (proj.idCompany ? proj.idCompany.toString() : null),
+            companyName: proj.idCompany?.name || null,
             views: viewsMap[proj._id.toString()] || 0
         }));
 
@@ -44,14 +55,37 @@ export async function getAllProjects(id) {
     }
 }
 
+export async function getCompaniesOptions() {
+    try {
+        await dbConnected();
+        const companies = await Company.find({}, { name: 1 }).sort({ name: 1 }).lean();
+        return {
+            success: true,
+            data: companies.map(c => ({
+                _id: c._id.toString(),
+                name: c.name || "Inmobiliaria sin nombre"
+            }))
+        };
+    } catch (error) {
+        console.error("Error getCompaniesOptions:", error);
+        return { success: false, data: [] };
+    }
+}
+
 export async function getProjectsTimelineStats(id, range = "30") {
     try {
         await dbConnected();
-        const idDecrypted = decrypt(id);
-        const projects = await project.find({ idCompany: idDecrypted }, { _id: 1 }).lean();
-        const projectIds = projects.map(p => p._id);
+        let matchQuery = {};
         
-        let matchQuery = { projectId: { $in: projectIds } };
+        if (id && id !== "ALL") {
+            const idDecrypted = decrypt(id);
+            if (idDecrypted) {
+                const projects = await project.find({ idCompany: idDecrypted }, { _id: 1 }).lean();
+                const projectIds = projects.map(p => p._id);
+                matchQuery = { projectId: { $in: projectIds } };
+            }
+        }
+        
         let groupingType = "day"; // "hour" or "day"
         let limitDate = null;
         
