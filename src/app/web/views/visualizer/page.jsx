@@ -1087,6 +1087,7 @@ const App = () => {
 
     //search Params to validate info
     const searchParams = useSearchParams();
+    const router = useRouter();
     const idProyect = decrypt(searchParams.get("id"));
 
     const { data: session } = useSession();
@@ -1270,7 +1271,11 @@ const App = () => {
             const currentModelIdx = searchParams.get("modelIndex") || "0";
             const terrainId = searchParams.get("terrainId") || "";
             const targetUrl = `/web/views/visualizer/easyview?id=${encodeURIComponent(currentId)}&modelIndex=${currentModelIdx}${terrainId ? `&terrainId=${encodeURIComponent(terrainId)}` : ''}`;
-            router.replace(targetUrl);
+            if (router && typeof router.replace === 'function') {
+                router.replace(targetUrl);
+            } else if (typeof window !== 'undefined') {
+                window.location.replace(targetUrl);
+            }
             return;
         }
         setIsSafariMobile(false);
