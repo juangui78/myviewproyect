@@ -1477,10 +1477,10 @@ const App = () => {
                                 id="visualizer-canvas"
                                 frameloop={isPhoto360ModalOpen ? "never" : "always"}
                                 style={{ cursor: currentView === 'free' ? 'none' : (editMarkersMode ? 'crosshair' : 'default') }}
-                                dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]} ref={objectRef} gl={{
-                                antialias: !(isSafariMobile || isInstagramBrowser),
+                                dpr={[1, 2]} ref={objectRef} gl={{
+                                antialias: true,
                                 powerPreference: "high-performance",
-                                precision: isSafariMobile || isInstagramBrowser ? "mediump" : "highp",
+                                precision: "highp",
                                 alpha: false,
                                 preserveDrawingBuffer: true,
                             }}

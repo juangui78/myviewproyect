@@ -1048,16 +1048,16 @@ const App = () => {
                             if (tex) {
                                 if (tex.isCompressedTexture) {
                                     // Texturas KTX2 (Basis Universal) ya vienen comprimidas en VRAM con mipmaps por hardware
-                                    tex.anisotropy = isMobile ? 2 : 4;
+                                    tex.anisotropy = 4;
                                     tex.minFilter = (tex.mipmaps && tex.mipmaps.length > 1)
                                         ? THREE.LinearMipmapLinearFilter
                                         : THREE.LinearFilter;
                                     tex.magFilter = THREE.LinearFilter;
                                 } else {
-                                    tex.anisotropy = isMobile ? 1 : 4;
-                                    tex.minFilter = isMobile ? THREE.LinearFilter : THREE.LinearMipmapLinearFilter;
+                                    tex.anisotropy = 4;
+                                    tex.minFilter = THREE.LinearMipmapLinearFilter;
                                     tex.magFilter = THREE.LinearFilter;
-                                    tex.generateMipmaps = !isMobile;
+                                    tex.generateMipmaps = true;
                                 }
                             }
                         };
@@ -2611,14 +2611,14 @@ const App = () => {
                                 id="visualizer-canvas"
                                 frameloop={isPhoto360ModalOpen ? "never" : "always"}
                                 style={{ cursor: currentView === 'free' ? 'none' : (editMarkersMode ? 'crosshair' : 'default'), touchAction: 'none' }}
-                                dpr={isSafariMobile || isInstagramBrowser ? 1 : [1, 2]}
+                                dpr={[1, 2]}
                                 ref={objectRef}
                                 camera={{ position: [0, 160, 0], fov: 75 }}
                                 performance={{ min: 0.5 }}
                                 gl={{
-                                    antialias: !(isSafariMobile || isInstagramBrowser),
+                                    antialias: true,
                                     powerPreference: "high-performance",
-                                    precision: isSafariMobile || isInstagramBrowser ? "mediump" : "highp",
+                                    precision: "highp",
                                     alpha: false,
                                     preserveDrawingBuffer: true,
                                 }}
@@ -2629,7 +2629,7 @@ const App = () => {
                                     getGltfLoader(gl)
                                 }}
                             >
-                                <AdaptiveDpr pixelated />
+                                <AdaptiveDpr />
                                 <ambientLight intensity={1} />
                                 <directionalLight color="white" position={[0, 2, 50]} />
 
