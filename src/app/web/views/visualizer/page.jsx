@@ -1265,22 +1265,10 @@ const App = () => {
     };
 
     useEffect(() => {
-        const { isSafariMobile, isInstagramBrowser } = checkIsSafariOnIOS();
-        if (isSafariMobile || isInstagramBrowser) {
-            const currentId = searchParams.get("id") || "";
-            const currentModelIdx = searchParams.get("modelIndex") || "0";
-            const terrainId = searchParams.get("terrainId") || "";
-            const targetUrl = `/web/views/visualizer/easyview?id=${encodeURIComponent(currentId)}&modelIndex=${currentModelIdx}${terrainId ? `&terrainId=${encodeURIComponent(terrainId)}` : ''}`;
-            if (router && typeof router.replace === 'function') {
-                router.replace(targetUrl);
-            } else if (typeof window !== 'undefined') {
-                window.location.replace(targetUrl);
-            }
-            return;
-        }
-        setIsSafariMobile(false);
-        setIsInstagramBrowser(false);
-    }, [router, searchParams]);
+        const info = checkIsSafariOnIOS();
+        setIsSafariMobile(Boolean(info?.isSafariMobile));
+        setIsInstagramBrowser(Boolean(info?.isInstagramBrowser));
+    }, []);
 
     useEffect(() => {
         THREE.Cache.enabled = true;
@@ -1625,8 +1613,7 @@ const App = () => {
 
     // useEffect para cargar el modelo inicial con proyecto actual
     useEffect(() => {
-        if (isSafariMobile || isInstagramBrowser) return; // ← salir temprano en Safari iOS
-
+        
         if (currentModel && !isModelLoaded) {
             const modelLocation = currentModel?.model;
             if (modelLocation && modelLocation.url) {
@@ -1711,7 +1698,6 @@ const App = () => {
 
     // Pre-cargar imágenes 360 solo DESPUÉS de que el modelo 3D y el streaming HD hayan finalizado
     useEffect(() => {
-        if (isSafariMobile || isInstagramBrowser) return;
         if (!isModelLoaded || isStreamingHighRes) return;
 
         if (view360Markers.length > 0) {
@@ -2594,7 +2580,7 @@ const App = () => {
 
             {/* Se condiciona el renderizado general no safari (monta Canvas en paralelo para precargar shaders y entorno) */}
 
-            {!isSafariMobile && (isModelLoaded || currentModel) && (
+            {(isModelLoaded || currentModel) && (
                 <div className='flex w-full h-full flex-col sm:flex-row'>
                     <div className='flex w-full h-full relative'>
                         {currentView === 'free' && (
