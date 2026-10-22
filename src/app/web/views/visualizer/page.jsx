@@ -1476,6 +1476,41 @@ const App = () => {
         isInitialLoadRef.current = true;
     }, [idProyect]);
 
+    // Helper para posicionar la cámara inicial con precisión sin saltos
+    const applyInitialCamera = useCallback((customBounds) => {
+        if (!orbitControlsRef.current) return false;
+        const controls = orbitControlsRef.current;
+        const camera = controls.object;
+        const boundsToUse = customBounds || modelBounds;
+
+        if (currentModel?.defaultCamera?.position?.length === 3) {
+            const { position, target } = currentModel.defaultCamera;
+            camera.position.set(position[0], position[1], position[2]);
+            if (target && target.length === 3) {
+                controls.target.set(target[0], target[1], target[2]);
+                camera.lookAt(target[0], target[1], target[2]);
+            }
+        } else if (boundsToUse) {
+            const span = Math.max(boundsToUse.width, boundsToUse.depth, 20);
+            const rad = (normalizeDegrees(currentModel?.northOffset || 0) * Math.PI) / 180;
+            const dist = span * 0.45;
+            controls.target.set(boundsToUse.centerX, boundsToUse.centerY || 0, boundsToUse.centerZ);
+            camera.position.set(
+                boundsToUse.centerX - dist * Math.sin(rad),
+                (boundsToUse.maxY || 10) + span * 0.45,
+                boundsToUse.centerZ + dist * Math.cos(rad)
+            );
+            camera.lookAt(boundsToUse.centerX, boundsToUse.centerY || 0, boundsToUse.centerZ);
+        } else {
+            return false;
+        }
+
+        camera.updateProjectionMatrix();
+        controls.update();
+        controls.saveState?.();
+        return true;
+    }, [currentModel, modelBounds]);
+
     // Helper para aplicar metadatos del modelo y calcular sus límites
     const applyModelMetadata = useCallback((modelObj, sceneObj, targetUrl) => {
         const computedBounds = computeModelBoundsAndFootprint(sceneObj);
@@ -1485,7 +1520,22 @@ const App = () => {
         }
 
         setIsModelLoaded(true);
-        setIsLoadingScreenVisible(false);
+
+        // Alinear cámara ANTES de ocultar pantalla de carga para eliminar saltos visibles
+        let tries = 0;
+        const settleCameraAndReveal = () => {
+            const applied = applyInitialCamera(computedBounds);
+            if (applied || tries >= 8) {
+                isInitialLoadRef.current = false;
+                setTimeout(() => {
+                    setIsLoadingScreenVisible(false);
+                }, 40);
+            } else {
+                tries++;
+                setTimeout(settleCameraAndReveal, 40);
+            }
+        };
+        settleCameraAndReveal();
         setCurrentModelUrl(targetUrl);
         setCurrentModelId(modelObj.key || modelObj._id);
         setPjname(modelObj.name);
@@ -1668,46 +1718,12 @@ const App = () => {
         if (session !== null && session !== undefined) setIsPublish(false);
     }, [currentModel, isModelLoaded, isSafariMobile, isInstagramBrowser, executeModelLoad, session]);
 
-    // Aplicar cámara por defecto una vez cargado el modelo y los controles listos
+    // Aplicar cámara por defecto una vez cargado el modelo y los controles listos (fallback seguro)
     useEffect(() => {
-        if (isModelLoaded) {
-            if (!isInitialLoadRef.current) {
-                return;
-            }
-            let attempts = 0;
-            const applyCamera = () => {
-                if (orbitControlsRef.current) {
-                    const controls = orbitControlsRef.current;
-                    const camera = controls.object;
-                    if (currentModel?.defaultCamera?.position?.length === 3) {
-                        const { position, target } = currentModel.defaultCamera;
-                        camera.position.set(position[0], position[1], position[2]);
-                        if (target && target.length === 3) {
-                            controls.target.set(target[0], target[1], target[2]);
-                        }
-                    } else if (modelBounds) {
-                        // Si no hay defaultCamera guardada, ubicar la cámara centrada sobre el modelo real
-                        const span = Math.max(modelBounds.width, modelBounds.depth, 20);
-                        const rad = (normalizeDegrees(currentModel?.northOffset || 0) * Math.PI) / 180;
-                        const dist = span * 0.45;
-                        controls.target.set(modelBounds.centerX, modelBounds.centerY || 0, modelBounds.centerZ);
-                        camera.position.set(
-                            modelBounds.centerX - dist * Math.sin(rad),
-                            (modelBounds.maxY || 10) + span * 0.45,
-                            modelBounds.centerZ + dist * Math.cos(rad)
-                        );
-                    }
-                    camera.updateProjectionMatrix();
-                    controls.update();
-                } else if (attempts < 15) {
-                    attempts++;
-                    setTimeout(applyCamera, 100);
-                }
-            };
-            setTimeout(applyCamera, 100);
-            isInitialLoadRef.current = false;
+        if (isModelLoaded && isInitialLoadRef.current) {
+            applyInitialCamera();
         }
-    }, [isModelLoaded, currentModel, modelBounds]);
+    }, [isModelLoaded, applyInitialCamera]);
 
     // Función para cargar un modelo específico sin dejar la escena en blanco
     const loadModel = (model) => {
@@ -2655,7 +2671,7 @@ const App = () => {
                                 style={{ cursor: currentView === 'free' ? 'none' : (editMarkersMode ? 'crosshair' : 'default'), touchAction: 'none' }}
                                 dpr={[1, 2]}
                                 ref={objectRef}
-                                camera={{ position: [0, 160, 0], fov: 75 }}
+                                camera={{ position: currentModel?.defaultCamera?.position || [0, 160, 0], fov: 75 }}
                                 performance={{ min: 0.5 }}
                                 gl={{
                                     antialias: true,
@@ -2852,6 +2868,7 @@ const App = () => {
                                 {currentView !== 'free' && (
                                     <OrbitControls
                                         makeDefault
+                                        target={currentModel?.defaultCamera?.target || [0, 0, 0]}
                                         ref={(controls) => {
                                             if (controls) {
                                                 orbitControlsRef.current = controls;
