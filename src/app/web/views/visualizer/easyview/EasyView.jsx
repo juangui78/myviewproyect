@@ -223,7 +223,7 @@ const createFadedGridMesh = (gridY = 0) => {
   return mesh;
 };
 
-export default function EasyView({ modelUrl, previewUrl = null, currentModel, projectInfo, projectId }) {
+export default function EasyView({ modelUrl, previewUrl = null, currentModel, projectInfo, projectId, onReady = null, onProgress = null }) {
   const mountRef = useRef(null);
   const savedCameraStateRef = useRef(null);
   const cameraRef = useRef(null);
@@ -376,7 +376,7 @@ export default function EasyView({ modelUrl, previewUrl = null, currentModel, pr
     };
     
     updateSize();
-    renderer.setClearColor(0xf0f0f0); // Color de fondo por defecto
+    renderer.setClearColor(0x020b12, 1); // Fondo oscuro coherente con el visualizador
     currentMount.appendChild(renderer.domElement);
 
     // Guardar referencias
@@ -503,6 +503,7 @@ export default function EasyView({ modelUrl, previewUrl = null, currentModel, pr
 
         if (isSceneConfigured) {
           setIsLoading(false);
+          onReady?.();
           return;
         }
         isSceneConfigured = true;
@@ -662,6 +663,7 @@ export default function EasyView({ modelUrl, previewUrl = null, currentModel, pr
 
         setTerrainsData(localTerrainsData);
         setIsLoading(false);
+        onReady?.();
       };
 
       if (previewUrl && previewUrl !== modelUrl) {
@@ -681,7 +683,9 @@ export default function EasyView({ modelUrl, previewUrl = null, currentModel, pr
           },
           (xhr) => {
             if (xhr.lengthComputable) {
-              setProgress(Math.round((xhr.loaded / xhr.total) * 100));
+              const pct = Math.round((xhr.loaded / xhr.total) * 100);
+              setProgress(pct);
+              onProgress?.(pct);
             }
           },
           (err) => {
@@ -695,12 +699,15 @@ export default function EasyView({ modelUrl, previewUrl = null, currentModel, pr
           (gltfFinal) => handleGltfScene(gltfFinal, false),
           (xhr) => {
             if (xhr.lengthComputable) {
-              setProgress(Math.round((xhr.loaded / xhr.total) * 100));
+              const pct = Math.round((xhr.loaded / xhr.total) * 100);
+              setProgress(pct);
+              onProgress?.(pct);
             }
           },
           (err) => {
             console.error('Error al cargar el modelo 3D en EasyView:', err);
             setIsLoading(false);
+            onReady?.();
           }
         );
       }
@@ -863,18 +870,20 @@ export default function EasyView({ modelUrl, previewUrl = null, currentModel, pr
 
   return (
     <div style={{ width: '100%', height: '100dvh', position: 'relative', overflow: 'hidden', touchAction: 'none', overscrollBehavior: 'none' }}>
-      {isLoading && (
+      {!onReady && isLoading && (
         <div style={{
           position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
           display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-          backgroundColor: '#f0f0f0', zIndex: 10, color: '#333', fontFamily: 'sans-serif'
+          backgroundColor: '#020b12', zIndex: 10, color: '#fff', fontFamily: 'sans-serif'
         }}>
           <div style={{
-            width: '50px', height: '50px', border: '4px solid #ccc',
-            borderTop: '4px solid #333', borderRadius: '50%',
+            width: '45px', height: '45px', border: '3px solid rgba(255,255,255,0.1)',
+            borderTop: '3px solid #0CDBFF', borderRadius: '50%',
             animation: 'spin 1s linear infinite', marginBottom: '16px'
           }} />
-          <p>Cargando modelo 3D... {progress}%</p>
+          <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)' }}>
+            {progress > 0 && progress < 100 ? `Cargando modelo 3D... ${progress}%` : 'Cargando modelo 3D...'}
+          </p>
           <style>{`
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
           `}</style>
