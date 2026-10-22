@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { getAllProjects, getProjectsTimelineStats } from "./actions/getAllProjects";
+import { getAllProjects, getProjectsTimelineStats, getCompaniesOptions } from "./actions/getAllProjects";
 import { toast } from "sonner";
 import { Button, Chip, useDisclosure } from "@nextui-org/react";
 import Link from "next/link";
@@ -83,6 +83,8 @@ const ContentPage = () => {
     const id = searchParams.get("id");
     const nameProject = searchParams.get("name");
 
+    const [selectedCompanyId, setSelectedCompanyId] = useState(id || "ALL");
+    const [companiesList, setCompaniesList] = useState([]);
     const [data, setData] = useState([]); // all projects from one company
     const [idProject, setIdProject] = useState(null);
     const [dataModels, setDataModels] = useState([]);
@@ -98,17 +100,32 @@ const ContentPage = () => {
     const [chartRange, setChartRange] = useState("30");
 
     useEffect(() => {
+        const loadCompanies = async () => {
+            const res = await getCompaniesOptions();
+            if (res.success) {
+                setCompaniesList(res.data);
+            }
+        };
+        loadCompanies();
+    }, []);
+
+    useEffect(() => {
+        if (id) {
+            setSelectedCompanyId(id);
+        }
+    }, [id]);
+
+    useEffect(() => {
         const fetchChartData = async () => {
-            if (!id) return;
             setChartLoading(true);
-            const res = await getProjectsTimelineStats(id, chartRange);
+            const res = await getProjectsTimelineStats(selectedCompanyId, chartRange);
             if (res.success) {
                 setTimelineData(res.data);
             }
             setChartLoading(false);
         };
         fetchChartData();
-    }, [id, chartRange]);
+    }, [selectedCompanyId, chartRange]);
 
     const chartData = useMemo(() => {
         return {
@@ -169,11 +186,10 @@ const ContentPage = () => {
 
         const fecthData = async () => {
             try {
-                const response = await getAllProjects(id);
+                const response = await getAllProjects(selectedCompanyId);
                 if (response.success) {
                     setData(response.data);
-                    console.log(response.data)
-                    return
+                    return;
                 }
                 toast.error(response.message);
             } catch (error) {
@@ -181,10 +197,8 @@ const ContentPage = () => {
             }
         }
 
-        if (id) {
-            fecthData();
-        }
-    }, [id]);
+        fecthData();
+    }, [selectedCompanyId]);
 
     //open modal to add new model
     //===================================================================================================
@@ -254,6 +268,23 @@ const ContentPage = () => {
                             <p className="text-white/60 text-sm mt-2 font-light">
                                 Panel administrativo y visualización 3D de tus desarrollos inmobiliarios.
                             </p>
+                            {companiesList.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-2.5 mt-3">
+                                    <span className="text-xs text-white/50 font-mono uppercase tracking-wider">Inmobiliaria:</span>
+                                    <select
+                                        value={selectedCompanyId}
+                                        onChange={(e) => setSelectedCompanyId(e.target.value)}
+                                        className="bg-[#07131D] border border-white/20 text-[#0CDBFF] text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#0CDBFF] cursor-pointer shadow-inner"
+                                    >
+                                        <option value="ALL">🏢 Todas las Inmobiliarias ({companiesList.length})</option>
+                                        {companiesList.map((c) => (
+                                            <option key={c._id} value={encrypt(c._id)}>
+                                                {c.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
                         </div>
                         <Button 
                             className="bg-gradient-to-r from-[#0CDBFF] to-[#00A8CC] hover:from-[#33E2FF] hover:to-[#00C5ED] text-[#02121B] font-bold shadow-lg shadow-[#0CDBFF]/20 px-6 py-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02]"
@@ -442,6 +473,11 @@ const ContentPage = () => {
                                             <h4 className="text-xl font-bold text-white group-hover:text-[#0CDBFF] transition-colors duration-300 truncate">
                                                 {item.name}
                                             </h4>
+                                            {item.companyName && (
+                                                <span className="inline-block text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-[#0CDBFF] border border-cyan-500/20">
+                                                    🏢 {item.companyName}
+                                                </span>
+                                            )}
                                             <p className="text-white/50 text-xs font-light leading-relaxed line-clamp-2 h-8">
                                                 {item.description}
                                             </p>
@@ -538,7 +574,7 @@ const ContentPage = () => {
             </section>
             
             {isOpen && <ModalAddModel isOpen={isOpen} onOpenChange={onOpenChange} idProject={idProject}/>}
-            {isOpenNewProject && <ModalNewProject isOpenNewProject={isOpenNewProject} onOpenChangeNewProject={onOpenChangeNewProject} idCompany={id}/>}
+            {isOpenNewProject && <ModalNewProject isOpenNewProject={isOpenNewProject} onOpenChangeNewProject={onOpenChangeNewProject} idCompany={selectedCompanyId !== "ALL" ? selectedCompanyId : (companiesList[0] ? encrypt(companiesList[0]._id) : id)}/>}
             {IsOpenDrawerModels && <DrawerShowModels IsOpenDrawerModels={IsOpenDrawerModels} onOpenChangeDrawerModels={onOpenChangeDrawerModels} dataModels={dataModels}/>}
             {IsOpenDrawerInfoProject && <DrawerShowInfoProject IsOpenDrawerInfoProject={IsOpenDrawerInfoProject} onOpenChangeDrawerShowInfoProject={onOpenChangeDrawerShowInfoProject} dataProject={dataProject}/>}
         </>

@@ -40,6 +40,8 @@ export default function History({ idProyect, onModelSelect }) {
     // Estos son los campos que necesitas para loadModel
     model: {
       url: model.model.url,
+      previewUrl: model.model?.previewUrl,
+      mobileUrl: model.model?.mobileUrl,
       _id: model._id,
       terrains: model.terrains
     }

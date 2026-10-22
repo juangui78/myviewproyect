@@ -3,6 +3,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Input, Button, Chip, Tooltip } from "@heroui/react";
 import { toast } from "sonner";
 import { getCompaniesWithActiveProjects } from "../actions/superadminActions";
+import ModalAddModel from "@/web/views/admin/Projects/components/ModalAddModel";
+import DrawerShowModels from "@/web/views/admin/Projects/components/DrawerShowModels";
+import { getModels } from "@/web/views/admin/Projects/actions/getModels";
+import { encrypt } from "@/api/libs/crypto";
 
 export default function CompaniesProjectsView() {
   const [companies, setCompanies] = useState([]);
@@ -10,6 +14,30 @@ export default function CompaniesProjectsView() {
   const [search, setSearch] = useState("");
   const [filterMode, setFilterMode] = useState("all"); // 'all' | 'withProjects' | 'noProjects'
   const [expandedCompanies, setExpandedCompanies] = useState(new Set());
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [dataModels, setDataModels] = useState([]);
+  const [isModelsOpen, setIsModelsOpen] = useState(false);
+  const [isAddModelOpen, setIsAddModelOpen] = useState(false);
+
+  const handleOpenModels = async (projId) => {
+    setSelectedProjectId(projId);
+    try {
+      const res = await getModels(projId);
+      if (res.success) {
+        setDataModels(res.data);
+        setIsModelsOpen(true);
+      } else {
+        toast.error("Error al obtener modelos: " + res.message);
+      }
+    } catch (e) {
+      toast.error("Error al conectar con el servidor.");
+    }
+  };
+
+  const handleOpenAddModel = (projId) => {
+    setSelectedProjectId(projId);
+    setIsAddModelOpen(true);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -347,7 +375,22 @@ export default function CompaniesProjectsView() {
                   </div>
 
                   {/* Right Badges & Toggle */}
-                  <div className="flex items-center gap-3 self-end md:self-center">
+                  <div className="flex items-center gap-2.5 self-end md:self-center">
+                    {company._id !== "unassigned" && (
+                      <a
+                        href={`/web/views/admin/Projects?id=${encrypt(company._id)}&name=${encodeURIComponent(company.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-white/5 hover:bg-white/10 text-[#0CDBFF] border border-white/10 flex items-center gap-1.5 transition-colors"
+                        title="Abrir Dashboard completo para esta inmobiliaria"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                        Dashboard
+                      </a>
+                    )}
                     <div
                       className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 border transition-all ${
                         company.activeProjectsCount > 0
@@ -435,33 +478,63 @@ export default function CompaniesProjectsView() {
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex items-center gap-2 pt-2 border-t border-white/5">
-                              <a
-                                href={`/proyectos/${project._id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold bg-[#0CDBFF] hover:bg-[#0CDBFF]/90 text-black shadow-[0_0_10px_rgba(12,219,255,0.2)] transition-all"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                </svg>
-                                Ver en 3D
-                              </a>
-
-                              <Tooltip content="Copiar enlace público" className="bg-[#0E1622] text-white text-xs">
-                                <Button
-                                  isIconOnly
-                                  size="sm"
-                                  variant="flat"
-                                  className="bg-white/5 hover:bg-white/10 text-white/70 hover:text-white"
-                                  onPress={() => copyProjectLink(project._id, project.name)}
+                            <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={`/proyectos/${project._id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold bg-[#0CDBFF] hover:bg-[#0CDBFF]/90 text-black shadow-[0_0_10px_rgba(12,219,255,0.2)] transition-all"
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                   </svg>
+                                  Ver en 3D
+                                </a>
+
+                                <Tooltip content="Copiar enlace público" className="bg-[#0E1622] text-white text-xs">
+                                  <Button
+                                    isIconOnly
+                                    size="sm"
+                                    variant="flat"
+                                    className="bg-white/5 hover:bg-white/10 text-white/70 hover:text-white"
+                                    onPress={() => copyProjectLink(project._id, project.name)}
+                                  >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                  </Button>
+                                </Tooltip>
+                              </div>
+
+                              {/* Admin Management Tools for Superadmin */}
+                              <div className="grid grid-cols-3 gap-1.5 pt-1.5 border-t border-white/5">
+                                <Button
+                                  size="sm"
+                                  variant="flat"
+                                  className="bg-white/5 hover:bg-white/10 text-white text-[11px] font-semibold h-7 px-1 min-w-0"
+                                  onPress={() => handleOpenModels(project._id)}
+                                >
+                                  📁 Modelos
                                 </Button>
-                              </Tooltip>
+                                <Button
+                                  size="sm"
+                                  className="bg-gradient-to-r from-[#0CDBFF]/20 to-[#00A8CC]/20 hover:from-[#0CDBFF]/35 hover:to-[#00A8CC]/35 text-[#0CDBFF] border border-[#0CDBFF]/30 text-[11px] font-bold h-7 px-1 min-w-0"
+                                  onPress={() => handleOpenAddModel(project._id)}
+                                >
+                                  ➕ + Modelo
+                                </Button>
+                                <a
+                                  href={`/web/views/visualizer/edit?id=${encrypt(project._id)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-[11px] font-semibold rounded-lg h-7 px-1 min-w-0 transition-colors border border-white/5"
+                                  title="Editar calibración 360, terrenos y marcadores en el visor"
+                                >
+                                  ⚙️ Editor
+                                </a>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -473,6 +546,20 @@ export default function CompaniesProjectsView() {
             );
           })}
         </div>
+      )}
+      {isAddModelOpen && (
+        <ModalAddModel
+          isOpen={isAddModelOpen}
+          onOpenChange={() => setIsAddModelOpen(false)}
+          idProject={selectedProjectId}
+        />
+      )}
+      {isModelsOpen && (
+        <DrawerShowModels
+          IsOpenDrawerModels={isModelsOpen}
+          onOpenChangeDrawerModels={() => setIsModelsOpen(false)}
+          dataModels={dataModels}
+        />
       )}
     </div>
   );

@@ -8,13 +8,13 @@ import { decrypt } from '@/api/libs/crypto';
 const EasyView = dynamic(() => import('./EasyView'), {
     ssr: false,
     loading: () => (
-        <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0', color: '#333', fontFamily: 'sans-serif' }}>
+        <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#020b12', color: '#fff', fontFamily: 'sans-serif' }}>
             <div style={{
-                width: '50px', height: '50px', border: '4px solid #ccc',
-                borderTop: '4px solid #333', borderRadius: '50%',
+                width: '50px', height: '50px', border: '4px solid rgba(255,255,255,0.1)',
+                borderTop: '4px solid #0CDBFF', borderRadius: '50%',
                 animation: 'spin 1s linear infinite', marginBottom: '16px'
             }} />
-            <p>Iniciando componentes gráficos...</p>
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>Iniciando EasyView optimizado...</p>
             <style>{`
                 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
             `}</style>
@@ -29,6 +29,7 @@ function EasyViewContent() {
     const decryptedId = encryptedId ? decrypt(encryptedId) : null;
     
     const [modelUrl, setModelUrl] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
     const [currentModel, setCurrentModel] = useState(null);
     const [projectInfo, setProjectInfo] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -65,7 +66,12 @@ function EasyViewContent() {
                     const selectedModel = modelsResponse.data[safeIndex];
                     setCurrentModel(selectedModel);
                     if (selectedModel?.model?.url) {
-                        setModelUrl(selectedModel.model.mobileUrl || selectedModel.model.url);
+                        const mainUrl = selectedModel.model.mobileUrl || selectedModel.model.url;
+                        const prevUrl = (selectedModel.model.previewUrl && selectedModel.model.previewUrl !== mainUrl)
+                            ? selectedModel.model.previewUrl
+                            : null;
+                        setModelUrl(mainUrl);
+                        setPreviewUrl(prevUrl);
                     }
                 }
             } catch (error) {
@@ -80,28 +86,45 @@ function EasyViewContent() {
 
     if (loading) {
         return (
-            <div style={{ width: '100%', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0', color: '#333', fontFamily: 'sans-serif' }}>
-                <p>Cargando visualizador optimizado...</p>
+            <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: '#020b12', color: '#fff', fontFamily: 'sans-serif' }}>
+                <div style={{
+                    width: '40px', height: '40px', border: '3px solid rgba(255,255,255,0.1)',
+                    borderTop: '3px solid #0CDBFF', borderRadius: '50%',
+                    animation: 'spin 1s linear infinite', marginBottom: '14px'
+                }} />
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Cargando modelo 3D optimizado...</p>
+                <style>{`
+                    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                `}</style>
             </div>
         );
     }
 
     if (!modelUrl) {
         return (
-            <div style={{ width: '100%', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0', color: '#333', fontFamily: 'sans-serif' }}>
-                <p>No se pudo cargar el modelo o no se encontró un ID válido.</p>
+            <div style={{ width: '100%', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#020b12', color: '#fff', fontFamily: 'sans-serif' }}>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>No se pudo cargar el modelo o no se encontró un ID válido.</p>
             </div>
         );
     }
 
-    return <EasyView key={encryptedId} modelUrl={modelUrl} currentModel={currentModel} projectInfo={projectInfo} projectId={decryptedId} />;
+    return (
+        <EasyView 
+            key={encryptedId} 
+            modelUrl={modelUrl} 
+            previewUrl={previewUrl} 
+            currentModel={currentModel} 
+            projectInfo={projectInfo} 
+            projectId={decryptedId} 
+        />
+    );
 }
 
 export default function EasyViewPage() {
     return (
         <Suspense fallback={
-            <div style={{ width: '100%', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0', color: '#333', fontFamily: 'sans-serif' }}>
-                <p>Cargando página...</p>
+            <div style={{ width: '100%', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#020b12', color: '#fff', fontFamily: 'sans-serif' }}>
+                <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>Cargando...</p>
             </div>
         }>
             <EasyViewContent />
