@@ -975,7 +975,9 @@ export default function EasyView({ modelUrl, previewUrl = null, currentModel, pr
           </div>
 
           <div className="z-[9999] pointer-events-none">
-            <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4 pointer-events-auto">
+            <div className={`fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4 pointer-events-auto transition-all duration-300 ${
+                selectedTerrainDetail ? 'opacity-0 pointer-events-none sm:opacity-100 sm:pointer-events-auto' : 'opacity-100 pointer-events-auto'
+              }`}>
                 <div className="navigation-controls flex flex-col items-center mb-4 gap-2">
                     <div className="flex flex-col items-center mb-1">
                         <span className="text-[12px] uppercase tracking-wider text-black font-bold mb-0.5 drop-shadow-md">
@@ -993,7 +995,9 @@ export default function EasyView({ modelUrl, previewUrl = null, currentModel, pr
                 </div>
             </div>
 
-            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 pointer-events-auto">
+            <div className={`fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 pointer-events-auto transition-all duration-300 ${
+                selectedTerrainDetail ? 'opacity-0 pointer-events-none sm:opacity-100 sm:pointer-events-auto' : 'opacity-100 pointer-events-auto'
+              }`}>
                 <a
                     href="https://wa.me/+573019027822"
                     target="_blank"
@@ -1005,7 +1009,9 @@ export default function EasyView({ modelUrl, previewUrl = null, currentModel, pr
             </div>
           </div>
 
-          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[9999] pointer-events-none">
+          <div className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[9999] pointer-events-none transition-all duration-300 ${
+                selectedTerrainDetail ? 'opacity-0 sm:opacity-100' : 'opacity-100'
+              }`}>
               <span className="text-[10px] text-black/40 font-medium tracking-widest uppercase">
                   by <span className="text-black/70">MyView_</span>
               </span>

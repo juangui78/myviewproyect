@@ -2924,7 +2924,9 @@ const App = () => {
                                 </div>
                             )}
                             {isModelLoaded && (
-                                <div className="fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4 flex flex-col items-start gap-1">
+                                <div className={`fixed bottom-[calc(1vh+5px)] left-[calc(2vw+6px)] z-[9999] md:bottom-4 md:left-4 flex flex-col items-start gap-1 transition-all duration-300 ${
+                                    activeTerrainForDetail ? 'opacity-0 pointer-events-none sm:opacity-100 sm:pointer-events-auto' : 'opacity-100 pointer-events-auto'
+                                }`}>
                                     <Minimap
                                         terrains={allTerrains.length > 0 ? allTerrains : terrains}
                                         bounds={minimapBounds}
@@ -3009,7 +3011,9 @@ const App = () => {
                                 </div>
                             )}
 
-                            <div className="fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 pointer-events-auto">
+                            <div className={`fixed bottom-[calc(1vh+14px)] right-[calc(2vw+10px)] z-[9999] md:bottom-4 md:right-4 pointer-events-auto transition-all duration-300 ${
+                                activeTerrainForDetail ? 'opacity-0 pointer-events-none sm:opacity-100 sm:pointer-events-auto' : 'opacity-100 pointer-events-auto'
+                            }`}>
                                 <a
                                     href="https://wa.me/+573019027822" // Reemplaza con tu número de WhatsApp
                                     target="_blank"
@@ -3023,7 +3027,9 @@ const App = () => {
                         </div>
 
                         {/* Branding */}
-                        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[9999] pointer-events-none">
+                        <div className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[9999] pointer-events-none transition-all duration-300 ${
+                            activeTerrainForDetail ? 'opacity-0 sm:opacity-100' : 'opacity-100'
+                        }`}>
                             <span className="text-[10px] text-white/40 font-medium tracking-widest uppercase">
                                 by <span className="text-white/70">MyView_</span>
                             </span>
