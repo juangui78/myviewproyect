@@ -131,45 +131,48 @@ export default function TerrainDetailCard({
     <>
       {/* Tarjeta Flotante Principal del Lote */}
       <div 
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-[92%] sm:w-[420px] transition-all duration-300 transform ${
+        className={`fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-[10001] w-[94%] sm:w-[420px] max-w-[440px] mb-[env(safe-area-inset-bottom,0px)] transition-all duration-300 transform ${
           isOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-8 pointer-events-none'
         }`}
       >
-        <div className="bg-[#07121D]/90 backdrop-blur-2xl border border-white/15 rounded-3xl p-5 shadow-[0_20px_50px_rgba(0,0,0,0.7)] text-white relative flex flex-col gap-4">
+        <div className="bg-[#07121D]/95 backdrop-blur-2xl border border-white/15 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] text-white relative flex flex-col gap-3 sm:gap-4">
           
           {/* Botón cerrar */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-white/50 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors"
+            className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 text-white/60 hover:text-white w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-xs sm:text-sm"
             title="Cerrar"
             type="button"
+            aria-label="Cerrar detalle"
           >
             ✕
           </button>
 
           {/* Encabezado: Título y Estado */}
-          <div className="flex items-center justify-between pr-8 gap-2">
-            <div>
-              <span className="text-[10px] font-mono tracking-widest text-[#0CDBFF] uppercase block font-semibold">
+          <div className="flex items-center justify-between pr-7 sm:pr-8 gap-2">
+            <div className="min-w-0">
+              <span className="text-[9px] sm:text-[10px] font-mono tracking-widest text-[#0CDBFF] uppercase block font-semibold">
                 Lote Seleccionado
               </span>
-              <h3 className="text-xl font-black text-white tracking-tight">
+              <h3 className="text-lg sm:text-xl font-black text-white tracking-tight truncate">
                 {terrainName}
               </h3>
             </div>
-            {getStatusBadge()}
+            <div className="shrink-0">
+              {getStatusBadge()}
+            </div>
           </div>
 
           {/* Métricas: Área */}
-          <div className="grid grid-cols-2 gap-3 bg-white/[0.04] border border-white/10 rounded-2xl p-3">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 bg-white/[0.04] border border-white/10 rounded-xl sm:rounded-2xl p-2.5 sm:p-3">
             <div>
-              <span className="text-[10px] text-white/50 block font-medium uppercase">Área Estimada</span>
-              <span className="text-base font-bold text-white">
+              <span className="text-[9px] sm:text-[10px] text-white/50 block font-medium uppercase">Área Estimada</span>
+              <span className="text-sm sm:text-base font-bold text-white">
                 {calculatedArea ? `${calculatedArea} m²` : 'En cálculo'}
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-white/50 block font-medium uppercase">Proyecto</span>
+              <span className="text-[9px] sm:text-[10px] text-white/50 block font-medium uppercase">Proyecto</span>
               <span className="text-xs font-semibold text-white/90 truncate block">
                 {projectName}
               </span>
@@ -178,31 +181,31 @@ export default function TerrainDetailCard({
 
           {/* Acciones Comerciales */}
           {isSold ? (
-            <div className="bg-red-500/10 border border-red-500/25 rounded-xl p-3 text-center">
+            <div className="bg-red-500/10 border border-red-500/25 rounded-xl p-2.5 sm:p-3 text-center">
               <p className="text-xs text-red-300 font-medium">
                 Este lote ya no se encuentra disponible para venta.
               </p>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 pt-0.5 sm:pt-1">
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-[#02121B] font-bold text-xs tracking-wide transition-transform active:scale-95 shadow-[0_0_20px_rgba(37,211,102,0.25)]"
+                className="flex items-center justify-center gap-1.5 sm:gap-2 py-2 sm:py-2.5 px-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-[#02121B] font-bold text-xs tracking-wide transition-transform active:scale-95 shadow-[0_0_20px_rgba(37,211,102,0.25)]"
               >
-                <div className="w-4 h-4">
+                <div className="w-4 h-4 shrink-0">
                   <Whatsapp />
                 </div>
-                <span>WhatsApp</span>
+                <span className="truncate">WhatsApp</span>
               </a>
 
               <Button
                 onPress={handleOpenLeadForm}
-                className="flex-1 bg-gradient-to-r from-[#0CDBFF] to-[#00C662] text-[#02121B] font-bold text-xs shadow-[0_0_20px_rgba(12,219,255,0.2)]"
-                size="md"
+                className="bg-gradient-to-r from-[#0CDBFF] to-[#00C662] text-[#02121B] font-bold text-xs shadow-[0_0_20px_rgba(12,219,255,0.2)] h-auto py-2 sm:py-2.5 px-3 rounded-xl min-w-0"
+                size="sm"
               >
-                Me Interesa
+                <span className="truncate">Me Interesa</span>
               </Button>
             </div>
           )}
