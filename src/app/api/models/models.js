@@ -33,6 +33,10 @@ const models_schema = new Schema({
     mobileUrl: {
       type: String,
       required: false
+    },
+    originalUrl: {
+      type: String,
+      required: false
     }
   },
   idProyect: {
