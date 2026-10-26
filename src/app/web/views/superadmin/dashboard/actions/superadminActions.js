@@ -242,7 +242,7 @@ export async function getAllCompaniesList() {
       success: true,
       data: companies.map(c => ({
         _id: c._id.toString(),
-        name: c.name
+        name: c.name || "Inmobiliaria sin nombre"
       }))
     };
   } catch (error) {

@@ -2,9 +2,9 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { 
   Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
-  Pagination, Input, Button, useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter
+  Pagination, Input, Button, useDisclosure, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter,
+  Tooltip
 } from "@heroui/react";
-import { Select, SelectItem, Tooltip } from "@nextui-org/react";
 import { Toaster, toast } from "sonner";
 import { SearchIcon } from "@/web/global_components/icons/SearchIcon";
 import { PlusIcon } from "@/web/global_components/icons/PlusIcon";
@@ -68,6 +68,167 @@ const AnimatedCounter = ({ value, duration = 1200 }) => {
   return <span>{count.toLocaleString()}</span>;
 };
 
+function CustomSelect({
+  label,
+  value,
+  onChange,
+  options = [],
+  placeholder = "Seleccionar...",
+  isRequired = false,
+  isSearchable = false,
+  dropUp = false
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [openUp, setOpenUp] = useState(dropUp);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [isOpen]);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  const filteredOptions = useMemo(() => {
+    if (!isSearchable || !search.trim()) return options;
+    const q = search.toLowerCase();
+    return options.filter((opt) => opt.label.toLowerCase().includes(q));
+  }, [options, search, isSearchable]);
+
+  const handleToggle = () => {
+    if (!isOpen && containerRef.current) {
+      if (dropUp) {
+        setOpenUp(true);
+      } else {
+        const rect = containerRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        setOpenUp(spaceBelow < 250);
+      }
+    }
+    setIsOpen((prev) => !prev);
+    setSearch("");
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5 w-full relative select-none" ref={containerRef}>
+      {label && (
+        <label className="text-xs text-white/70 font-medium flex items-center gap-1">
+          {label} {isRequired && <span className="text-rose-400">*</span>}
+        </label>
+      )}
+
+      <button
+        type="button"
+        onClick={handleToggle}
+        className={`w-full flex items-center justify-between px-3 h-11 rounded-xl bg-white/[0.04] border transition-all duration-200 text-xs text-left cursor-pointer ${
+          isOpen
+            ? "border-[#0CDBFF] shadow-[0_0_12px_rgba(12,219,255,0.25)] bg-white/[0.06]"
+            : "border-white/20 hover:border-[#0CDBFF]/50"
+        }`}
+      >
+        <div className="flex items-center gap-2 truncate">
+          {selectedOption ? (
+            <>
+              {selectedOption.icon && <span className="shrink-0">{selectedOption.icon}</span>}
+              <span className="text-white font-medium truncate">{selectedOption.label}</span>
+            </>
+          ) : (
+            <span className="text-white/40">{placeholder}</span>
+          )}
+        </div>
+        <svg
+          className={`w-4 h-4 text-white/50 transition-transform duration-200 shrink-0 ml-2 ${
+            isOpen ? (openUp ? "rotate-0 text-[#0CDBFF]" : "rotate-180 text-[#0CDBFF]") : (openUp ? "rotate-180" : "")
+          }`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div
+          className={`absolute left-0 w-full max-h-56 bg-[#0E1622] border border-white/20 rounded-xl z-50 flex flex-col backdrop-blur-2xl animate-fadeIn ${
+            openUp
+              ? "bottom-[calc(100%+6px)] shadow-[0_-12px_32px_rgba(0,0,0,0.9)]"
+              : "top-[calc(100%+6px)] shadow-[0_12px_32px_rgba(0,0,0,0.9)]"
+          }`}
+        >
+          {isSearchable && options.length > 5 && (
+            <div className="p-2 border-b border-white/10 bg-[#070D14] rounded-t-xl">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar inmobiliaria..."
+                className="w-full px-2.5 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-[#0CDBFF]"
+                autoFocus
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
+
+          <div className="overflow-y-auto max-h-44 p-1.5 flex flex-col gap-0.5 scrollbar">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-2 text-xs text-white/40 text-center">
+                No se encontraron resultados
+              </div>
+            ) : (
+              filteredOptions.map((opt) => {
+                const isSelected = opt.value === value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-[#0CDBFF]/15 text-[#0CDBFF] font-semibold border border-[#0CDBFF]/30"
+                        : "text-white/80 hover:bg-white/[0.08] hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      {opt.icon && <span className="shrink-0">{opt.icon}</span>}
+                      <span className="truncate">{opt.label}</span>
+                    </div>
+                    {isSelected && (
+                      <svg
+                        className="w-4 h-4 text-[#0CDBFF] shrink-0 ml-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SuperadminDashboard() {
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -105,7 +266,7 @@ export default function SuperadminDashboard() {
   const [formEmail, setFormEmail] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [formType, setFormType] = useState("user");
-  const [formCompany, setFormCompany] = useState("");
+  const [formCompany, setFormCompany] = useState("none");
 
   const loadStats = async () => {
     setStatsLoading(true);
@@ -203,7 +364,7 @@ export default function SuperadminDashboard() {
       email: formEmail,
       password: formPassword,
       type: formType,
-      id_Company: formCompany || null
+      id_Company: formCompany && formCompany !== "none" ? formCompany : null
     };
 
     const res = await createUserBySuperadmin(payload);
@@ -229,7 +390,7 @@ export default function SuperadminDashboard() {
       lastName: formLastName,
       email: formEmail,
       type: formType,
-      id_Company: formCompany || null
+      id_Company: formCompany && formCompany !== "none" ? formCompany : null
     };
 
     if (formPassword.trim() !== "") {
@@ -267,7 +428,7 @@ export default function SuperadminDashboard() {
     setFormEmail("");
     setFormPassword("");
     setFormType("user");
-    setFormCompany("");
+    setFormCompany("none");
     setSelectedUser(null);
   };
 
@@ -278,9 +439,54 @@ export default function SuperadminDashboard() {
     setFormEmail(user.email);
     setFormPassword("");
     setFormType(user.type);
-    setFormCompany(user.id_Company || "");
+    setFormCompany(user.id_Company ? user.id_Company.toString() : "none");
+    if (companies.length === 0) loadCompanies();
     onEditOpen();
   };
+
+  const availableCompanies = useMemo(() => {
+    const list = [...companies];
+    if (selectedUser?.id_Company && selectedUser?.companyName && selectedUser.companyName !== "Ninguna") {
+      if (!list.some((c) => c._id === selectedUser.id_Company)) {
+        list.push({ _id: selectedUser.id_Company, name: selectedUser.companyName });
+      }
+    }
+    return list;
+  }, [companies, selectedUser]);
+
+  const roleOptions = useMemo(() => [
+    { value: "user", label: "Visualizador (User)", icon: <span className="w-2 h-2 rounded-full bg-white/40 inline-block" /> },
+    { value: "admin", label: "Administrador (Admin)", icon: <span className="w-2 h-2 rounded-full bg-[#0CDBFF] inline-block" /> },
+    { value: "company", label: "Empresa / Inmobiliaria (Company)", icon: <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" /> }
+  ], []);
+
+  const companyOptions = useMemo(() => {
+    const opts = [
+      { value: "none", label: "Sin Inmobiliaria (Ninguna)", icon: <span className="text-xs">🚫</span> }
+    ];
+    companies.forEach((c) => {
+      opts.push({
+        value: c._id,
+        label: c.name,
+        icon: <span className="text-xs text-[#0CDBFF]">🏢</span>
+      });
+    });
+    return opts;
+  }, [companies]);
+
+  const editCompanyOptions = useMemo(() => {
+    const opts = [
+      { value: "none", label: "Sin Inmobiliaria (Ninguna)", icon: <span className="text-xs">🚫</span> }
+    ];
+    availableCompanies.forEach((c) => {
+      opts.push({
+        value: c._id,
+        label: c.name,
+        icon: <span className="text-xs text-[#0CDBFF]">🏢</span>
+      });
+    });
+    return opts;
+  }, [availableCompanies]);
 
   const openDeleteModal = (user) => {
     setSelectedUser(user);
@@ -652,6 +858,7 @@ export default function SuperadminDashboard() {
                   startContent={<PlusIcon />}
                   onPress={() => {
                     resetForm();
+                    if (companies.length === 0) loadCompanies();
                     onCreateOpen();
                   }}
                   size="sm"
@@ -707,8 +914,15 @@ export default function SuperadminDashboard() {
                     <TableCell>
                       {renderTableRoleChip(item?.type)}
                     </TableCell>
-                    <TableCell className="font-medium text-[#0CDBFF] text-xs">
-                      {item?.companyName || "—"}
+                    <TableCell className="text-xs">
+                      {item?.companyName && item.companyName !== "Ninguna" ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-[#0CDBFF]/10 text-[#0CDBFF] border border-[#0CDBFF]/30">
+                          <span className="text-xs">🏢</span>
+                          <span className="truncate max-w-[160px]">{item.companyName}</span>
+                        </span>
+                      ) : (
+                        <span className="text-white/30 italic text-xs">Sin inmobiliaria</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-xs text-white/50">
                       {item?.created ? new Date(item.created).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
@@ -839,7 +1053,7 @@ export default function SuperadminDashboard() {
         placement="center"
         backdrop="blur"
         classNames={{
-          content: "bg-[#0E1622]/95 backdrop-blur-2xl border border-white/10 text-white max-w-md rounded-2xl shadow-2xl",
+          content: "bg-[#0E1622]/95 backdrop-blur-2xl border border-white/10 text-white max-w-md rounded-2xl shadow-2xl overflow-visible",
           header: "border-b border-white/10 py-4 px-6",
           footer: "border-t border-white/10 py-3 px-6"
         }}
@@ -850,7 +1064,7 @@ export default function SuperadminDashboard() {
               <ModalHeader className="flex flex-col gap-0.5 text-base font-bold text-white">
                 Añadir Nuevo Usuario
               </ModalHeader>
-              <ModalBody id="create-user-modal-body" className="flex flex-col gap-4 py-6">
+              <ModalBody id="create-user-modal-body" className="flex flex-col gap-4 py-6 overflow-visible">
                 <Input
                   label="Nombre"
                   placeholder="Ej: Juan"
@@ -904,58 +1118,22 @@ export default function SuperadminDashboard() {
                   }}
                   isRequired
                 />
-                <Select
+                <CustomSelect
                   label="Rol de Sistema"
-                  labelPlacement="outside"
-                  variant="bordered"
-                  className="w-full text-white"
-                  classNames={{
-                    trigger: "border-white/20 bg-transparent text-white",
-                    value: "text-white text-xs",
-                    listbox: "bg-[#0E1622] text-white"
-                  }}
-                  selectedKeys={formType ? new Set([formType]) : new Set()}
-                  onSelectionChange={(keys) => {
-                    const selected = Array.from(keys)[0];
-                    if (selected) setFormType(selected);
-                  }}
-                  popoverProps={{
-                    portalContainer: typeof window !== "undefined" ? document.getElementById("create-user-modal-body") || document.body : undefined,
-                    className: "z-[99999]"
-                  }}
+                  value={formType}
+                  onChange={setFormType}
+                  options={roleOptions}
                   isRequired
-                >
-                  <SelectItem key="user" className="text-white" value="user">Visualizador (User)</SelectItem>
-                  <SelectItem key="admin" className="text-white" value="admin">Administrador (Admin)</SelectItem>
-                  <SelectItem key="company" className="text-white" value="company">Empresa / Inmobiliaria (Company)</SelectItem>
-                </Select>
-                <Select
+                />
+                <CustomSelect
                   label="Asociar Inmobiliaria"
-                  placeholder="Opcional"
-                  labelPlacement="outside"
-                  variant="bordered"
-                  className="w-full text-white"
-                  classNames={{
-                    trigger: "border-white/20 bg-transparent text-white",
-                    value: "text-white text-xs",
-                    listbox: "bg-[#0E1622] text-white"
-                  }}
-                  selectedKeys={formCompany ? new Set([formCompany]) : new Set()}
-                  onSelectionChange={(keys) => {
-                    const selected = Array.from(keys)[0];
-                    setFormCompany(selected || "");
-                  }}
-                  popoverProps={{
-                    portalContainer: typeof window !== "undefined" ? document.getElementById("create-user-modal-body") || document.body : undefined,
-                    className: "z-[99999]"
-                  }}
-                >
-                  {companies.map((c) => (
-                    <SelectItem key={c._id} className="text-white" value={c._id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </Select>
+                  placeholder="Seleccionar inmobiliaria (opcional)"
+                  value={formCompany}
+                  onChange={setFormCompany}
+                  options={companyOptions}
+                  isSearchable
+                  dropUp
+                />
               </ModalBody>
               <ModalFooter>
                 <Button variant="light" className="text-white/70" onPress={onClose}>
@@ -977,7 +1155,7 @@ export default function SuperadminDashboard() {
         placement="center"
         backdrop="blur"
         classNames={{
-          content: "bg-[#0E1622]/95 backdrop-blur-2xl border border-white/10 text-white max-w-md rounded-2xl shadow-2xl",
+          content: "bg-[#0E1622]/95 backdrop-blur-2xl border border-white/10 text-white max-w-md rounded-2xl shadow-2xl overflow-visible",
           header: "border-b border-white/10 py-4 px-6",
           footer: "border-t border-white/10 py-3 px-6"
         }}
@@ -988,7 +1166,7 @@ export default function SuperadminDashboard() {
               <ModalHeader className="flex flex-col gap-0.5 text-base font-bold text-white">
                 Editar Usuario
               </ModalHeader>
-              <ModalBody id="edit-user-modal-body" className="flex flex-col gap-4 py-6">
+              <ModalBody id="edit-user-modal-body" className="flex flex-col gap-4 py-6 overflow-visible">
                 <Input
                   label="Nombre"
                   placeholder="Ej: Juan"
@@ -1041,58 +1219,22 @@ export default function SuperadminDashboard() {
                     label: "text-xs text-white/70"
                   }}
                 />
-                <Select
+                <CustomSelect
                   label="Rol de Sistema"
-                  labelPlacement="outside"
-                  variant="bordered"
-                  className="w-full text-white"
-                  classNames={{
-                    trigger: "border-white/20 bg-transparent text-white",
-                    value: "text-white text-xs",
-                    listbox: "bg-[#0E1622] text-white"
-                  }}
-                  selectedKeys={formType ? new Set([formType]) : new Set()}
-                  onSelectionChange={(keys) => {
-                    const selected = Array.from(keys)[0];
-                    if (selected) setFormType(selected);
-                  }}
-                  popoverProps={{
-                    portalContainer: typeof window !== "undefined" ? document.getElementById("edit-user-modal-body") || document.body : undefined,
-                    className: "z-[99999]"
-                  }}
+                  value={formType}
+                  onChange={setFormType}
+                  options={roleOptions}
                   isRequired
-                >
-                  <SelectItem key="user" className="text-white" value="user">Visualizador (User)</SelectItem>
-                  <SelectItem key="admin" className="text-white" value="admin">Administrador (Admin)</SelectItem>
-                  <SelectItem key="company" className="text-white" value="company">Empresa / Inmobiliaria (Company)</SelectItem>
-                </Select>
-                <Select
+                />
+                <CustomSelect
                   label="Asociar Inmobiliaria"
-                  placeholder="Opcional"
-                  labelPlacement="outside"
-                  variant="bordered"
-                  className="w-full text-white"
-                  classNames={{
-                    trigger: "border-white/20 bg-transparent text-white",
-                    value: "text-white text-xs",
-                    listbox: "bg-[#0E1622] text-white"
-                  }}
-                  selectedKeys={formCompany ? new Set([formCompany]) : new Set()}
-                  onSelectionChange={(keys) => {
-                    const selected = Array.from(keys)[0];
-                    setFormCompany(selected || "");
-                  }}
-                  popoverProps={{
-                    portalContainer: typeof window !== "undefined" ? document.getElementById("edit-user-modal-body") || document.body : undefined,
-                    className: "z-[99999]"
-                  }}
-                >
-                  {companies.map((c) => (
-                    <SelectItem key={c._id} className="text-white" value={c._id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </Select>
+                  placeholder="Seleccionar inmobiliaria (opcional)"
+                  value={formCompany}
+                  onChange={setFormCompany}
+                  options={editCompanyOptions}
+                  isSearchable
+                  dropUp
+                />
               </ModalBody>
               <ModalFooter>
                 <Button variant="light" className="text-white/70" onPress={onClose}>
