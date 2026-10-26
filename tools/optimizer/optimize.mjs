@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS, KHRTextureBasisu } from '@gltf-transform/extensions';
-import { prune, dedup, weld, meshopt, simplify, textureCompress, inspect } from '@gltf-transform/functions';
+import { dequantize, prune, dedup, weld, meshopt, simplify, textureCompress, inspect } from '@gltf-transform/functions';
 import { MeshoptEncoder, MeshoptDecoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 
@@ -21,6 +21,46 @@ function formatBytes(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+}
+
+// Promedia las normales por vertice compartido (POSITION + TEXCOORD_0) para que weld()
+// pueda soldar mallas de fotogrametria que fueron exportadas con normales planas por cara.
+function smoothNormalsBeforeWeld(doc) {
+  for (const m of doc.getRoot().listMeshes()) {
+    for (const p of m.listPrimitives()) {
+      const pos = p.getAttribute('POSITION');
+      const norm = p.getAttribute('NORMAL');
+      const uv = p.getAttribute('TEXCOORD_0');
+      if (!pos || !norm) continue;
+      const count = pos.getCount();
+      const map = new Map();
+      const vPos = [0, 0, 0], vNorm = [0, 0, 0], vUv = [0, 0];
+      for (let i = 0; i < count; i++) {
+        pos.getElement(i, vPos);
+        norm.getElement(i, vNorm);
+        if (uv) uv.getElement(i, vUv);
+        const key = vPos[0].toFixed(4) + ',' + vPos[1].toFixed(4) + ',' + vPos[2].toFixed(4) + ',' + vUv[0].toFixed(4) + ',' + vUv[1].toFixed(4);
+        let acc = map.get(key);
+        if (!acc) {
+          acc = [0, 0, 0];
+          map.set(key, acc);
+        }
+        acc[0] += vNorm[0];
+        acc[1] += vNorm[1];
+        acc[2] += vNorm[2];
+      }
+      for (const acc of map.values()) {
+        const len = Math.hypot(acc[0], acc[1], acc[2]) || 1;
+        acc[0] /= len; acc[1] /= len; acc[2] /= len;
+      }
+      for (let i = 0; i < count; i++) {
+        pos.getElement(i, vPos);
+        if (uv) uv.getElement(i, vUv);
+        const key = vPos[0].toFixed(4) + ',' + vPos[1].toFixed(4) + ',' + vPos[2].toFixed(4) + ',' + vUv[0].toFixed(4) + ',' + vUv[1].toFixed(4);
+        norm.setElement(i, map.get(key));
+      }
+    }
+  }
 }
 
 async function main() {
@@ -108,14 +148,18 @@ Genera 3 archivos listos para MyView:
   if (!args.includes('--no-preview')) {
     console.log(`\n[2/4] Generando Preview Progresivo (simplificacion 15% + textura 1K)...`);
     const docPreview = await io.read(inputPath);
-    await docPreview.transform(
-      prune(),
-      dedup(),
-      weld(),
-      simplify({ simplifier: MeshoptSimplifier, ratio: 0.15, error: 0.01 }),
-      textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [1024, 1024], quality: 78 }),
+    await docPreview.transform(dequantize());
+    smoothNormalsBeforeWeld(docPreview);
+    const previewTransforms = [prune(), dedup(), weld()];
+    if (totalTris > 15000) {
+      previewTransforms.push(simplify({ simplifier: MeshoptSimplifier, ratio: 0.15, error: 0.02 }));
+    }
+    const prevResize = texturesCount > 2 ? [512, 512] : [1024, 1024];
+    previewTransforms.push(
+      textureCompress({ encoder: sharp, targetFormat: 'webp', resize: prevResize, quality: 75 }),
       meshopt({ encoder: MeshoptEncoder, level: 'high' })
     );
+    await docPreview.transform(...previewTransforms);
     await io.write(previewPath, docPreview);
     const prevStat = fs.statSync(previewPath);
     console.log(`      \x1b[32m✔ Preview listo:\x1b[0m ${path.basename(previewPath)} (${formatBytes(prevStat.size)}) - Reduccion: \x1b[1m${((1 - prevStat.size / origSize) * 100).toFixed(1)}%\x1b[0m`);
@@ -127,12 +171,15 @@ Genera 3 archivos listos para MyView:
   console.log(`\n[3/4] Generando Version High-Res (eliminando texturas duplicadas + Meshopt)...`);
   const highPath = path.join(outDir, `${baseName}-high.glb`);
   const docHigh = await io.read(inputPath);
-  await docHigh.transform(
-    prune(), // Elimina imagenes huerfanas (ej: el JPEG duplicado de 14 MB)
-    dedup(),
-    weld(),
-    meshopt({ encoder: MeshoptEncoder, level: 'high' })
-  );
+  await docHigh.transform(dequantize());
+  smoothNormalsBeforeWeld(docHigh);
+  const highTransforms = [prune(), dedup(), weld()];
+  const hasHugeJpeg = initialReport.textures.properties.some(t => t.mimeType === 'image/jpeg' && t.size > 8 * 1024 * 1024);
+  if (hasHugeJpeg) {
+    highTransforms.push(textureCompress({ encoder: sharp, targetFormat: 'webp', quality: 86 }));
+  }
+  highTransforms.push(meshopt({ encoder: MeshoptEncoder, level: 'high' }));
+  await docHigh.transform(...highTransforms);
   await io.write(highPath, docHigh);
   const highStat = fs.statSync(highPath);
   console.log(`      \x1b[32m✔ High-Res listo:\x1b[0m ${path.basename(highPath)} (${formatBytes(highStat.size)}) - Reduccion: \x1b[1m${((1 - highStat.size / origSize) * 100).toFixed(1)}%\x1b[0m`);
@@ -145,9 +192,12 @@ Genera 3 archivos listos para MyView:
   if (!args.includes('--no-ktx2') && fs.existsSync(basisuExe)) {
     console.log(`\n[4/4] Generando Version Movil KTX2 (Basis Universal ETC1S con 13 niveles de mipmaps)...`);
     const docMobile = await io.read(inputPath);
+    await docMobile.transform(dequantize());
+    smoothNormalsBeforeWeld(docMobile);
     await docMobile.transform(prune(), dedup(), weld());
 
     const textures = docMobile.getRoot().listTextures();
+    const maxMobileDim = textures.length >= 3 ? 2048 : 4096;
     const tempFiles = [];
 
     for (let i = 0; i < textures.length; i++) {
@@ -159,10 +209,10 @@ Genera 3 archivos listos para MyView:
       const tempKtx2 = path.join(outDir, `_temp_tex_${i}.ktx2`);
       tempFiles.push(tempPng, tempKtx2);
 
-      // Redimensionar textura para moviles a 4096 maximo
+      // Redimensionar textura para moviles (4096 para 1-2 texturas, 2048 para >=3 atlas)
       const meta = await sharp(rawImg).metadata();
-      const targetW = Math.min(meta.width || 4096, 4096);
-      const targetH = Math.min(meta.height || 4096, 4096);
+      const targetW = Math.min(meta.width || maxMobileDim, maxMobileDim);
+      const targetH = Math.min(meta.height || maxMobileDim, maxMobileDim);
 
       await sharp(rawImg).resize(targetW, targetH).png().toFile(tempPng);
 

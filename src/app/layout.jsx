@@ -4,6 +4,16 @@ import { Providers } from './providers'
 export const metadata = {
   title: "MyView_",
   description: "MyView_",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black",
+    title: "MyView",
+  },
+  icons: {
+    icon: "/logos/isotipo-full-color.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport = {
@@ -11,7 +21,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover",
+  themeColor: "#030D1C",
 };
 
 export default function RootLayout({ children }) {
