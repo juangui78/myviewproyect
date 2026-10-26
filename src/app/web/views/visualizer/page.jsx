@@ -955,6 +955,7 @@ const App = () => {
         });
     }, [modelBounds]);
     const isInitialLoadRef = React.useRef(true);
+    const fullyLoadedModelsRef = React.useRef(new Set());
     const transformControlsRef = React.useRef();
     const [selectedMarkerObj, setSelectedMarkerObj] = useState(null);
     const [background360, setBackground360] = useState(null);
@@ -1521,21 +1522,26 @@ const App = () => {
 
         setIsModelLoaded(true);
 
-        // Alinear cámara ANTES de ocultar pantalla de carga para eliminar saltos visibles
-        let tries = 0;
-        const settleCameraAndReveal = () => {
-            const applied = applyInitialCamera(computedBounds);
-            if (applied || tries >= 8) {
-                isInitialLoadRef.current = false;
-                setTimeout(() => {
-                    setIsLoadingScreenVisible(false);
-                }, 40);
-            } else {
-                tries++;
-                setTimeout(settleCameraAndReveal, 40);
-            }
-        };
-        settleCameraAndReveal();
+        // Alinear cámara ANTES de ocultar pantalla de carga ÚNICAMENTE en la carga inicial del visualizador
+        if (isInitialLoadRef.current) {
+            let tries = 0;
+            const settleCameraAndReveal = () => {
+                const applied = applyInitialCamera(computedBounds);
+                if (applied || tries >= 8) {
+                    isInitialLoadRef.current = false;
+                    setTimeout(() => {
+                        setIsLoadingScreenVisible(false);
+                    }, 40);
+                } else {
+                    tries++;
+                    setTimeout(settleCameraAndReveal, 40);
+                }
+            };
+            settleCameraAndReveal();
+        } else {
+            // Al navegar entre modelos (ant-sig): mantener la cámara en el mismo punto exacto
+            setIsLoadingScreenVisible(false);
+        }
         setCurrentModelUrl(targetUrl);
         setCurrentModelId(modelObj.key || modelObj._id);
         setPjname(modelObj.name);
@@ -1627,6 +1633,7 @@ const App = () => {
                         return;
                     }
                     const optimizedHigh = preprocessLoadedGltf(gltfHigh);
+                    fullyLoadedModelsRef.current.add(highUrl);
                     setGltf((prevGltf) => {
                         if (prevGltf && prevGltf !== optimizedHigh) {
                             setTimeout(() => disposeGLTF(prevGltf, false), 120);
@@ -1668,7 +1675,9 @@ const App = () => {
             );
         };
 
-        if (previewUrl) {
+        const isAlreadyLoadedInHighRes = fullyLoadedModelsRef.current.has(highUrl);
+
+        if (previewUrl && !isAlreadyLoadedInHighRes) {
             loader.load(
                 previewUrl,
                 (gltfPreview) => {
@@ -1698,6 +1707,9 @@ const App = () => {
                 }
             );
         } else {
+            // Si el modelo ya se cargó en alta previamente (o no tiene preview),
+            // Three.js ya tiene el archivo en memoria (THREE.Cache), por lo que carga
+            // directamente en alta resolución sin parpadeo de preview y sin acumular VRAM.
             setIsStreamingHighRes(false);
             loadHighResStage(false);
         }
@@ -1742,11 +1754,9 @@ const App = () => {
 
             executeModelLoad(model, () => {
                 setIsSwitchingModel(false);
-                setTimeout(() => {
-                    if (currentCameraState) {
-                        restoreCameraState(currentCameraState);
-                    }
-                }, 100);
+                if (currentCameraState) {
+                    restoreCameraState(currentCameraState);
+                }
                 console.log('Modelo cargado correctamente. ID:', model.key || model._id);
             });
         } else {
@@ -2868,7 +2878,6 @@ const App = () => {
                                 {currentView !== 'free' && (
                                     <OrbitControls
                                         makeDefault
-                                        target={currentModel?.defaultCamera?.target || [0, 0, 0]}
                                         ref={(controls) => {
                                             if (controls) {
                                                 orbitControlsRef.current = controls;
