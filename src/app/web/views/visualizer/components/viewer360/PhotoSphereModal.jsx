@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Viewer } from "@photo-sphere-viewer/core";
 import { MarkersPlugin } from "@photo-sphere-viewer/markers-plugin";
 import * as THREE from 'three';
-import { useTexture } from "@react-three/drei";
 import "@photo-sphere-viewer/core/index.css";
 import "@photo-sphere-viewer/markers-plugin/index.css";
 
 const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false, onSaveYawOffset }) => {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
+  const currentPanoUrlRef = useRef(null);
   const [activeUrl, setActiveUrl] = useState(null);
   
   // Local state to handle real-time manual orientation adjustment (in degrees)
@@ -35,7 +35,7 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
     }
   }, [activeUrl, activeMarker]);
 
-  // SECUENTIAL NAVIGATION HANDLERS (Arrows on left/right edges of the screen)
+  // SEQUENTIAL NAVIGATION HANDLERS (Arrows on left/right edges of the screen)
   const activeIndex = markers.findIndex(m => m.photo360 === activeUrl);
   const hasMultipleMarkers = markers.length > 1;
 
@@ -69,28 +69,85 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
       onSaveYawOffset(activeMarker.id, radValue);
       setIsSaved(true);
       
-      // Confirm with a popup, as requested by the user
       alert(`¡Alineación guardada localmente para "${activeMarker.label || 'este mirador'}"!\n\nÁngulo guardado: ${Math.round(localOffsetDegrees)}°.\n\n⚠️ IMPORTANTE: Esta alineación aún no se ha subido al servidor. Para guardarla permanentemente en la base de datos, debes cerrar este modal y pulsar el botón "Guardar" de la barra de herramientas.`);
     }
   };
 
-  // 1. Manage Viewer Lifecycle: Instantiate on open, destroy on close
+  // Helper para renderizar/actualizar los hotspots 3D de navegación entre fotos
+  const updateHotspots = useCallback((viewerInstance, targetUrl, offsetDeg, saved) => {
+    if (!viewerInstance) return;
+    const markersPlugin = viewerInstance.getPlugin(MarkersPlugin);
+    if (!markersPlugin) return;
+
+    const activeMarkerObj = markers.find(m => m.photo360 === targetUrl);
+    if (!activeMarkerObj || !activeMarkerObj.position) {
+      markersPlugin.clearMarkers();
+      return;
+    }
+
+    const currentPos = new THREE.Vector3(...activeMarkerObj.position);
+    markersPlugin.clearMarkers();
+
+    markers.forEach((marker) => {
+      // Ignorar a sí mismo o marcadores sin posición/foto
+      if (marker.id === activeMarkerObj.id || !marker.photo360 || !marker.position) return;
+
+      const targetPos = new THREE.Vector3(...marker.position);
+      const direction = new THREE.Vector3().subVectors(targetPos, currentPos);
+      const distance = direction.length();
+
+      const baseYaw = Math.atan2(direction.x, -direction.z);
+      const pitch = Math.asin(direction.y / distance);
+
+      const yawOffsetRad = saved 
+        ? (activeMarkerObj.yawOffset || 0) 
+        : (offsetDeg * (Math.PI / 180));
+      const yaw = baseYaw + yawOffsetRad;
+
+      const markerId = `hotspot-${marker.id}`;
+      markersPlugin.addMarker({
+        id: markerId,
+        position: { yaw, pitch },
+        html: `
+          <div class="custom-hotspot" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)); transition: transform 0.2s ease;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" fill="rgba(0, 0, 0, 0.65)" stroke="#0CDBFF" stroke-width="2"/>
+              <path d="M12 8L16 12L12 16M16 12H8" stroke="#0CDBFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div style="background: rgba(0,0,0,0.8); color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; font-family: system-ui, sans-serif; white-space: nowrap; margin-top: 4px; border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+              ${marker.label || 'Mirador'}
+            </div>
+          </div>
+        `,
+        anchor: 'bottom center',
+        tooltip: {
+          content: marker.label || 'Ver mirador',
+          position: 'top center',
+        },
+        data: {
+          markerData: marker
+        }
+      });
+    });
+  }, [markers]);
+
+  // 1. Ciclo de vida del visor: inicializar al abrir y destruir al cerrar
   useEffect(() => {
     if (!isOpen || !url) {
-      // Destroy viewer if active when modal closes
       if (viewerRef.current) {
         viewerRef.current.destroy();
         viewerRef.current = null;
       }
+      currentPanoUrlRef.current = null;
       setActiveUrl(null);
       return;
     }
 
-    // Set activeUrl on open
     setActiveUrl(url);
+    currentPanoUrlRef.current = url;
 
-    // Initialize clean viewer instance
-    viewerRef.current = new Viewer({
+    // Configuración optimizada de PhotoSphereViewer
+    const viewer = new Viewer({
       container: containerRef.current,
       panorama: url,
       loadingImg: "",
@@ -101,19 +158,29 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
       },
       navbar: ["zoom", "fullscreen"],
       useXmpData: false,
-      webgl: {
-        context: "webgl",
+      rendererParameters: {
+        alpha: false,
+        antialias: false,
+        powerPreference: "high-performance",
         preserveDrawingBuffer: false,
       },
+      // Optimización de respuesta táctil y de ratón (elimina el retraso/lag percibido de 0.8)
+      moveSpeed: 1.2,
+      moveInertia: 0.05,
+      zoomSpeed: 1.2,
+      mousewheel: true,
+      mousemove: true,
+      touchmoveTwoFingers: false,
       defaultZoomLvl: 0,
       plugins: [
         [MarkersPlugin, {}]
       ]
     });
 
-    const markersPlugin = viewerRef.current.getPlugin(MarkersPlugin);
+    viewerRef.current = viewer;
 
-    // Event handler when a hotspot marker is clicked
+    const markersPlugin = viewer.getPlugin(MarkersPlugin);
+
     const onClickMarker = (event) => {
       const destinationMarker = event.marker.data?.markerData;
       if (destinationMarker && destinationMarker.photo360) {
@@ -123,103 +190,59 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
 
     markersPlugin.addEventListener('select-marker', onClickMarker);
 
-    // Cleanup on unmount/close
+    // Cargar los hotspots una vez que el visor esté completamente listo
+    viewer.addEventListener('ready', () => {
+      updateHotspots(viewer, url, localOffsetDegrees, isSaved);
+    }, { once: true });
+
     return () => {
       if (viewerRef.current) {
         markersPlugin.removeEventListener('select-marker', onClickMarker);
         viewerRef.current.destroy();
         viewerRef.current = null;
       }
+      currentPanoUrlRef.current = null;
     };
   }, [isOpen, url]);
 
-  // 2. Update panorama and calculate hotspots when activeUrl, markers list, localOffsetDegrees, or isSaved changes
+  // 2. Transición de foto únicamente cuando el usuario cambia a OTRA foto 360
   useEffect(() => {
-    let isCurrent = true; // Tracks if this effect run is the most recent one
-
     if (!viewerRef.current || !activeUrl || !isOpen) return;
 
+    // Si es la misma foto que ya tiene el visor cargada, no recargar
+    if (currentPanoUrlRef.current === activeUrl) return;
+
+    currentPanoUrlRef.current = activeUrl;
     const markersPlugin = viewerRef.current.getPlugin(MarkersPlugin);
-    
-    // Clear old hotspots instantly before the transition starts
     if (markersPlugin) {
       markersPlugin.clearMarkers();
     }
 
     viewerRef.current.setPanorama(activeUrl, {
       zoom: 0,
-      transition: true,
+      transition: {
+        speed: 500,
+        rotation: false,
+        effect: "fade"
+      },
       showLoader: false,
     }).then(() => {
-      // If a new transition started while this one was loading, do not modify markers
-      if (!isCurrent) return;
-
-      const activeMarkerObj = markers.find(m => m.photo360 === activeUrl);
-      
-      if (markersPlugin && activeMarkerObj && activeMarkerObj.position) {
-        markersPlugin.clearMarkers(); // Ensure we have a completely clean slate
-        
-        const currentPos = new THREE.Vector3(...activeMarkerObj.position);
-        
-        markers.forEach((marker) => {
-          // Ignore ourselves and markers without photo URL or position
-          if (marker.id === activeMarkerObj.id || !marker.photo360 || !marker.position) return;
-          
-          const targetPos = new THREE.Vector3(...marker.position);
-          const direction = new THREE.Vector3().subVectors(targetPos, currentPos);
-          const distance = direction.length();
-          
-          // Calculate Yaw (angle in horizontal plane) and Pitch (elevation vertical angle)
-          const baseYaw = Math.atan2(direction.x, -direction.z);
-          const pitch = Math.asin(direction.y / distance);
-          
-          // Use parent's saved yawOffset if the slider hasn't been modified (isSaved is true)
-          // otherwise use the local slider's value in real-time.
-          const yawOffsetRad = isSaved 
-            ? (activeMarkerObj.yawOffset || 0) 
-            : (localOffsetDegrees * (Math.PI / 180));
-          const yaw = baseYaw + yawOffsetRad;
-          
-          // Prevent PSVError: cannot find marker by checking getMarkers() array first
-          const markerId = `hotspot-${marker.id}`;
-          const exists = markersPlugin.getMarkers().some(m => m.id === markerId);
-          if (!exists) {
-            markersPlugin.addMarker({
-              id: markerId,
-              position: { yaw, pitch },
-              html: `
-                <div class="custom-hotspot" style="display: flex; flex-direction: column; align-items: center; cursor: pointer; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)); transition: transform 0.2s ease;">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" fill="rgba(0, 0, 0, 0.65)" stroke="#0CDBFF" stroke-width="2"/>
-                    <path d="M12 8L16 12L12 16M16 12H8" stroke="#0CDBFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  <div style="background: rgba(0,0,0,0.8); color: white; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; font-family: system-ui, sans-serif; white-space: nowrap; margin-top: 4px; border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                    ${marker.label || 'Mirador'}
-                  </div>
-                </div>
-              `,
-              anchor: 'bottom center',
-              tooltip: {
-                content: marker.label || 'Ver mirador',
-                position: 'top center',
-              },
-              data: {
-                markerData: marker
-              }
-            });
-          }
-        });
+      if (viewerRef.current) {
+        updateHotspots(viewerRef.current, activeUrl, localOffsetDegrees, isSaved);
       }
     }).catch(error => {
-      console.error("Error al cargar panorama:", error);
+      console.error("Error al cargar panorama 360:", error);
     });
+  }, [activeUrl, isOpen, updateHotspots, localOffsetDegrees, isSaved]);
 
-    return () => {
-      isCurrent = false; // Mark this hook run as inactive on cleanup/next run
-    };
-  }, [activeUrl, isOpen, markers, localOffsetDegrees, isSaved]);
+  // 3. Actualización de orientación/hotspots en tiempo real sin recargar la foto 360
+  useEffect(() => {
+    if (!viewerRef.current || !isOpen || !activeUrl) return;
+    // Solo actualizar posiciones de los marcadores (sin re-descargar ni reiniciar la textura 360)
+    updateHotspots(viewerRef.current, activeUrl, localOffsetDegrees, isSaved);
+  }, [localOffsetDegrees, isSaved, updateHotspots, activeUrl, isOpen]);
 
-  // 3. Preload adjacent panorama textures in the background to ensure instant transition
+  // 4. Precarga nativa en segundo plano de fotos adyacentes
   useEffect(() => {
     if (!activeUrl || !markers.length || !isOpen) return;
 
@@ -229,25 +252,15 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
     const currentPos = new THREE.Vector3(...activeMarkerObj.position);
 
     markers.forEach((marker) => {
-      // Ignore ourselves and markers without photo URL or position
       if (marker.id === activeMarkerObj.id || !marker.photo360 || !marker.position) return;
 
       const targetPos = new THREE.Vector3(...marker.position);
       const distance = currentPos.distanceTo(targetPos);
 
-      // Preload adjacent node textures (within 20 meters)
-      if (distance <= 20) {
-        try {
-          // Preload using Drei's useTexture cache
-          useTexture.preload(marker.photo360);
-
-          // Preload using standard Image constructor to populate the browser's HTTP cache
-          // ensuring the Photo Sphere Viewer's separate context receives it instantly from cache
-          const img = new Image();
-          img.src = marker.photo360;
-        } catch (e) {
-          console.warn("Failed to preload texture:", marker.photo360, e);
-        }
+      // Precargar fotos adyacentes a menos de 25m en la caché del navegador
+      if (distance <= 25) {
+        const img = new Image();
+        img.src = marker.photo360;
       }
     });
   }, [activeUrl, markers, isOpen]);
@@ -430,8 +443,16 @@ const Photo360Modal = ({ url, isOpen, onClose, markers = [], isEditMode = false,
           </div>
         )}
 
-        {/* 360 Viewer Container */}
-        <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
+        {/* 360 Viewer Container con touchAction y userSelect optimizados */}
+        <div 
+          ref={containerRef} 
+          style={{ 
+            width: "100%", 
+            height: "100%",
+            touchAction: "none",
+            userSelect: "none",
+          }} 
+        />
       </div>
     </div>
   );
