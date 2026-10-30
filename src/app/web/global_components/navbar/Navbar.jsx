@@ -37,8 +37,8 @@ import { encrypt } from "@/api/libs/crypto";
 export default function NavBar({children}) {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const idUser = session?.user._id;
-  const rol = session?.user.rol;
+  const idUser = session?.user?._id;
+  const rol = session?.user?.rol;
   const isSuperadmin = session?.user?.email === "darksus78@gmail.com";
 
   const [notifications, setNotifications] = useState([]);

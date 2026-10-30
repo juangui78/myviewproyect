@@ -77,8 +77,42 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // Nunca interceptar autenticación ni rutas sensibles
-  if (url.pathname.startsWith('/api/auth')) return;
+  // Nunca interceptar autenticación, pero en modo sin conexión devolver sesión vacía válida (200)
+  // para que NextAuth SessionProvider no lance CLIENT_FETCH_ERROR
+  if (url.pathname.startsWith('/api/auth')) {
+    if (url.pathname.endsWith('/session')) {
+      event.respondWith(
+        fetch(request).catch(
+          () =>
+            new Response(JSON.stringify({}), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            })
+        )
+      );
+    }
+    return;
+  }
+
+  // Mapas HDR de iluminación de @react-three/drei (<Environment preset=... />) -> Cache-First
+  if (
+    url.pathname.endsWith('.hdr') ||
+    url.hostname.includes('githubusercontent.com') ||
+    url.hostname.includes('digitaloceanspaces.com')
+  ) {
+    event.respondWith(
+      caches.open(SHELL_CACHE).then(async (cache) => {
+        const cached = await cache.match(request, { ignoreVary: true });
+        if (cached) return cached;
+        const netRes = await fetch(request);
+        if (netRes && netRes.ok) {
+          cache.put(request, netRes.clone());
+        }
+        return netRes;
+      })
+    );
+    return;
+  }
 
   // 1. Archivos 3D (.glb) e imágenes de proyectos guardados en MYVIEW_MODELS_CACHE (incluye CloudFront)
   if (

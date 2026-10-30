@@ -221,7 +221,7 @@ export default React.memo(function Cards({ proyects, totalProyects, offlineMode 
     }
     if (isEffectiveOffline) {
       const visualizerId = item.encryptedId || encrypt(item._id);
-      router.push(`/web/views/visualizer?id=${encodeURIComponent(visualizerId)}`);
+      window.location.href = `/web/views/visualizer?id=${encodeURIComponent(visualizerId)}`;
       return;
     }
     router.push(`/proyectos/${item._id}`);
@@ -413,7 +413,13 @@ export default React.memo(function Cards({ proyects, totalProyects, offlineMode 
                           query: { id: visualizerId },
                         }}
                         target={isPwaStandalone ? undefined : "_blank"}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isEffectiveOffline) {
+                            e.preventDefault();
+                            window.location.href = `/web/views/visualizer?id=${encodeURIComponent(visualizerId)}`;
+                          }
+                        }}
                         className="w-full"
                       >
                         <div className="w-full h-11 px-4 rounded-2xl bg-gradient-to-r from-[#0CDBFF]/15 via-cyan-500/10 to-[#00C662]/15 border border-cyan-500/30 hover:border-cyan-400 hover:from-[#0CDBFF]/25 hover:to-[#00C662]/25 shadow-[0_0_20px_rgba(12,219,255,0.08)] hover:shadow-[0_0_25px_rgba(12,219,255,0.25)] flex items-center justify-between text-white font-semibold text-sm transition-all duration-300 group/btn">
