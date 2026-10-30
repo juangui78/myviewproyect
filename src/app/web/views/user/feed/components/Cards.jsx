@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import NextImage from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -11,12 +11,21 @@ import EditIconV2 from "@/web/global_components/icons/EditIconV2";
 import Qr from "@/web/global_components/icons/Qr";
 import { SearchIcon } from "@/web/global_components/icons/SearchIcon";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { toast } from "sonner";
+import {
+  isStandalonePwa,
+  listOfflineProjects,
+  downloadProjectOffline,
+  removeOfflineProject,
+  onOfflineProjectsChange,
+  formatBytes,
+} from "@/web/global_components/pwa/offlineStore";
 
 const DrawerInfo = dynamic(() => import("./DrawerInfo"), { ssr: false });
 const ModalUsersInvited = dynamic(() => import("./ModalUsersInvited"), { ssr: false });
 const ModalQr = dynamic(() => import("./ModalQr"), { ssr: false });
 
-export default React.memo(function Cards({ proyects, totalProyects }) {
+export default React.memo(function Cards({ proyects, totalProyects, offlineMode = false }) {
   const { data: session } = useSession();
   const [_id, setId] = useState("");
   const [ID_USER, setID_USER] = useState(null);
@@ -28,11 +37,50 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
   const [valueSearching, setValueSearching] = useState(activeSearch);
   const debounceTimer = useRef(null);
 
+  // Estado PWA / Offline (solo activo en modo standalone o cuando offlineMode=true)
+  const [isPwaStandalone, setIsPwaStandalone] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [offlineMap, setOfflineMap] = useState({});
+  const [downloadingMap, setDownloadingMap] = useState({});
+
   useEffect(() => {
-    setValueSearching(activeSearch);
-  }, [activeSearch]);
+    const standalone = isStandalonePwa() || offlineMode;
+    setIsPwaStandalone(standalone);
+    setIsOnline(typeof navigator !== "undefined" ? navigator.onLine : true);
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    const refreshOfflineRecords = async () => {
+      if (!standalone) return;
+      const list = await listOfflineProjects();
+      const map = {};
+      list.forEach((p) => {
+        map[String(p._id)] = p;
+      });
+      setOfflineMap(map);
+    };
+
+    refreshOfflineRecords();
+    const unsub = onOfflineProjectsChange(refreshOfflineRecords);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      unsub();
+    };
+  }, [offlineMode]);
+
+  useEffect(() => {
+    if (!offlineMode) {
+      setValueSearching(activeSearch);
+    }
+  }, [activeSearch, offlineMode]);
 
   const triggerSearch = (query) => {
+    if (offlineMode) return;
     const params = new URLSearchParams(searchParams);
     const trimmed = query.trim();
 
@@ -49,6 +97,8 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
     const nextValue = e.target.value;
     setValueSearching(nextValue);
 
+    if (offlineMode) return;
+
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
@@ -61,7 +111,87 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
   const handleClear = () => {
     setValueSearching("");
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    triggerSearch("");
+    if (!offlineMode) {
+      triggerSearch("");
+    }
+  };
+
+  const handleResetSearch = () => {
+    handleClear();
+  };
+
+  // Si la app instalada pierde conexión mientras está en el feed normal, mostrar los proyectos descargados
+  const isEffectiveOffline = offlineMode || (isPwaStandalone && !isOnline);
+
+  const displayedProjects = useMemo(() => {
+    let baseList = Array.isArray(proyects) ? proyects : [];
+
+    if (isEffectiveOffline && !offlineMode) {
+      const savedList = Object.values(offlineMap);
+      if (savedList.length > 0) {
+        baseList = savedList;
+      }
+    }
+
+    if (isEffectiveOffline && valueSearching.trim()) {
+      const q = valueSearching.trim().toLowerCase();
+      return baseList.filter(
+        (p) =>
+          (p.name || "").toLowerCase().includes(q) ||
+          (p.city || "").toLowerCase().includes(q) ||
+          (p.department || "").toLowerCase().includes(q)
+      );
+    }
+
+    return baseList;
+  }, [proyects, isEffectiveOffline, offlineMode, offlineMap, valueSearching]);
+
+  const effectiveTotal = isEffectiveOffline && !offlineMode
+    ? Object.keys(offlineMap).length
+    : (totalProyects || 0);
+
+  const handleToggleOfflineProject = async (e, item) => {
+    e.stopPropagation();
+    const pid = String(item._id);
+
+    if (downloadingMap[pid] !== undefined) return;
+
+    const existing = offlineMap[pid];
+    if (existing) {
+      try {
+        await removeOfflineProject(pid);
+        toast.success(`"${item.name}" eliminado del almacenamiento offline`);
+      } catch (err) {
+        toast.error("No se pudo eliminar el proyecto offline");
+      }
+      return;
+    }
+
+    if (!navigator.onLine) {
+      toast.error("Necesitas conexión a internet para descargar este proyecto");
+      return;
+    }
+
+    setDownloadingMap((prev) => ({ ...prev, [pid]: 1 }));
+    try {
+      const visualizerId = item.encryptedId || encrypt(item._id);
+      await downloadProjectOffline(
+        { ...item, encryptedId: visualizerId },
+        (pct) => {
+          setDownloadingMap((prev) => ({ ...prev, [pid]: pct }));
+        }
+      );
+      toast.success(`"${item.name}" disponible sin internet`);
+    } catch (err) {
+      console.error("Error descargando proyecto offline:", err);
+      toast.error(err?.message || "No se pudo descargar el proyecto");
+    } finally {
+      setDownloadingMap((prev) => {
+        const next = { ...prev };
+        delete next[pid];
+        return next;
+      });
+    }
   };
 
   const { isOpen, onOpenChange } = useDisclosure();
@@ -84,17 +214,47 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
     onOpenChangeQr(true);
   };
 
-  const handleCardClick = (e, projectId) => {
+  const handleCardClick = (e, item) => {
     // Si el clic ocurrió sobre un botón, enlace u otro control interactivo, no redirigir
     if (e.target.closest("button, a, input, select, textarea, [role='button']")) {
       return;
     }
-    router.push(`/proyectos/${projectId}`);
+    if (isEffectiveOffline) {
+      const visualizerId = item.encryptedId || encrypt(item._id);
+      router.push(`/web/views/visualizer?id=${encodeURIComponent(visualizerId)}`);
+      return;
+    }
+    router.push(`/proyectos/${item._id}`);
   };
+
+  const searchIndicator = isEffectiveOffline ? valueSearching.trim() : activeSearch;
 
   return (
     <>
       <div className="w-full flex flex-col items-center">
+        {/* Banner sutil de Modo Sin Conexión cuando está en la App Instalada sin red */}
+        {isEffectiveOffline && (
+          <div className="w-[95%] xl:w-[85%] 2xl:w-[75%] max-w-[1800px] mt-4 px-4">
+            <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-amber-500/10 border border-amber-400/25 text-amber-200 text-xs">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                <span>
+                  <strong className="font-semibold text-white">Modo sin conexión:</strong>{" "}
+                  mostrando únicamente los proyectos descargados en este dispositivo.
+                </span>
+              </div>
+              {isOnline && offlineMode && (
+                <Link
+                  href="/web/views/user/feed"
+                  className="shrink-0 px-3 py-1 rounded-lg bg-[#0CDBFF]/20 border border-[#0CDBFF]/40 text-[#0CDBFF] font-semibold hover:bg-[#0CDBFF]/30 transition-colors"
+                >
+                  Ir al Feed Online
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Unified Command & Header Bar */}
         <div className="w-[95%] xl:w-[85%] 2xl:w-[75%] max-w-[1800px] flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mt-6 mb-3 px-4">
           {/* Left: Title + Metric Count Badge */}
@@ -103,12 +263,14 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
               Proyectos
             </h2>
             <span className="text-xs font-bold text-[#0CDBFF] bg-cyan-500/10 border border-[#0CDBFF]/25 px-2.5 py-0.5 rounded-full font-mono shadow-[0_0_12px_rgba(12,219,255,0.1)]">
-              {activeSearch && proyects ? `${proyects.length} de ${totalProyects || 0}` : (totalProyects || 0)}
+              {searchIndicator && displayedProjects
+                ? `${displayedProjects.length} de ${effectiveTotal}`
+                : effectiveTotal}
             </span>
 
-            {activeSearch && (
+            {searchIndicator && (
               <span className="text-xs font-medium text-white/70 bg-white/[0.04] border border-white/10 px-2.5 py-0.5 rounded-lg flex items-center gap-1.5 ml-1">
-                <span>&quot;{activeSearch}&quot;</span>
+                <span>&quot;{searchIndicator}&quot;</span>
                 <button
                   onClick={handleClear}
                   className="hover:text-white transition-colors text-white/50 text-[10px]"
@@ -156,9 +318,15 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-[95%] xl:w-[85%] 2xl:w-[75%] max-w-[1800px] mt-5 px-4 mb-[80px] relative">
-          {Array.isArray(proyects) && proyects.length > 0 ? (
-            proyects.map((item, idx) => {
+          {Array.isArray(displayedProjects) && displayedProjects.length > 0 ? (
+            displayedProjects.map((item, idx) => {
+              const pid = String(item._id);
               const visualizerId = item.encryptedId || encrypt(item._id);
+              const offlineRecord = offlineMap[pid];
+              const isDownloaded = Boolean(offlineRecord);
+              const downloadProgress = downloadingMap[pid];
+              const isDownloading = downloadProgress !== undefined;
+
               const formattedDate = item.lastScanDate
                 ? new Date(item.lastScanDate).toLocaleDateString("es-ES", {
                   day: "2-digit",
@@ -167,17 +335,28 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
                 })
                 : null;
 
+              const syncedDateLabel = offlineRecord?.syncedAt
+                ? new Date(offlineRecord.syncedAt).toLocaleDateString("es-ES", {
+                  day: "2-digit",
+                  month: "short",
+                })
+                : null;
+
               return (
                 <div
                   key={item._id}
-                  onClick={(e) => handleCardClick(e, item._id)}
+                  onClick={(e) => handleCardClick(e, item)}
                   className="bg-[#0D1520]/80 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative flex flex-col xl:flex-row rounded-[28px] overflow-hidden group hover:border-cyan-500/40 transition-all duration-500 hover:shadow-[0_0_40px_rgba(12,219,255,0.12)] cursor-pointer"
                 >
                   {/* Left Column: Image Thumbnail */}
                   <div className="w-full xl:w-[50%] p-4 flex flex-col">
                     <div className="relative w-full h-[240px] xl:h-full min-h-[220px] rounded-[22px] overflow-hidden border border-white/10 bg-[#030D1C] group-hover:border-cyan-500/30 transition-colors shadow-inner">
                       <Link
-                        href={`/proyectos/${item._id}`}
+                        href={
+                          isEffectiveOffline
+                            ? `/web/views/visualizer?id=${encodeURIComponent(visualizerId)}`
+                            : `/proyectos/${item._id}`
+                        }
                         onClick={(e) => e.stopPropagation()}
                         className="w-full h-full block relative"
                       >
@@ -188,6 +367,7 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
                           className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                           src={item.urlImage || "/images/parcela.jpg"}
                           priority={idx < 2}
+                          unoptimized={isEffectiveOffline || isDownloaded}
                         />
                       </Link>
                     </div>
@@ -232,7 +412,7 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
                           pathname: `/web/views/visualizer`,
                           query: { id: visualizerId },
                         }}
-                        target="_blank"
+                        target={isPwaStandalone ? undefined : "_blank"}
                         onClick={(e) => e.stopPropagation()}
                         className="w-full"
                       >
@@ -251,39 +431,101 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
                         </div>
                       </Link>
 
-                      {/* Secondary Actions Grid */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenInfo(item._id);
-                          }}
-                          className="h-10 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-white/80 hover:text-white text-xs font-medium flex items-center justify-center gap-2 transition-all"
-                        >
-                          <EditIconV2 className="w-4 h-4 text-white/60" />
-                          <span>Información</span>
-                        </button>
+                      {/* Secondary Actions Grid (solo cuando hay red) */}
+                      {!isEffectiveOffline && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenInfo(item._id);
+                            }}
+                            className="h-10 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-white/80 hover:text-white text-xs font-medium flex items-center justify-center gap-2 transition-all"
+                          >
+                            <EditIconV2 className="w-4 h-4 text-white/60" />
+                            <span>Información</span>
+                          </button>
 
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenQr(item._id);
+                            }}
+                            className="h-10 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-white/80 hover:text-white text-xs font-medium flex items-center justify-center gap-2 transition-all"
+                          >
+                            <Qr className="w-4 h-4 text-white/60" />
+                            <span>Compartir</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Botón de Disponible Offline (Exclusivo para la App Instalada / Standalone) */}
+                      {isPwaStandalone && (
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenQr(item._id);
-                          }}
-                          className="h-10 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-white/80 hover:text-white text-xs font-medium flex items-center justify-center gap-2 transition-all"
+                          disabled={isDownloading}
+                          onClick={(e) => handleToggleOfflineProject(e, item)}
+                          className={`relative overflow-hidden h-9 px-3 rounded-xl border text-xs font-medium flex items-center justify-between gap-2 transition-all ${
+                            isDownloaded
+                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-300"
+                              : "bg-white/[0.03] hover:bg-white/[0.07] border-white/10 text-white/75 hover:text-white"
+                          }`}
                         >
-                          <Qr className="w-4 h-4 text-white/60" />
-                          <span>Compartir</span>
+                          {isDownloading && (
+                            <span
+                              className="absolute inset-y-0 left-0 bg-[#0CDBFF]/20 transition-all duration-200 pointer-events-none"
+                              style={{ width: `${downloadProgress}%` }}
+                            />
+                          )}
+                          <span className="relative z-10 flex items-center gap-2">
+                            {isDownloading ? (
+                              <>
+                                <span className="w-3.5 h-3.5 border-2 border-[#0CDBFF]/30 border-t-[#0CDBFF] rounded-full animate-spin" />
+                                <span>Descargando modelo... {downloadProgress}%</span>
+                              </>
+                            ) : isDownloaded ? (
+                              <>
+                                <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>
+                                  Disponible sin internet
+                                  {offlineRecord?.bytes ? ` · ${formatBytes(offlineRecord.bytes)}` : ""}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-3.5 h-3.5 text-[#0CDBFF] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3" />
+                                </svg>
+                                <span>Guardar para ver sin internet</span>
+                              </>
+                            )}
+                          </span>
+
+                          {isDownloaded && !isDownloading && (
+                            <span className="relative z-10 text-[10px] text-white/40">
+                              {syncedDateLabel ? `Sync ${syncedDateLabel} · ` : ""}Quitar
+                            </span>
+                          )}
                         </button>
-                      </div>
+                      )}
                     </div>
 
                     {/* Status & Timestamp Bar */}
                     <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-white/50">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
-                        <span className="font-semibold text-white/80">Activo</span>
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            isDownloaded
+                              ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"
+                              : "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]"
+                          }`}
+                        />
+                        <span className="font-semibold text-white/80">
+                          {isEffectiveOffline ? "Offline listo" : "Activo"}
+                        </span>
                       </div>
 
                       {formattedDate && (
@@ -306,18 +548,22 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
               </div>
 
               <h4 className="text-xl font-bold text-white mb-2">
-                {activeSearch
-                  ? `No se encontraron proyectos para "${activeSearch}"`
-                  : "Aún no tienes proyectos 3D disponibles"}
+                {searchIndicator
+                  ? `No se encontraron proyectos para "${searchIndicator}"`
+                  : isEffectiveOffline
+                    ? "No tienes proyectos guardados sin internet"
+                    : "Aún no tienes proyectos 3D disponibles"}
               </h4>
 
               <p className="text-white/50 text-sm max-w-md mx-auto mb-6">
-                {activeSearch
+                {searchIndicator
                   ? "Verifica el término ingresado o restablece los filtros para ver todos tus modelos disponibles."
-                  : "Los levantamientos fotogramétricos y gemelos digitales que se asignen a tu cuenta aparecerán listados aquí."}
+                  : isEffectiveOffline
+                    ? "Cuando tengas conexión a internet, pulsa 'Guardar para ver sin internet' en la tarjeta de cualquier proyecto para llevarlo contigo a terreno."
+                    : "Los levantamientos fotogramétricos y gemelos digitales que se asignen a tu cuenta aparecerán listados aquí."}
               </p>
 
-              {activeSearch && (
+              {searchIndicator && (
                 <Button
                   onClick={handleResetSearch}
                   className="bg-gradient-to-r from-[#0CDBFF] to-[#00C662] text-black font-bold text-xs h-9 px-5 rounded-xl shadow-lg"
@@ -331,11 +577,11 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
       </div>
 
       {/* Drawers & Modals */}
-      {_id !== "" && (
+      {!isEffectiveOffline && _id !== "" && (
         <DrawerInfo isOpen={isOpen} onOpenChange={onOpenChange} _id={_id} />
       )}
 
-      {ID_USER && (
+      {!isEffectiveOffline && ID_USER && (
         <ModalUsersInvited
           isOpenUsers={isOpenUsers}
           onOpenChangeUsers={onOpenChangeUsers}
@@ -344,7 +590,7 @@ export default React.memo(function Cards({ proyects, totalProyects }) {
         />
       )}
 
-      {_id !== "" && (
+      {!isEffectiveOffline && _id !== "" && (
         <ModalQr
           isOpenQr={isOpenQr}
           onOpenChangeQr={onOpenChangeQr}

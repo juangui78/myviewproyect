@@ -37,6 +37,7 @@ import dynamic from "next/dynamic";
 import LoadingScreen from './components/loadingScreen/LoadingScreen.jsx';
 import { get, set } from 'mongoose';
 import Background360 from './components/background360/Background360';
+import { isStandalonePwa, syncOfflineProjectIfDownloaded } from '@/web/global_components/pwa/offlineStore';
 
 const Photo360Modal = dynamic(() => import('./components/viewer360/PhotoSphereModal'), {
     ssr: false
@@ -1473,6 +1474,14 @@ const App = () => {
 
     }, [idProyect])
 
+    // Si se abre en la PWA instalada con conexión y el proyecto está guardado offline,
+    // actualizar automáticamente sus datos/modelo 3D y limpiar cualquier versión modificada
+    useEffect(() => {
+        if (!idProyect || !models || models.length === 0) return;
+        if (!isStandalonePwa() || !navigator.onLine) return;
+        syncOfflineProjectIfDownloaded(idProyect, projectInfo, models);
+    }, [idProyect, projectInfo, models]);
+
     useEffect(() => {
         isInitialLoadRef.current = true;
     }, [idProyect]);
@@ -2512,8 +2521,8 @@ const App = () => {
             {/* Canvas Header Controls */}
             <div className="flex justify-between w-full pt-[12px] px-[10px] sm:px-[15px] bg-transparent z-[10] absolute items-center gap-1.5 sm:gap-4 pointer-events-none">
                 <div className="pointer-events-auto shrink-0">
-                    {!isPublish ?
-                        <Link href='/web/views/user/feed' >
+                    {(!isPublish || isStandalonePwa()) ?
+                        <Link href={(typeof navigator !== 'undefined' && !navigator.onLine) ? '/offline' : '/web/views/user/feed'} >
                             <button 
                                 type="button" 
                                 className="flex items-center justify-center h-10 px-3 sm:px-4 text-sm font-medium text-white bg-black/60 backdrop-blur-md border border-white/20 rounded-full shadow-lg hover:bg-black/80 transition-all gap-1.5 shrink-0"
