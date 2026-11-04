@@ -14,7 +14,7 @@ export async function getLeads(filterCompanyId = null) {
       return { success: false, message: "No autenticado" };
     }
 
-    const isSuperadmin = session.user?.email === "darksus78@gmail.com";
+    const isSuperadmin = ["darksus78@gmail.com", "duvergarciar28@gmail.com"].includes(session.user?.email?.toLowerCase());
     const rol = session.user?.rol;
 
     let query = {};
@@ -66,7 +66,7 @@ export async function updateLeadStatus(leadId, newStatus) {
       return { success: false, message: "Prospecto no encontrado." };
     }
 
-    const isSuperadmin = session.user?.email === "darksus78@gmail.com";
+    const isSuperadmin = ["darksus78@gmail.com", "duvergarciar28@gmail.com"].includes(session.user?.email?.toLowerCase());
     const rol = session.user?.rol;
 
     if (!isSuperadmin && rol !== "company" && lead.idCompany.toString() !== session.user.id_company) {

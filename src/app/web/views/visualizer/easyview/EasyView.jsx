@@ -262,7 +262,7 @@ export default function EasyView({ modelUrl, previewUrl = null, currentModel, pr
 
   const { data: session } = useSession();
 
-  const isSuperAdmin = session?.user?.rol === 'superadmin' || session?.user?.email === "darksus78@gmail.com";
+  const isSuperAdmin = session?.user?.rol === 'superadmin' || ["darksus78@gmail.com", "duvergarciar28@gmail.com"].includes(session?.user?.email?.toLowerCase());
   const userId = session?.user?._id || session?.user?.id;
   const userCompanyId = session?.user?.id_company;
 

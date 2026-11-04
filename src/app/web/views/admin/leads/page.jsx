@@ -24,7 +24,7 @@ export default function LeadsAdminPage() {
   const [companyFilter, setCompanyFilter] = useState("Todos");
   const [companies, setCompanies] = useState([]);
 
-  const isPlatformAdmin = session?.user?.email === "darksus78@gmail.com" || session?.user?.rol === "company";
+  const isPlatformAdmin = ["darksus78@gmail.com", "duvergarciar28@gmail.com"].includes(session?.user?.email?.toLowerCase()) || session?.user?.rol === "company";
 
   const fetchLeadsData = async () => {
     setLoading(true);
