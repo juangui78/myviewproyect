@@ -16,7 +16,7 @@ export async function GET(request) {
     }
 
     const idCompany = session?.user?.id_company;
-    const isSuperadmin = session?.user?.email === "darksus78@gmail.com";
+    const isSuperadmin = ["darksus78@gmail.com", "duvergarciar28@gmail.com"].includes(session?.user?.email?.toLowerCase());
 
     let queryFilter = {};
     if (!isSuperadmin) {

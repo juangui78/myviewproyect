@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyView - Pitch Deck & Presentación Comercial</title>
+  <style>
+    /* EMBEDDED WORK SANS LOCAL FONT */
+    @font-face {
+      font-family: 'Work Sans';
+      src: url('./fonts/WorkSans-VariableFont_wght.woff2') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+    }
+
+    :root {
+      --bg: #02121B;
+      --card-bg: rgba(6, 26, 40, 0.88);
+      --card-border: rgba(12, 219, 255, 0.22);
+      --card-border-green: rgba(0, 198, 98, 0.25);
+      --cyan: #0CDBFF;
+      --green: #00C662;
+      --amber: #F59E0B;
+      --red: #EF4444;
+      --purple: #A855F7;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --font: 'Work Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font) !important;
+    }
+
+    html, body {
+      background-color: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+    }
+
+    .bg-grid {
+      background-color: #02121B;
+      background-image: 
+        radial-gradient(ellipse 70% 40% at 50% 0%, rgba(12, 219, 255, 0.15) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(0, 198, 98, 0.10) 0%, transparent 60%),
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+    }
+
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #top-nav {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(2, 18, 27, 0.92);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      height: 30px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .brand-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--cyan);
+      background: rgba(12, 219, 255, 0.12);
+      border: 1px solid rgba(12, 219, 255, 0.3);
+      padding: 3px 10px;
+      border-radius: 999px;
+    }
+
+    .slide-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .slide-meta strong {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .slide-badge-count {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-family: monospace !important;
+      font-size: 12px;
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-action {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-action.btn-cyan {
+      background: rgba(12, 219, 255, 0.15);
+      border-color: rgba(12, 219, 255, 0.35);
+      color: var(--cyan);
+    }
+    .btn-action.btn-cyan:hover {
+      background: rgba(12, 219, 255, 0.28);
+    }
+
+    #progress-container {
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    #progress-bar {
+      height: 100%;
+      width: 10%;
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+      transition: width 0.35s ease;
+    }
+
+    #deck-stage {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem 2rem;
+    }
+
+    .slide {
+      display: none;
+      width: 100%;
+      max-width: 1180px;
+      height: 100%;
+      max-height: 680px;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.98) translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .glass-box {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 1.5rem;
+      box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .text-gradient {
+      background: linear-gradient(135deg, var(--cyan) 10%, var(--green) 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 0.75rem;
+    }
+
+    .tag-cyan {
+      background: rgba(12, 219, 255, 0.12);
+      border: 1px solid rgba(12, 219, 255, 0.3);
+      color: var(--cyan);
+    }
+
+    .tag-green {
+      background: rgba(0, 198, 98, 0.12);
+      border: 1px solid rgba(0, 198, 98, 0.3);
+      color: var(--green);
+    }
+
+    .tag-red {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--red);
+    }
+
+    .tag-amber {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--amber);
+    }
+
+    .tag-purple {
+      background: rgba(168, 85, 247, 0.12);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      color: var(--purple);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      width: 100%;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.25rem;
+      width: 100%;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      width: 100%;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .img-showcase {
+      width: 100%;
+      height: 240px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #bottom-nav {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(2, 18, 27, 0.94);
+      z-index: 100;
+    }
+
+    .nav-buttons {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-nav {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-nav:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .btn-nav-primary {
+      background: linear-gradient(135deg, var(--cyan), var(--green));
+      color: #02121B;
+      border: none;
+      box-shadow: 0 4px 15px rgba(12, 219, 255, 0.35);
+    }
+
+    .btn-nav-primary:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 4px 20px rgba(12, 219, 255, 0.5);
+    }
+
+    .dots-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot-btn {
+      height: 8px;
+      width: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .dot-btn.active {
+      width: 24px;
+      background: var(--cyan);
+      box-shadow: 0 0 8px rgba(12, 219, 255, 0.8);
+    }
+
+    .keyboard-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    kbd {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-family: monospace !important;
+      color: #fff;
+    }
+
+    #notes-drawer {
+      position: fixed;
+      right: 2rem;
+      bottom: 75px;
+      width: 420px;
+      max-width: 90vw;
+      background: rgba(5, 20, 32, 0.96);
+      border: 1px solid rgba(12, 219, 255, 0.4);
+      border-radius: 16px;
+      padding: 1.25rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+      display: none;
+      z-index: 200;
+    }
+
+    #notes-drawer.open {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .notes-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: 0.75rem;
+    }
+
+    .notes-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .btn-close:hover { color: #fff; }
+
+    #notes-body {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #E2E8F0;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    @media print {
+      body, html {
+        overflow: visible !important;
+        height: auto !important;
+        background: #02121B !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      #top-nav, #progress-container, #bottom-nav, #notes-drawer {
+        display: none !important;
+      }
+      #app-container {
+        display: block !important;
+        height: auto !important;
+      }
+      #deck-stage {
+        display: block !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      .slide {
+        display: flex !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        padding: 3rem !important;
+        justify-content: center !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+      }
+      @page {
+        size: 16in 9in;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body class="bg-grid">
+
+  <div id="save-notification">✅ ¡Cambios guardados correctamente!</div>
+  <div id="app-container">
+
+    <!-- TOP BAR -->
+    <header id="top-nav">
+      <div class="brand-box">
+        <img src="./logos/completo-fullblanco.png" alt="MyView Logo" class="brand-logo" onclick="goToSlide(0)" style="cursor: pointer;">
+        <span class="brand-tag">Pitch Deck 2026</span>
+      </div>
+
+      <div class="slide-meta">
+        <span id="slide-name">Portada & Visión</span>
+        <span>•</span>
+        <span id="slide-counter" class="slide-badge-count">01 / 10</span>
+      </div>
+
+      <div class="top-actions">
+        <button onclick="toggleNotes()" class="btn-action" title="Ver speech hablado (Tecla N)">
+          <span>🎤</span> <span>Speech Asesor (N)</span>
+        </button>
+        
+        <button id="btn-edit" onclick="toggleEditMode()" class="btn-action" title="Editar textos de las diapositivas (Tecla E)">
+          <span>✏️</span> <span id="edit-btn-text">Editar Textos</span>
+        </button>
+        <button id="btn-save" onclick="saveEdits()" class="btn-action btn-cyan" style="display: none;" title="Guardar cambios">
+          <span>💾</span> <span>Guardar</span>
+        </button>
+        <button onclick="exportToPdf()" class="btn-action" title="Descargar como PDF listo">
+          <span>📄</span> <span>Exportar a PDF</span>
+        </button>
+        <button onclick="toggleFullScreen()" class="btn-action btn-cyan" title="Pantalla completa (Tecla F)">
+          <span>⛶</span> <span>Pantalla Completa (F)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- PROGRESS LINE -->
+    <div id="progress-container">
+      <div id="progress-bar"></div>
+    </div>
+
+    <!-- MAIN STAGE -->
+    <main id="deck-stage">
+
+      <!-- ================= SLIDE 1: PORTADA ================= -->
+      <section class="slide active" data-title="Portada & Visión">
+        <div style="text-align: center; max-width: 950px;">
+          <div class="tag-pill tag-cyan">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--green);"></span>
+            PLATAFORMA DE MODELOS 3D INTERACTIVOS WEB EN ANTIOQUIA
+          </div>
+          
+          <h1 style="font-size: 52px; font-weight: 800; line-height: 1.12; margin-bottom: 1.25rem;">
+            Deja de vender terrenos con <br>
+            <span class="text-gradient">fotos planas y videos pasivos</span>
+          </h1>
+
+          <p style="font-size: 20px; color: var(--text-muted); font-weight: 300; line-height: 1.6; max-width: 780px; margin: 0 auto 2rem auto;">
+            Permite que tus compradores caminen el lote en 3D desde su celular, calculen el área en m² sobre el relieve real y te contacten por WhatsApp listos para comprar.
+          </p>
+
+          <div class="grid-3" style="text-align: left; max-width: 880px; margin: 0 auto;">
+            <div class="glass-box" style="padding: 1.25rem;">
+              <div style="font-size: 22px; font-weight: 800; color: var(--cyan); margin-bottom: 4px;">⚡ 0.3s</div>
+              <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px;">Carga Ultrarrápida</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Optimización liviana para celular que abre al instante en 4G.</div>
+            </div>
+
+            <div class="glass-box" style="padding: 1.25rem;">
+              <div style="font-size: 22px; font-weight: 800; color: var(--green); margin-bottom: 4px;">📐 m² en Vivo</div>
+              <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px;">Medición Interactiva</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Cálculo automático de áreas poligonales sobre la topografía real.</div>
+            </div>
+
+            <div class="glass-box" style="padding: 1.25rem;">
+              <div style="font-size: 22px; font-weight: 800; color: var(--amber); margin-bottom: 4px;">🚫 0 Apps</div>
+              <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px;">100% Web Móvil</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Sin instalar aplicaciones pesadas, plugins ni licencias de AutoCAD.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SLIDE 2: EL PROBLEMA ================= -->
+      <section class="slide" data-title="El Gran Problema">
+        <div style="width: 100%; max-width: 1050px;">
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div class="tag-pill tag-red">DIAGNÓSTICO DEL MERCADO</div>
+            <h2 style="font-size: 38px; font-weight: 800;">¿Por qué se pierden ventas y se retrasan obras?</h2>
+          </div>
+
+          <div class="grid-2">
+            <div class="glass-box" style="border-color: rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.05);">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
+                <span style="font-size: 28px;">📸</span>
+                <div>
+                  <h3 style="font-size: 20px; font-weight: 700; color: #fff;">Inmobiliarias & Parcelaciones</h3>
+                  <div style="font-size: 12px; color: #FCA5A5;">Oriente Antioqueño & Valle de Aburrá</div>
+                </div>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+                Las fotos y videos aéreos tradicionales son <strong style="color:#fff;">planos y pasivos</strong>. No transmiten la inclinación de la ladera, la verdadera vista ni los linderos reales.
+              </p>
+              <div style="font-size: 12px; color: #E2E8F0; display: flex; flex-direction: column; gap: 8px;">
+                <div>❌ <strong>Compradores foráneos desisten:</strong> Clientes de Bogotá o del exterior no cierran por incertidumbre del relieve.</div>
+                <div>❌ <strong>Gasto inútil de viáticos:</strong> Viajes de 2 horas al lote con personas que al llegar dicen: <em>"no creí que fuera tan empinado"</em>.</div>
+                <div>❌ <strong>Cero diferenciación:</strong> Todos los competidores usan las mismas fotos genéricas.</div>
+              </div>
+            </div>
+
+            <div class="glass-box" style="border-color: rgba(245, 158, 11, 0.35); background: rgba(245, 158, 11, 0.05);">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
+                <span style="font-size: 28px;">📐</span>
+                <div>
+                  <h3 style="font-size: 20px; font-weight: 700; color: #fff;">Ingeniería, Obras & Topografía</h3>
+                  <div style="font-size: 12px; color: #FDE68A;">Constructoras & Consultoría Civil</div>
+                </div>
+              </div>
+              <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+                Se entregan nubes de puntos y ortomosaicos de <strong style="color:#fff;">3 a 5 Gigas</strong> que clientes, comités e interventores no pueden abrir en sus computadores de oficina.
+              </p>
+              <div style="font-size: 12px; color: #E2E8F0; display: flex; flex-direction: column; gap: 8px;">
+                <div>❌ <strong>Equipos bloqueados:</strong> La contraparte no tiene tarjetas gráficas potentes ni AutoCAD Civil 3D.</div>
+                <div>❌ <strong>Viajes obligados al terreno:</strong> Ingenieros desplazándose solo a explicar cotas o avances de excavación sencillos.</div>
+                <div>❌ <strong>Comités lentos:</strong> Retrasos en autorizaciones bancarias y actas de interventoría.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SLIDE 3: QUÉ ES MYVIEW ================= -->
+      <section class="slide" data-title="¿Qué es MyView?">
+        <div style="width: 100%; max-width: 1100px;">
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div class="tag-pill tag-cyan">LA SOLUCIÓN VERTICALIZADA</div>
+            <h2 style="font-size: 38px; font-weight: 800;">
+              ¿Qué es <span class="text-gradient">MyView</span> exactamente?
+            </h2>
+            <p style="font-size: 15px; color: var(--text-muted); max-width: 700px; margin: 0 auto;">
+              No somos fotógrafos tradicionales ni un software genérico extranjero: somos la primera plataforma de <strong>Modelos 3D Interactivos Web ultraligeros</strong> creada en Antioquia.
+            </p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: center;">
+            <div class="glass-box" style="padding: 1rem;">
+              <img src="./images/visor_la_aldana.jpg" alt="Modelo 3D Real" class="img-showcase" style="height: 250px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--text-muted);">
+                <span style="color: var(--cyan); font-weight: 700;">Visor 3D WebGL Nativo</span>
+                <span>Resolución Milimétrica • 60 FPS</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <div class="glass-box" style="padding: 1rem;">
+                <h4 style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px;">🌐 100% Web & Móvil</h4>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                  Un enlace que se comparte por WhatsApp. El comprador o interventor lo abre en Safari o Chrome con un toque y navega la montaña en 3D.
+                </p>
+              </div>
+
+              <div class="glass-box" style="padding: 1rem; border-color: rgba(0, 198, 98, 0.3);">
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--green); margin-bottom: 4px;">⚡ Optimización Rápida y Liviana</h4>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                  Reduce el peso del archivo para que no gaste datos. Carga en 0.3 segundos sin congelar teléfonos en carreteras con señal 4G estándar.
+                </p>
+              </div>
+
+              <div class="glass-box" style="padding: 1rem; border-color: rgba(168, 85, 247, 0.3);">
+                <h4 style="font-size: 16px; font-weight: 700; color: var(--purple); margin-bottom: 4px;">🎯 Enfoque Dual</h4>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                  Acelera las ventas de parcelaciones campestres y al mismo tiempo certifica avances de obra para constructoras e interventorías.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SLIDE 4: QUÉ HACEMOS (FLUJO) ================= -->
+      <section class="slide" data-title="¿Qué Hacemos?">
+        <div style="width: 100%; max-width: 1100px;">
+          <div style="text-align: center; margin-bottom: 1.75rem;">
+            <div class="tag-pill tag-green">TODO RESUELTO DE PRINCIPIO A FIN</div>
+            <h2 style="font-size: 38px; font-weight: 800;">¿Qué Hacemos? De la Tierra a la Pantalla</h2>
+            <p style="font-size: 15px; color: var(--text-muted);">Nosotros nos encargamos de todo el proceso técnico para que el cliente solo disfrute del resultado.</p>
+          </div>
+
+          <div class="grid-4" style="margin-bottom: 1.5rem;">
+            <div class="glass-box" style="position: relative;">
+              <div style="font-size: 32px; font-weight: 900; color: rgba(255,255,255,0.12); position: absolute; right: 1rem; top: 0.5rem;">01</div>
+              <div style="font-size: 26px; margin-bottom: 6px;">🚁</div>
+              <h4 style="font-size: 16px; font-weight: 700; color: var(--cyan); margin-bottom: 6px;">Vuelo en Campo</h4>
+              <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                Desplazamiento a cualquier municipio de Antioquia con drones de precisión y fotogrametría georreferenciada.
+              </p>
+            </div>
+
+            <div class="glass-box" style="position: relative;">
+              <div style="font-size: 32px; font-weight: 900; color: rgba(255,255,255,0.12); position: absolute; right: 1rem; top: 0.5rem;">02</div>
+              <div style="font-size: 26px; margin-bottom: 6px;">⚙️</div>
+              <h4 style="font-size: 16px; font-weight: 700; color: var(--green); margin-bottom: 6px;">Procesamiento GPU</h4>
+              <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                Reconstrucción tridimensional de la malla y compresión avanzada KTX2 para habilitar carga instantánea web.
+              </p>
+            </div>
+
+            <div class="glass-box" style="position: relative;">
+              <div style="font-size: 32px; font-weight: 900; color: rgba(255,255,255,0.12); position: absolute; right: 1rem; top: 0.5rem;">03</div>
+              <div style="font-size: 26px; margin-bottom: 6px;">📍</div>
+              <h4 style="font-size: 16px; font-weight: 700; color: var(--amber); margin-bottom: 6px;">Configuración 3D</h4>
+              <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                Delimitación de lotes, cálculo de m², estado comercial (*Disponible/Vendido*), brújula solar y botón WhatsApp.
+              </p>
+            </div>
+
+            <div class="glass-box" style="position: relative;">
+              <div style="font-size: 32px; font-weight: 900; color: rgba(255,255,255,0.12); position: absolute; right: 1rem; top: 0.5rem;">04</div>
+              <div style="font-size: 26px; margin-bottom: 6px;">🚀</div>
+              <h4 style="font-size: 16px; font-weight: 700; color: var(--purple); margin-bottom: 6px;">Entrega del Enlace</h4>
+              <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                Link interactivo listo para compartir por WhatsApp, insertar en el portal web o proyectar en sala de ventas.
+              </p>
+            </div>
+          </div>
+
+          <div class="glass-box" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem;">
+            <div style="font-size: 13px; color: #fff;">
+              ⏱️ <strong>Plazo de Entrega Garantizado:</strong> 48 a 72 horas desde el vuelo técnico en campo.
+            </div>
+            <span class="tag-pill tag-green" style="margin: 0;">100% OPERATIVO</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SLIDE 5: FUNCIONALIDADES ================= -->
+      <section class="slide" data-title="Funcionalidades Clave">
+        <div style="width: 100%; max-width: 1050px;">
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div class="tag-pill tag-cyan">EXPERIENCIA INTERACTIVA</div>
+            <h2 style="font-size: 38px; font-weight: 800;">Herramientas Diseñadas para Vender</h2>
+          </div>
+
+          <div class="grid-2">
+            <div class="glass-box" style="display: flex; gap: 14px; align-items: flex-start;">
+              <div style="font-size: 32px; background: rgba(12,219,255,0.12); border-radius: 12px; padding: 10px;">📐</div>
+              <div>
+                <h4 style="font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px;">Cálculo de Áreas en m² en Vivo</h4>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                  El usuario toca vértices sobre el relieve del terreno y el sistema calcula en tiempo real el área poligonal en metros cuadrados y el perímetro.
+                </p>
+              </div>
+            </div>
+
+            <div class="glass-box" style="display: flex; gap: 14px; align-items: flex-start;">
+              <div style="font-size: 32px; background: rgba(0,198,98,0.12); border-radius: 12px; padding: 10px;">🧭</div>
+              <div>
+                <h4 style="font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px;">Brújula 3D & Minimapa Solar</h4>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                  Ubicación espacial para evaluar asoleamiento (amanecer y atardecer), dirección de brisas dominantes y vías de acceso vehicular.
+                </p>
+              </div>
+            </div>
+
+            <div class="glass-box" style="display: flex; gap: 14px; align-items: flex-start;">
+              <div style="font-size: 32px; background: rgba(245,158,11,0.12); border-radius: 12px; padding: 10px;">💬</div>
+              <div>
+                <h4 style="font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px;">Captación de Leads a WhatsApp</h4>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                  Botón flotante y modal que captura los datos del prospecto y timbra directo al WhatsApp del asesor indicando el lote exacto de interés.
+                </p>
+              </div>
+            </div>
+
+            <div class="glass-box" style="display: flex; gap: 14px; align-items: flex-start;">
+              <div style="font-size: 32px; background: rgba(168,85,247,0.12); border-radius: 12px; padding: 10px;">🌐</div>
+              <div>
+                <h4 style="font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px;">Panorámicas Aéreas 360°</h4>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+                  Puntos de observación esféricos combinados para contextualizar el entorno: vista a la represa en Guatapé, cordillera en Llanogrande o valles.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SLIDE 6: SEGUIMIENTO 4D ================= -->
+      <section class="slide" data-title="Seguimiento de Obra">
+        <div style="width: 100%; max-width: 1100px;">
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div class="tag-pill tag-purple">INGENIERÍA & EDIFICACIÓN</div>
+            <h2 style="font-size: 38px; font-weight: 800;">Seguimiento de Obra: Antes y Después</h2>
+            <p style="font-size: 15px; color: var(--text-muted);">Compara fases constructivas y movimientos de tierra con nuestro comparador Antes / Después.</p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; align-items: center;">
+            <div class="glass-box" style="padding: 1rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; font-weight: 700;">
+                <span style="color: var(--cyan);">Fase 01: Excavación Inicial</span>
+                <span style="color: var(--green);">Fase 02: Estructura y Vaciado</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <img src="./images/Antes-landing.jpg" alt="Antes" class="img-showcase" style="height: 220px;">
+                <img src="./images/Despues-landing.jpg" alt="Después" class="img-showcase" style="height: 220px;">
+              </div>
+              <div style="text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+                Registro histórico 3D inalterable para comités de obra e interventorías técnicas.
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+              <div class="glass-box" style="padding: 1rem;">
+                <h4 style="font-size: 15px; font-weight: 700; color: #fff;">🚜 Control de Movimiento de Tierras</h4>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                  Auditoría volumétrica visual de cortes y rellenos para certificar horas de maquinaria.
+                </p>
+              </div>
+
+              <div class="glass-box" style="padding: 1rem;">
+                <h4 style="font-size: 15px; font-weight: 700; color: #fff;">🏦 Auditorías Bancarias Remotas</h4>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                  Sustentación gráfica de hitos constructivos ante entidades financieras y fiduciarias.
+                </p>
+              </div>
+
+              <div class="glass-box" style="padding: 1rem;">
+                <h4 style="font-size: 15px; font-weight: 700; color: #fff;">📉 -40% Visitas al Terreno</h4>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                  Ingenieros, arquitectos e interventores alineados sobre el mismo Modelo 3D.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SLIDE 7: DÓNDE ESTAMOS ENFOCADOS ================= -->
+      <section class="slide" data-title="Dónde Estamos Enfocados">
+        <div style="width: 100%; max-width: 1050px;">
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div class="tag-pill tag-cyan">SEGMENTACIÓN COMERCIAL</div>
+            <h2 style="font-size: 38px; font-weight: 800;">Nuestros Dos Nichos Clave en Antioquia</h2>
+          </div>
+
+          <div class="grid-2">
+            <div class="glass-box" style="border-color: rgba(12,219,255,0.4);">
+              <span class="tag-pill tag-cyan">NICHO A • INMOBILIARIO</span>
+              <h3 style="font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 6px;">Parcelaciones & Inmobiliarias</h3>
+              <p style="font-size: 12px; color: var(--cyan); margin-bottom: 12px;">Llanogrande, Rionegro, La Ceja, Guatapé, El Retiro, Santa Fe de Antioquia.</p>
+              
+              <div style="font-size: 12px; color: #E2E8F0; display: flex; flex-direction: column; gap: 8px;">
+                <div>✔️ <strong>Compradores Remotos:</strong> Cierres directos con clientes en Bogotá, EE.UU. o Europa sin esperar a que viajen.</div>
+                <div>✔️ <strong>Filtro de Calificación:</strong> Al terreno solo van prospectos que ya conocen la topografía y tienen presupuesto.</div>
+                <div>✔️ <strong>Mayor Ticket y Reputación:</strong> Diferenciación absoluta frente a agencias tradicionales.</div>
+              </div>
+            </div>
+
+            <div class="glass-box" style="border-color: rgba(0,198,98,0.4);">
+              <span class="tag-pill tag-green">NICHO B • TÉCNICO</span>
+              <h3 style="font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 6px;">Topografía, Obras & Constructoras</h3>
+              <p style="font-size: 12px; color: var(--green); margin-bottom: 12px;">Constructoras civiles, consultoras viales y despachos topográficos.</p>
+              
+              <div style="font-size: 12px; color: #E2E8F0; display: flex; flex-direction: column; gap: 8px;">
+                <div>✔️ <strong>Cero Fricción:</strong> El cliente o interventor abre el Modelo 3D en 2 segundos sin software pesado.</div>
+                <div>✔️ <strong>Mediciones Rápidas:</strong> Cotas, distancias y áreas directamente en el navegador.</div>
+                <div>✔️ <strong>Exportables Técnicos:</strong> Curvas de nivel y ortomosaicos listos para AutoCAD Civil 3D y QGIS.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SLIDE 8: DÓNDE NOS PODEMOS ENFOCAR ================= -->
+      <section class="slide" data-title="Sectores de Expansión">
+        <div style="width: 100%; max-width: 1100px;">
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div class="tag-pill tag-amber">HORIZONTES DE CRECIMIENTO</div>
+            <h2 style="font-size: 38px; font-weight: 800;">Sectores de Expansión de Alto Valor</h2>
+            <p style="font-size: 15px; color: var(--text-muted);">Verticales donde la topografía y visualización 3D generan altos retornos de inversión.</p>
+          </div>
+
+          <div class="grid-4">
+            <div class="glass-box">
+              <div style="font-size: 32px; margin-bottom: 6px;">🏕️</div>
+              <h4 style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px;">Glampings & Hoteles</h4>
+              <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+                Reserva inmersiva de cabañas: el turista escoge su estadía según la vista 360° y privacidad del terreno.
+              </p>
+              <div style="font-size: 11px; color: var(--cyan); font-weight: 700; margin-top: 8px;">Guatapé, Jericó, Santa Elena</div>
+            </div>
+
+            <div class="glass-box">
+              <div style="font-size: 32px; margin-bottom: 6px;">🥑</div>
+              <h4 style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px;">Agroindustria & Fincas</h4>
+              <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+                Zonificación de cultivos (aguacate Hass, café, flores), control de curvas de nivel, drenajes y lotes forestales.
+              </p>
+              <div style="font-size: 11px; color: var(--green); font-weight: 700; margin-top: 8px;">Suroeste & Altiplano</div>
+            </div>
+
+            <div class="glass-box">
+              <div style="font-size: 32px; margin-bottom: 6px;">⛏️</div>
+              <h4 style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px;">Minería & Canteras</h4>
+              <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+                Cubicación periódica de acopios de material, control de taludes de seguridad y reportes ambientales.
+              </p>
+              <div style="font-size: 11px; color: var(--amber); font-weight: 700; margin-top: 8px;">Canteras de Áridos</div>
+            </div>
+
+            <div class="glass-box">
+              <div style="font-size: 32px; margin-bottom: 6px;">☀️</div>
+              <h4 style="font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px;">Energía Solar & Redes</h4>
+              <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">
+                Estudios de asoleamiento con brújula 3D, pendientes óptimas para paneles solares y trazado vial.
+              </p>
+              <div style="font-size: 11px; color: var(--purple); font-weight: 700; margin-top: 8px;">Granjas Solares</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SLIDE 9: CASOS DE ÉXITO ================= -->
+      <section class="slide" data-title="Casos Reales y Métricas">
+        <div style="width: 100%; max-width: 1050px;">
+          <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div class="tag-pill tag-green">CASOS EN PRODUCCIÓN</div>
+            <h2 style="font-size: 38px; font-weight: 800;">Resultados Comprobados en Antioquia</h2>
+          </div>
+
+          <div class="grid-2" style="margin-bottom: 1.25rem;">
+            <div class="glass-box">
+              <div class="tag-pill tag-cyan">SEGUIMIENTO DE OBRA</div>
+              <h3 style="font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px;">Proyecto Laurum</h3>
+              <p style="font-size: 12px; color: var(--text-muted); font-style: italic; line-height: 1.5; margin-bottom: 10px;">
+                "La reconstrucción 3D periódica nos permitió documentar y auditar cada fase de la edificación en el tiempo, reduciendo los tiempos de comité de obra en un 40%."
+              </p>
+              <div style="font-size: 11px; color: var(--cyan); font-weight: 600;">✔️ Historial 3D Multifecha • ✔️ Auditoría Remota</div>
+            </div>
+
+            <div class="glass-box">
+              <div class="tag-pill tag-green">TOPOGRAFÍA DE PRECISIÓN</div>
+              <h3 style="font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px;">Proyecto La Aldana</h3>
+              <p style="font-size: 12px; color: var(--text-muted); font-style: italic; line-height: 1.5; margin-bottom: 10px;">
+                "Levantamiento fotogramétrico de alta precisión y Modelo 3D georreferenciado con curvas de nivel exportadas directamente a Civil 3D sin reprocesos."
+              </p>
+              <div style="font-size: 11px; color: var(--green); font-weight: 600;">✔️ Modelo de Elevación (DEM) • ✔️ Compatibilidad CAD/GIS</div>
+            </div>
+          </div>
+
+          <div class="grid-3" style="text-align: center;">
+            <div class="glass-box" style="padding: 1rem;">
+              <div style="font-size: 32px; font-weight: 900; color: var(--cyan);">0.3s</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Carga en smartphones 4G</div>
+            </div>
+            <div class="glass-box" style="padding: 1rem;">
+              <div style="font-size: 32px; font-weight: 900; color: var(--green);">-65%</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Visitas en frío filtradas</div>
+            </div>
+            <div class="glass-box" style="padding: 1rem;">
+              <div style="font-size: 32px; font-weight: 900; color: var(--amber);">3x</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Conversión en WhatsApp</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SLIDE 10: MODELO DE SERVICIO ================= -->
+      <section class="slide" data-title="Propuesta & Suscripción">
+        <div style="width: 100%; max-width: 950px; text-align: center;">
+          <div class="tag-pill tag-cyan">MODELO DE SERVICIO FLEXIBLE</div>
+          <h2 style="font-size: 36px; font-weight: 800; margin-bottom: 0.5rem;">¿Cómo Funciona el Servicio?</h2>
+          <p style="font-size: 15px; color: var(--text-muted); margin-bottom: 1.5rem;">
+            Un esquema simple y accesible diseñado para acompañar el ritmo de venta o avance de tu proyecto.
+          </p>
+
+          <div class="grid-2" style="text-align: left; margin-bottom: 1.25rem;">
+            <!-- Bloque 1: Levantamiento -->
+            <div class="glass-box" style="border-color: rgba(12,219,255,0.4);">
+              <div style="font-size: 28px; margin-bottom: 6px;">🚁</div>
+              <div style="font-size: 12px; font-weight: 700; color: var(--cyan); text-transform: uppercase;">1. Servicio Inicial en Campo</div>
+              <h3 style="font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 8px;">Levantamiento y Montaje 3D</h3>
+              <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px;">
+                Servicio único por cada lote o terreno. Incluye desplazamiento técnico, vuelo dron georreferenciado, optimización y publicación del Modelo 3D.
+              </p>
+              <div style="font-size: 11px; color: #E2E8F0; display: flex; flex-direction: column; gap: 6px;">
+                <div>✔️ Entrega listo para usar en 48-72 horas.</div>
+                <div>✔️ Delimitación de lotes, cálculo de m² y WhatsApp.</div>
+                <div>✔️ Tarifa de bienvenida para el primer proyecto.</div>
+              </div>
+            </div>
+
+            <!-- Bloque 2: Suscripción -->
+            <div class="glass-box" style="border-color: rgba(0,198,98,0.4);">
+              <div style="font-size: 28px; margin-bottom: 6px;">🔄</div>
+              <div style="font-size: 12px; font-weight: 700; color: var(--green); text-transform: uppercase;">2. Alojamiento Continuo</div>
+              <h3 style="font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 8px;">Suscripción y Mantenimiento Web</h3>
+              <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px;">
+                Cuota mensual accesible para mantener el visor activo 24/7 en la nube, con soporte continuo y sin preocuparse por servidores.
+              </p>
+              <div style="font-size: 11px; color: #E2E8F0; display: flex; flex-direction: column; gap: 6px;">
+                <div>✔️ <strong>Inmobiliarias:</strong> Tu lote visible y listo para vender 24/7.</div>
+                <div>✔️ <strong>Obras Civiles:</strong> Historial multifecha y control de hitos.</div>
+                <div>✔️ Sin cláusulas de permanencia: activo el tiempo que dure la venta u obra.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Banner CTA -->
+          <div class="glass-box" style="display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 2rem; border-color: rgba(255,255,255,0.15);">
+            <div style="text-align: left;">
+              <div style="font-size: 16px; font-weight: 800; color: #fff;">¿Listo para digitalizar tu primer predio?</div>
+              <div style="font-size: 12px; color: var(--text-muted);">Pregunta por nuestra tarifa de demostración para el primer proyecto de prueba.</div>
+            </div>
+            <button onclick="window.open('https://wa.me/573000000000?text=Hola,%20quiero%20conocer%20mas%20sobre%20MyView%20para%20mi%20proyecto')" class="btn-nav btn-nav-primary" style="padding: 10px 20px; font-size: 13px; border-radius: 10px;">
+              Consultar con un Asesor →
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- BOTTOM BAR -->
+    <footer id="bottom-nav">
+      <div class="nav-buttons">
+        <button onclick="prevSlide()" class="btn-nav">
+          <span>◀</span> <span>Anterior</span>
+        </button>
+        <button onclick="nextSlide()" class="btn-nav btn-nav-primary">
+          <span>Siguiente</span> <span>▶</span>
+        </button>
+      </div>
+
+      <div id="dots-box" class="dots-box"></div>
+
+      <div class="keyboard-hint">
+        <span>Navegar:</span> <kbd>←</kbd> <kbd>→</kbd>
+        <span style="margin-left: 8px;">Speech:</span> <kbd>N</kbd>
+        <span style="margin-left: 8px;">Pantalla Completa:</span> <kbd>F</kbd>
+      </div>
+    </footer>
+
+    <!-- NOTES / TELEPROMPTER DRAWER -->
+    <div id="notes-drawer">
+      <div class="notes-header">
+        <div class="notes-title">
+          <span>🎤</span> <span>Speech del Asesor Comercial</span>
+        </div>
+        <button class="btn-close" onclick="toggleNotes()">✕</button>
+      </div>
+      <div id="notes-body"></div>
+    </div>
+
+  </div>
+
+  <!-- CORE PRESENTATION JAVASCRIPT -->
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const slideNameEl = document.getElementById('slide-name');
+    const slideCounterEl = document.getElementById('slide-counter');
+    const progressBar = document.getElementById('progress-bar');
+    const dotsBox = document.getElementById('dots-box');
+    const notesDrawer = document.getElementById('notes-drawer');
+    const notesBody = document.getElementById('notes-body');
+
+    let currentSlide = 0;
+
+    const speeches = [
+      // 1
+      `"Hola. La forma en que se venden y supervisan terrenos en Antioquia acaba de cambiar radicalmente. Hoy les presento MyView: convertimos vuelos técnicos de dron en Modelos 3D Interactivos interactivos en la web que abren en menos de un segundo en cualquier celular."`,
+      // 2
+      `"Hoy en día se pierden ventas valiosas con clientes de Bogotá o el exterior porque una foto de dron no muestra la pendiente ni los linderos. Y en el área de obras, los ingenieros mandan archivos pesados de 5 Gigas que nadie puede abrir. Hay visitas innecesarias, desgaste de tiempo y frustración."`,
+      // 3
+      `"¿Qué es MyView? No somos fotógrafos comunes ni software extranjero pesado. Desarrollamos un visor 3D 100% web optimizado para que sea muy liviano. Carga en 0.3 segundos en un celular 4G en plena carretera."`,
+      // 4
+      `"Entregamos todo listo y resuelto: vamos con nuestros drones georreferenciados, procesamos la fotogrametría, configuramos la delimitación de lotes, metros cuadrados y botón de WhatsApp, y en 48 a 72 horas te entregamos un enlace web listo para compartir con tus clientes."`,
+      // 5
+      `"Mira lo que hace el cliente: toca con el dedo y calcula el área en m² sobre el relieve real; consulta la brújula 3D para ver por dónde sale el sol y hacia dónde sopla la brisa; y si le gusta un lote, toca el botón de WhatsApp y te timbra directamente a ti diciendo 'Me interesa el lote 4'."`,
+      // 6
+      `"Para obras y topografía tenemos el Seguimiento 3D. Con un slider de Antes y Después comparamos la excavación de hoy contra el terreno virgen de hace 2 meses. Los bancos e interventores auditan el avance sin tener que desplazarse al lote todas las semanas."`,
+      // 7
+      `"Hoy estamos enfocados en dos mercados clave de Antioquia: Inmobiliarias y parcelaciones campestres del Oriente y Santa Fe de Antioquia para acelerar ventas remotas; y constructoras y topógrafos para certificar obras sin trabar computadores."`,
+      // 8
+      `"Además, tenemos sectores de alto valor en expansión: Glampings para que el turista elija su cabaña por la vista 360°, agroindustria para cálculo de pendientes de aguacate y café, canteras para cubicaciones periódicas de material, y granjas solares."`,
+      // 9
+      `"Ya lo demostramos con casos reales como Proyecto Laurum en seguimiento de edificación y La Aldana en topografía de alta precisión. Nuestros clientes reducen hasta un 65% las visitas en frío innecesarias y aumentan 3 veces la conversión de prospectos calificados."`,
+      // 10
+      `"Este servicio tiene un valor de lista de $1.200.000 COP. Pero para que experimenten el impacto en su propio proyecto, hoy tenemos el programa Aliados Pioneros con un 50% de descuento: su primer lote completo por solo $600.000 COP. ¿Qué predio tienen disponible esta semana para programar el vuelo?"`
+    ];
+
+    slides.forEach((_, idx) => {
+      const dot = document.createElement('button');
+      dot.className = `dot-btn ${idx === 0 ? 'active' : ''}`;
+      dot.onclick = () => goToSlide(idx);
+      dotsBox.appendChild(dot);
+    });
+
+    function updatePresentation() {
+      slides.forEach((slide, idx) => {
+        slide.classList.toggle('active', idx === currentSlide);
+      });
+
+      const title = slides[currentSlide].getAttribute('data-title') || `Slide ${currentSlide + 1}`;
+      slideNameEl.textContent = title;
+      slideCounterEl.textContent = `${String(currentSlide + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
+      progressBar.style.width = `${((currentSlide + 1) / slides.length) * 100}%`;
+
+      Array.from(dotsBox.children).forEach((dot, idx) => {
+        dot.classList.toggle('active', idx === currentSlide);
+      });
+
+      notesBody.textContent = speeches[currentSlide] || "Sin notas adicionales para esta diapositiva.";
+    }
+
+    function nextSlide() {
+      if (currentSlide < slides.length - 1) {
+        currentSlide++;
+        updatePresentation();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updatePresentation();
+      }
+    }
+
+    function goToSlide(idx) {
+      if (idx >= 0 && idx < slides.length) {
+        currentSlide = idx;
+        updatePresentation();
+      }
+    }
+
+    function toggleNotes() {
+      notesDrawer.classList.toggle('open');
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    function exportToPdf() {
+      window.print();
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'Backspace') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullScreen();
+      } else if (e.key === 'e' || e.key === 'E') {\n        toggleEditMode();\n      } else if (e.key === 'n' || e.key === 'N') {
+        toggleNotes();
+      } else if (e.key === 'Home') {
+        goToSlide(0);
+      } else if (e.key === 'End') {
+        goToSlide(slides.length - 1);
+      }
+    });
+
+    let startX = 0;
+    window.addEventListener('touchstart', (e) => {
+      startX = e.changedTouches[0].screenX;
+    });
+    window.addEventListener('touchend', (e) => {
+      const endX = e.changedTouches[0].screenX;
+      if (endX < startX - 50) nextSlide();
+      if (endX > startX + 50) prevSlide();
+    });
+
+    updatePresentation();
+  </script>
+</body>
+</html>
